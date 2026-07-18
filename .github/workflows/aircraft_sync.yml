@@ -1,0 +1,51 @@
+# aircraft_sync.yml — Aircraft Procurement Tracker daily pipeline
+#
+# Collects aviation-procurement news via RSS, extracts fleet events with
+# Claude, writes them straight to Supabase (ac_ tables). No JSON commit —
+# the frontend reads Supabase directly, same pattern as daily_sync.yml.
+#
+# Uses the SAME repo secrets as the drone pipeline:
+#   SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, ANTHROPIC_API_KEY
+
+name: aircraft-tracker-sync
+
+on:
+  schedule:
+    - cron: "30 4,16 * * *"   # 04:30 & 16:30 UTC (offset from the drone sync)
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aircraft-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install feedparser anthropic
+
+      - name: Collect RSS feeds
+        working-directory: scripts
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: python collect_rss.py
+
+      - name: Extract fleet events with Claude
+        working-directory: scripts
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python process_articles.py

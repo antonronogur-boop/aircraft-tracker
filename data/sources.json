@@ -1,0 +1,17 @@
+[
+  {"source_id":"ACS-0001","source_name":"Defense News","rss_url":"https://www.defensenews.com/arc/outboundfeeds/rss/category/air/?outputType=xml","homepage":"https://www.defensenews.com","reliability_score":85},
+  {"source_id":"ACS-0002","source_name":"Breaking Defense","rss_url":"https://breakingdefense.com/feed/","homepage":"https://breakingdefense.com","reliability_score":82},
+  {"source_id":"ACS-0003","source_name":"The Aviationist","rss_url":"https://theaviationist.com/feed/","homepage":"https://theaviationist.com","reliability_score":78},
+  {"source_id":"ACS-0004","source_name":"Airforce Technology","rss_url":"https://www.airforce-technology.com/feed/","homepage":"https://www.airforce-technology.com","reliability_score":72},
+  {"source_id":"ACS-0005","source_name":"Air & Space Forces Magazine","rss_url":"https://www.airandspaceforces.com/feed/","homepage":"https://www.airandspaceforces.com","reliability_score":84},
+  {"source_id":"ACS-0006","source_name":"Naval News","rss_url":"https://www.navalnews.com/feed/","homepage":"https://www.navalnews.com","reliability_score":80},
+  {"source_id":"ACS-0007","source_name":"Defence Blog","rss_url":"https://defence-blog.com/feed/","homepage":"https://defence-blog.com","reliability_score":65},
+  {"source_id":"ACS-0008","source_name":"Overt Defense","rss_url":"https://www.overtdefense.com/feed/","homepage":"https://www.overtdefense.com","reliability_score":68},
+  {"source_id":"ACS-0009","source_name":"Militarnyi (English)","rss_url":"https://mil.in.ua/en/feed/","homepage":"https://mil.in.ua/en/","reliability_score":70},
+  {"source_id":"ACS-0010","source_name":"Army Recognition","rss_url":"https://armyrecognition.com/rss","homepage":"https://armyrecognition.com","reliability_score":62},
+  {"source_id":"ACS-0011","source_name":"DSCA Major Arms Sales","rss_url":null,"homepage":"https://www.dsca.mil/press-media/major-arms-sales","reliability_score":95,"enabled":true},
+  {"source_id":"ACS-0012","source_name":"Janes","rss_url":null,"homepage":"https://www.janes.com","reliability_score":92},
+  {"source_id":"ACS-0013","source_name":"Scramble Magazine","rss_url":null,"homepage":"https://www.scramble.nl","reliability_score":80},
+  {"source_id":"ACS-0014","source_name":"FlightGlobal","rss_url":null,"homepage":"https://www.flightglobal.com","reliability_score":85},
+  {"source_id":"ACS-0015","source_name":"Aviation Week","rss_url":null,"homepage":"https://aviationweek.com","reliability_score":90}
+]
