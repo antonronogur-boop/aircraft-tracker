@@ -46,6 +46,26 @@ géptípust vagy beszerzési kulcsszót említenek — így az AI-feldolgozás
 `review_status=pending`-gel születnek; a frontend admin felületén lehet
 majd jóváhagyni őket (Sprint 2).
 
+## Web frontend (web/)
+
+Next.js 14 + Tailwind, country-first UI: Dashboard ("Latest signals" feed +
+weekly stats), Countries (region-grouped, fleet table + event timeline per
+country), Aircraft catalogue (base data, operators, event history per type),
+and an admin Review queue with bulk approve/reject.
+
+Local run:
+```cmd
+cd web
+npm install
+npm run dev
+```
+Open http://localhost:3000. Config comes from `web/.env.local`
+(NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, and
+SUPABASE_SERVICE_ROLE_KEY for the review API route).
+
+Vercel deploy: import the GitHub repo, set **Root Directory = `web`**, add
+the same three env vars, deploy. Every push auto-deploys.
+
 ## Roadmap
 
 - **Sprint 2**: Next.js frontend — What's-new feed, országoldalak
