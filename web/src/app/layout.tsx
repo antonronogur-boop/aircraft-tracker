@@ -11,6 +11,7 @@ const NAV = [
   { href: "/", label: "Dashboard" },
   { href: "/countries", label: "Countries" },
   { href: "/aircraft", label: "Aircraft" },
+  { href: "/weekly", label: "Weekly report" },
   { href: "/admin/review", label: "Review" },
 ];
 

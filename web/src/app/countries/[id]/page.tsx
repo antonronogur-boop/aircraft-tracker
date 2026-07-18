@@ -4,10 +4,11 @@ import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
-const FLEET_STATUS_ORDER = ["active", "on_order", "option", "selected", "retiring", "retired"];
+const FLEET_STATUS_ORDER = ["active", "on_order", "option", "selected", "negotiation", "retiring", "retired"];
 const FLEET_STATUS_LABEL: Record<string, string> = {
   active: "Active", on_order: "On order", option: "Option",
-  selected: "Selected", retiring: "Retiring", retired: "Retired",
+  selected: "Selected", negotiation: "In negotiation",
+  retiring: "Retiring", retired: "Retired",
 };
 
 export default async function CountryPage({ params }: { params: { id: string } }) {
