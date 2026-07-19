@@ -60,7 +60,7 @@ Rules:
 - ONLY events that change (or will change) a country's FLEET. Explicitly
   DO NOT create events for: deployments, exercises, training missions,
   airshows/flypasts, operational strikes or combat usage, routine test
-  flights, personnel/командer news, weapons integration tests without a
+  flights, personnel/commander news, weapons integration tests without a
   procurement decision, opinion/analysis pieces. If the article contains
   only such content, return {"relevant": false}.
 - "incident" = only an actual loss/destruction of an aircraft (crash,
