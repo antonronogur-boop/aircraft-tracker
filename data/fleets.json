@@ -3802,6 +3802,20 @@
       "active",
       12,
       null
+    ],
+    [
+      "alb",
+      "uh-60",
+      "active",
+      4,
+      "UH-60M, first NATO-standard helos"
+    ],
+    [
+      "alb",
+      "h145m",
+      "on_order",
+      6,
+      "announced 2024 frame"
     ]
   ]
 }
