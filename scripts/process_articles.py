@@ -165,12 +165,27 @@ def call_claude(client, article):
         return None, "json_parse_error"
 
 
+def load_recent_soft_keys():
+    """(country_id, type_id, event_type) of non-rejected soft events from the
+    last 30 days — used to skip duplicate negotiation/selection/other events
+    when multiple outlets cover the same story."""
+    from datetime import datetime, timedelta, timezone
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
+    rows = db.select("ac_events", {
+        "select": "country_id,type_id,event_type",
+        "review_status": "neq.rejected",
+        "event_type": "in.(negotiation,selection,other)",
+        "created_at": "gte.{}".format(cutoff)})
+    return {(r.get("country_id"), r.get("type_id"), r["event_type"]) for r in rows}
+
+
 def main():
     run = db.start_run("ac_process_articles")
     processed = 0
     try:
         client = anthropic.Anthropic()
         type_idx, country_idx = build_indexes()
+        soft_keys = load_recent_soft_keys()
         articles = db.select("ac_articles", {
             "select": "article_id,title,url,short_summary",
             "status": "eq.raw", "order": "collected_date.asc",
@@ -195,9 +210,19 @@ def main():
                 type_id = match(ev.get("aircraft_type"), type_idx)
                 country_id = match(ev.get("country"), country_idx)
                 counterparty_id = match(ev.get("counterparty_country"), country_idx)
+                etype = ev.get("event_type") or "other"
+                # duplicate guard: same soft story already tracked -> skip
+                if etype in ("negotiation", "selection", "other") \
+                        and (country_id or type_id) \
+                        and (country_id, type_id, etype) in soft_keys:
+                    print("  [dup] skipped: {} / {} / {}".format(
+                        ev.get("country"), ev.get("aircraft_type"), etype))
+                    continue
+                if etype in ("negotiation", "selection", "other"):
+                    soft_keys.add((country_id, type_id, etype))
                 row = {
                     "article_id": art["article_id"],
-                    "event_type": ev.get("event_type") or "other",
+                    "event_type": etype,
                     "country_id": country_id,
                     "type_id": type_id,
                     "counterparty_country_id": counterparty_id,
