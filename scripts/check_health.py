@@ -29,8 +29,14 @@ def fetch(key, table, params):
 
 
 def parse_ts(v):
+    if not v:
+        return None
+    # Pre-3.11 fromisoformat chokes on non-3/6-digit fractional seconds —
+    # strip the fraction entirely (second precision is plenty here).
+    import re
+    s = re.sub(r"\.\d+", "", str(v)).replace("Z", "+00:00")
     try:
-        return datetime.fromisoformat(str(v).replace("Z", "+00:00"))
+        return datetime.fromisoformat(s)
     except (ValueError, TypeError):
         return None
 
