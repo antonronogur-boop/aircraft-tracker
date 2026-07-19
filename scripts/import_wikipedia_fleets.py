@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
-"""Full fleet import from Wikipedia — one inventory table per country.
+"""EXPERIMENTAL - DO NOT RUN against the live DB until table filtering
+is hardened (it imported SAM/radar rows and bad sums on 2026-07-19).
+
+Full fleet import from Wikipedia — one inventory table per country.
 
 For every country in data/wiki_sources.json (or matchable by naming
 pattern), downloads the Wikipedia article, finds the aircraft-inventory
