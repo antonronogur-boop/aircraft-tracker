@@ -57,11 +57,22 @@ Return STRICT JSON only (no markdown fences), with this shape:
 
 Rules:
 - Only MILITARY aircraft (incl. large military UAVs). Ignore airlines/civil.
+- ONLY events that change (or will change) a country's FLEET. Explicitly
+  DO NOT create events for: deployments, exercises, training missions,
+  airshows/flypasts, operational strikes or combat usage, routine test
+  flights, personnel/командer news, weapons integration tests without a
+  procurement decision, opinion/analysis pieces. If the article contains
+  only such content, return {"relevant": false}.
+- "incident" = only an actual loss/destruction of an aircraft (crash,
+  shoot-down) that reduces a fleet — not near-misses or disciplinary news.
 - One event per (country, type, event_type) — merge duplicates.
 - "order" = signed contract; "selection" = type chosen but not yet signed;
   "negotiation" = talks/requests/approvals (incl. US DSCA approvals);
   "export_sale" = a country selling its own aircraft onward.
+- "upgrade" = a decided/contracted modernization programme for a fleet.
 - Do not invent numbers. If the article gives no quantity/value, use null.
+- Prefer FEWER, stronger events over many weak ones (max 3 per article
+  unless it is genuinely a multi-country deal roundup).
 - summary must state WHO does WHAT with WHICH aircraft (and how many)."""
 
 

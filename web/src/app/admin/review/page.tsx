@@ -43,7 +43,7 @@ export default function ReviewPage() {
 
   useEffect(() => { void load(); }, []);
 
-  async function decide(ids: number[], action: "approve" | "reject") {
+  async function decide(ids: number[], action: "approve" | "reject" | "approve_apply") {
     setBusy((b) => new Set([...b, ...ids]));
     for (const id of ids) {
       try {
@@ -134,6 +134,14 @@ export default function ReviewPage() {
                 <p className="mt-1 text-sm text-slate-300">{e.summary}</p>
               </div>
               <div className="flex shrink-0 gap-1.5">
+                {e.country_id && e.type_id && e.quantity != null &&
+                  ["order", "delivery", "retirement", "incident"].includes(e.event_type) && (
+                  <button onClick={() => decide([e.event_id], "approve_apply")}
+                          title="Approve AND apply to fleet baseline (order -> on_order, delivery -> active, retirement/incident -> active-)"
+                          className="rounded bg-cyan-600/70 px-2 py-1 text-xs text-white hover:bg-cyan-600">
+                    ✓+fleet
+                  </button>
+                )}
                 <button onClick={() => decide([e.event_id], "approve")}
                         className="rounded bg-emerald-600/70 px-2 py-1 text-xs text-white hover:bg-emerald-600">✓</button>
                 <button onClick={() => decide([e.event_id], "reject")}
