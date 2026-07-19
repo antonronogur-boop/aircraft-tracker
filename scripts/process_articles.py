@@ -96,9 +96,10 @@ def build_indexes():
     """Alias -> id lookup tables for countries and aircraft types."""
     type_idx, country_idx = {}, {}
     for t in db.select("ac_aircraft_types", {"select": "type_id,name,designation,aliases"}):
-        for v in [t.get("name"), t.get("designation")] + list(t.get("aliases") or []):
+        # type_id itself is the most important alias: 'f-35', 'gripen', 'fcas'
+        for v in [t["type_id"], t.get("name"), t.get("designation")] + list(t.get("aliases") or []):
             if v:
-                type_idx[v.lower()] = t["type_id"]
+                type_idx[str(v).lower()] = t["type_id"]
     for c in db.select("ac_countries", {"select": "country_id,name,aliases"}):
         for v in [c.get("name")] + list(c.get("aliases") or []):
             if v:
