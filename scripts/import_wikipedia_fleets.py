@@ -54,14 +54,27 @@ CATEGORY_KEYWORDS = [
 
 
 def fetch_page(title):
-    url = "https://en.wikipedia.org/api/rest_v1/page/html/{}".format(
-        urllib.parse.quote(title.replace(" ", "_"), safe=""))
-    req = urllib.request.Request(url, headers={"User-Agent": UA})
-    try:
-        with urllib.request.urlopen(req, timeout=30) as resp:
-            return resp.read().decode("utf-8", errors="replace")
-    except Exception:  # noqa: BLE001
-        return None
+    """Fetch article HTML: REST API first, plain article URL as fallback,
+    with retries — Wikipedia intermittently drops requests, and a single
+    failure must not mark a country as NO PAGE."""
+    quoted = urllib.parse.quote(title.replace(" ", "_"), safe="")
+    urls = [
+        "https://en.wikipedia.org/api/rest_v1/page/html/{}".format(quoted),
+        "https://en.wikipedia.org/wiki/{}".format(quoted),
+    ]
+    for url in urls:
+        for attempt in range(3):
+            req = urllib.request.Request(url, headers={"User-Agent": UA})
+            try:
+                with urllib.request.urlopen(req, timeout=30) as resp:
+                    return resp.read().decode("utf-8", errors="replace")
+            except urllib.error.HTTPError as e:
+                if e.code == 404:
+                    break  # real missing title -> try next URL form
+                time.sleep(2 * (attempt + 1))
+            except Exception:  # noqa: BLE001 — network hiccup
+                time.sleep(2 * (attempt + 1))
+    return None
 
 
 def clean(cell):
@@ -114,10 +127,16 @@ def parse_inventory(html):
         cls = " ".join(table.get("class") or [])
         if "wikitable" not in cls:
             continue
-        headers = [clean(th).lower() for th in table.find_all("th")[:8]]
-        if not headers or "aircraft" not in " ".join(headers):
+        headers = [clean(th).lower() for th in table.find_all("th")[:10]]
+        joined = " ".join(headers)
+        # Two common formats:
+        #   A) "Aircraft | Origin | Type | Variant | In service | Notes"
+        #   B) "Type | Image | Origin | Class/Role | Introduced | In service | Total"
+        #      ("List of active X military aircraft" pages -- name col is "Type")
+        if not headers or ("aircraft" not in joined and "type" not in joined):
             continue
-        if not any("in service" in h or "quantity" in h or "in service" in h for h in headers):
+        if not any(("in service" in h) or ("quantity" in h) or ("number" in h)
+                   or (h == "total") for h in headers):
             continue
         # column positions
         def col(*names):
@@ -125,8 +144,18 @@ def parse_inventory(html):
                 if any(n in h for n in names):
                     return i
             return None
-        c_name, c_type = 0, col("type", "role")
-        c_var, c_serv, c_notes = col("variant", "version"), col("in service", "quantity"), col("note")
+        c_name = col("aircraft")
+        name_is_type_col = c_name is None
+        if c_name is None:
+            c_name = col("type")
+        if c_name is None:
+            c_name = 0
+        c_type = col("role", "class") if name_is_type_col else col("type", "role", "class")
+        c_var = col("variant", "version")
+        c_serv = col("in service", "quantity", "number")
+        if c_serv is None:
+            c_serv = col("total")
+        c_notes = col("note")
         section = ""
         for tr in table.find_all("tr"):
             tds = tr.find_all("td")
@@ -135,8 +164,10 @@ def parse_inventory(html):
             if len(tds) == 1 and tds[0].get("colspan"):
                 section = clean(tds[0])
                 continue
-            name = clean(tds[0])
-            if not name or len(name) < 2 or name.lower() in ("aircraft", "total"):
+            name = clean(tds[c_name]) if c_name < len(tds) else ""
+            if not name or len(name) < 2 or name.lower() in ("aircraft", "type", "total") \
+                    or name.lower().startswith("total"):
+                continue
                 continue
             def cell(i):
                 return clean(tds[i]) if i is not None and i < len(tds) else ""
