@@ -60,7 +60,7 @@ function Donut({ slices }: { slices: { event_type: string; count: number }[] }) 
 
 function DealCard({ ev }: { ev: ReportEvent }) {
   return (
-    <div className="rounded-lg border border-slate-800 bg-slate-900/40 p-3 print:border-slate-300">
+    <div className="print-card rounded-lg border border-slate-800 bg-slate-900/40 p-3 print:border-slate-300">
       <div className="flex flex-wrap items-center gap-2">
         <EventBadge type={ev.event_type} />
         {ev.country_id
@@ -106,7 +106,7 @@ export function WeeklyReportView({
   return (
     <div className="report-body">
       {/* 1. Overview */}
-      <section className="mb-8 rounded-xl border border-cyan-500/20 bg-cyan-500/5 p-5 print:border-slate-300">
+      <section className="print-card mb-8 rounded-xl border border-cyan-500/20 bg-cyan-500/5 p-5 print:border-slate-300">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h2 className="text-sm font-semibold text-cyan-300">The week in one paragraph</h2>
           <span className="text-xs text-slate-500">
@@ -154,7 +154,7 @@ export function WeeklyReportView({
           </div>
           <div className="space-y-2">
             {payload.by_type.filter((t) => t.note).map((t) => (
-              <div key={t.event_type} className="rounded-md border border-slate-800 bg-slate-900/40 px-3 py-2 print:border-slate-300">
+              <div key={t.event_type} className="print-card rounded-md border border-slate-800 bg-slate-900/40 px-3 py-2 print:border-slate-300">
                 <div className="flex items-center gap-2">
                   <EventBadge type={t.event_type} />
                   <span className="text-xs text-slate-500">{t.count} events</span>
@@ -163,7 +163,7 @@ export function WeeklyReportView({
               </div>
             ))}
             {payload.by_region.length > 0 && (
-              <div className="rounded-md border border-slate-800 bg-slate-900/40 px-3 py-2 print:border-slate-300">
+              <div className="print-card rounded-md border border-slate-800 bg-slate-900/40 px-3 py-2 print:border-slate-300">
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">By region</p>
                 <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1">
                   {payload.by_region.map((r) => (
@@ -192,7 +192,7 @@ export function WeeklyReportView({
                 </div>
                 <div className="space-y-1.5">
                   {items.map((it) => (
-                    <p key={it.event_id} className="border-l border-slate-700 pl-2 text-sm text-slate-400">
+                    <p key={it.event_id} className="print-card border-l border-slate-700 pl-2 text-sm text-slate-400">
                       <span className="text-slate-300">{it.country}</span> / {it.aircraft} — {it.summary}
                     </p>
                   ))}
@@ -201,7 +201,7 @@ export function WeeklyReportView({
             ))}
           </div>
           {(payload.watchlist.assessment?.near_term || payload.watchlist.assessment?.long_term) && (
-            <div className="mt-4 rounded-lg border border-amber-500/20 bg-amber-500/5 p-4 print:border-slate-300">
+            <div className="print-card mt-4 rounded-lg border border-amber-500/20 bg-amber-500/5 p-4 print:border-slate-300">
               <h3 className="text-xs font-semibold uppercase tracking-wide text-amber-300">Analyst assessment</h3>
               {payload.watchlist.assessment.near_term && (
                 <p className="mt-2 text-sm text-slate-300">

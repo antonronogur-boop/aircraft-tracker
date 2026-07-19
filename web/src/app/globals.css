@@ -4,12 +4,17 @@
 
 /* Print / PDF export: clean light rendering of the weekly report */
 @media print {
+  @page { margin: 14mm; }
   body { background: #fff !important; color: #111 !important; }
   nav, footer, .print\:hidden { display: none !important; }
   main { max-width: 100% !important; padding: 0 !important; }
+  .report-body { font-size: 11.5px; }
   .report-body * { color: #111 !important; border-color: #cbd5e1 !important; }
   .report-body .bg-slate-900\/40, .report-body .bg-cyan-500\/5,
   .report-body .bg-amber-500\/5 { background: #f8fafc !important; }
   a { text-decoration: none !important; }
-  section { break-inside: avoid; }
+  /* Sections FLOW across pages; only individual cards stay unbroken. */
+  section { break-inside: auto; margin-bottom: 1rem !important; }
+  h2, h3 { break-after: avoid; }
+  .print-card { break-inside: avoid; }
 }
