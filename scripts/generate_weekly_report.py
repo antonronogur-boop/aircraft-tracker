@@ -133,10 +133,12 @@ def main():
             'be signed soon and what to watch>", "long_term": "<2-3 sentences: slower-moving '
             'processes and their strategic significance>"}\n'
             "}\n\n"
-            "DATA:\nstats: {}\n\nkey_deals: {}\n\nevent_type_counts: {}\n\n"
-            "regions: {}\n\nwatchlist: {}"
-        ).format(json.dumps(stats), json.dumps(deal_ctx), json.dumps(type_counts),
-                 json.dumps(region_ctx), json.dumps(watch_ctx))
+            "DATA:\nstats: " + json.dumps(stats)
+            + "\n\nkey_deals: " + json.dumps(deal_ctx)
+            + "\n\nevent_type_counts: " + json.dumps(type_counts)
+            + "\n\nregions: " + json.dumps(region_ctx)
+            + "\n\nwatchlist: " + json.dumps(watch_ctx)
+        )
 
         client = anthropic.Anthropic()
         msg = client.messages.create(model=MODEL, max_tokens=2500,
