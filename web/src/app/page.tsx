@@ -1,5 +1,6 @@
 import { loadBundle, indexBy, visibleEvents } from "@/lib/db";
 import { PageHeader, StatCard, EventCard } from "@/components/ui";
+import { SystemHealth } from "@/components/SystemHealth";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -29,6 +30,8 @@ export default async function Dashboard() {
         title="Dashboard"
         description="What changed in the world's military aircraft fleets — orders, deliveries, upgrades, sales and retirements, extracted from open sources."
       />
+
+      <SystemHealth />
 
       <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <StatCard label="Events this week" value={thisWeek.length} />
