@@ -66,7 +66,7 @@ def fetch_page(title):
         for attempt in range(3):
             req = urllib.request.Request(url, headers={"User-Agent": UA})
             try:
-                with urllib.request.urlopen(req, timeout=30) as resp:
+                with urllib.request.urlopen(req, timeout=60) as resp:
                     return resp.read().decode("utf-8", errors="replace")
             except urllib.error.HTTPError as e:
                 if e.code == 404:
@@ -127,7 +127,10 @@ def parse_inventory(html):
         cls = " ".join(table.get("class") or [])
         if "wikitable" not in cls:
             continue
-        headers = [clean(th).lower() for th in table.find_all("th")[:10]]
+        first_tr = table.find("tr")
+        if first_tr is None:
+            continue
+        headers = [clean(x).lower() for x in first_tr.find_all(["th", "td"])[:10]]
         joined = " ".join(headers)
         # Two common formats:
         #   A) "Aircraft | Origin | Type | Variant | In service | Notes"
@@ -158,16 +161,19 @@ def parse_inventory(html):
         c_notes = col("note")
         section = ""
         for tr in table.find_all("tr"):
-            tds = tr.find_all("td")
-            if not tds:
+            if tr is first_tr:
                 continue
+            tds = tr.find_all(["th", "td"])   # many pages put the aircraft
+            if not tds:                        # name in a row-header <th>
+                continue
+            if all(td.name == "th" for td in tds):
+                continue                       # secondary header row
             if len(tds) == 1 and tds[0].get("colspan"):
                 section = clean(tds[0])
                 continue
             name = clean(tds[c_name]) if c_name < len(tds) else ""
             if not name or len(name) < 2 or name.lower() in ("aircraft", "type", "total") \
                     or name.lower().startswith("total"):
-                continue
                 continue
             def cell(i):
                 return clean(tds[i]) if i is not None and i < len(tds) else ""
@@ -213,11 +219,12 @@ def main():
             continue
         html = None
         used_title = None
-        for title in candidates_for(cid, cname):
+        for i, title in enumerate(candidates_for(cid, cname)):
             html = fetch_page(title)
-            if html and "wikitable" in html:
+            if html and (i == 0 or "wikitable" in html):
                 used_title = title
                 break
+            html = None
             time.sleep(0.5)
         if not html:
             report.append((cid, "NO PAGE", 0, 0))
