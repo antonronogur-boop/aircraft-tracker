@@ -43,8 +43,9 @@ def main():
         })
 
     # Delete previous baseline rows, then insert fresh.
+    # NOTE: PostgREST 'like' uses * as wildcard (translated to %), not %.
     db._request("DELETE", "ac_fleets",  # noqa: SLF001 — intentional low-level call
-                params={"source_note": "like.{}%".format(BASELINE_TAG)},
+                params={"source_note": "like.{}*".format(BASELINE_TAG)},
                 prefer="return=minimal")
     # Insert in chunks (PostgREST payload limits)
     for i in range(0, len(rows), 200):
