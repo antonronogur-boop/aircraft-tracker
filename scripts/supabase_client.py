@@ -41,8 +41,18 @@ def _request(method, path, params=None, body=None, prefer=None):
 
 def select(table, params=None):
     # type: (str, Optional[Dict[str, str]]) -> List[Dict[str, Any]]
-    """Paginated SELECT — always returns the full result set."""
+    """SELECT with pagination.
+
+    If the caller passes an explicit "limit", it is HONOURED (single request,
+    no pagination) — batch caps in the pipeline scripts depend on this.
+    Without a limit, all pages are fetched.
+    """
     params = dict(params or {})
+    explicit_limit = params.pop("limit", None)
+    if explicit_limit is not None:
+        params["limit"] = str(explicit_limit)
+        return _request("GET", table, params=params) or []
+
     rows = []  # type: List[Dict[str, Any]]
     for page in range(_MAX_PAGES):
         page_params = dict(params)
