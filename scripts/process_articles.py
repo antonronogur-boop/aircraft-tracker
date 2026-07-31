@@ -48,7 +48,16 @@ Return STRICT JSON only (no markdown fences), with this shape:
       "aircraft_type": "<aircraft name as close to official as possible>",
       "quantity": <int or null>,
       "value_usd_m": <deal value in MILLIONS of USD, or null>,
-      "event_date": "YYYY-MM-DD or null",
+      "value_type": "firm|ceiling|notified_max|estimate|unknown",
+      "value_currency_year": <year the figure is quoted in, or null>,
+      "event_date": "YYYY-MM-DD or null — WHEN IT HAPPENED, not when reported",
+      "announcement_date": "YYYY-MM-DD or null — when it was made public",
+      "lifecycle_stage": "requirement|rfi_sources_sought|rfp|bid|selection|national_approval|export_approval|contract_signed|production|delivery|ioc|foc|upgrade_programme|retirement|loss|other",
+      "capability_domain": "fighter_strike|air_mobility_rotary|air_mobility_fixed|uncrewed_cca|counter_uas|isr_aew_sigint|tanker|training|attack_helicopter|maritime_patrol|other",
+      "delivery_start_year": <int or null>,
+      "delivery_end_year": <int or null>,
+      "expected_ioc_year": <int or null — when the capability becomes usable>,
+      "independent_lineages": <1 normally; >1 only if genuinely separate evidence chains>,
       "summary": "<1-2 sentence plain-English summary of the event>",
       "confidence": <0.0-1.0, how certain the article is (rumor=low, signed contract=high)>
     }
@@ -56,6 +65,34 @@ Return STRICT JSON only (no markdown fences), with this shape:
 }
 
 Rules:
+- EVENT DATE DISCIPLINE — the single most important rule. "event_date" is the
+  date the procurement action itself took place. If a 2026 article describes a
+  contract signed in January 2020 or a budget approval given in 2025, the
+  event_date is 2020-01 / 2025 — NOT today. A fresh article never makes an old
+  event current. If the article gives only a month or year, use the first day
+  of it. Put the publication date in announcement_date.
+- LIFECYCLE STAGE IS NOT EVENT TYPE. Distinguish precisely:
+  * requirement / rfi_sources_sought / rfp / bid — pre-competition steps
+  * selection — type chosen, nothing signed
+  * national_approval — parliament/cabinet/budget-committee authorisation
+    (e.g. the German Bundestag budget committee releasing funds)
+  * export_approval — US DSCA/State Department clearance or a congressional
+    review passing. THIS IS NOT A PURCHASE: it is permission to sell, with a
+    notional MAXIMUM value that regularly exceeds the eventual contract.
+  * contract_signed — a signed, funded procurement contract
+  * production / delivery / ioc / foc — execution and fielding
+  If the article says "approved", decide WHO approved WHAT: a buyer's budget
+  authority (national_approval) or an exporter's government (export_approval).
+- VALUE TYPE: "up to $X" or IDIQ ceilings are "ceiling"; DSCA notification
+  totals are "notified_max"; a signed contract sum is "firm"; press estimates
+  are "estimate". Give value_currency_year when the figure is historical.
+- CAPABILITY EFFECT DATES: where stated, give delivery_start_year,
+  delivery_end_year and expected_ioc_year. Never invent them; null is correct
+  when the article is silent. Do not infer IOC from the contract date.
+- INDEPENDENT LINEAGES: several outlets repeating one manufacturer press
+  release or one ministry statement is ONE lineage. Only count a second
+  lineage for genuinely separate evidence (a second government, a contract
+  document, imagery).
 - Only MILITARY aircraft (incl. large military UAVs). Ignore airlines/civil.
 - ONLY events that change (or will change) a country's FLEET. Explicitly
   DO NOT create events for: deployments, exercises, training missions,
@@ -69,6 +106,14 @@ Rules:
 - "order" = signed contract; "selection" = type chosen but not yet signed;
   "negotiation" = talks/requests/approvals (incl. US DSCA approvals);
   "export_sale" = a country selling its own aircraft onward.
+  (event_type stays coarse for continuity; lifecycle_stage carries the
+  precision. An FMS/DSCA clearance is event_type "negotiation" and
+  lifecycle_stage "export_approval" — never event_type "order".)
+- AIRCRAFT COUNT IS NOT COMBAT CAPABILITY. The summary states the procurement
+  fact. Do not assert readiness, force-structure superiority, supplier
+  dominance or regional balance conclusions — those need pilot readiness,
+  weapons stocks, mission data, tanker and basing information the article
+  does not contain.
 - "upgrade" = a decided/contracted modernization programme for a fleet.
 - Do not invent numbers. If the article gives no quantity/value, use null.
 - Prefer FEWER, stronger events over many weak ones (max 3 per article
@@ -166,6 +211,59 @@ def call_claude(client, article):
         return None, "json_parse_error"
 
 
+LIFECYCLE_STAGES = {
+    "requirement", "rfi_sources_sought", "rfp", "bid", "selection",
+    "national_approval", "export_approval", "contract_signed", "production",
+    "delivery", "ioc", "foc", "upgrade_programme", "retirement", "loss",
+    "other"}
+VALUE_TYPES = {"firm", "ceiling", "notified_max", "estimate", "unknown"}
+CAPABILITY_DOMAINS = {
+    "fighter_strike", "air_mobility_rotary", "air_mobility_fixed",
+    "uncrewed_cca", "counter_uas", "isr_aew_sigint", "tanker", "training",
+    "attack_helicopter", "maritime_patrol", "other"}
+# event_type -> lifecycle_stage fallback, ha a modell nem ad ervenyeset
+STAGE_FALLBACK = {"order": "contract_signed", "delivery": "delivery",
+                  "upgrade": "upgrade_programme", "selection": "selection",
+                  "negotiation": "requirement", "retirement": "retirement",
+                  "incident": "loss", "export_sale": "contract_signed"}
+
+
+def _year(value, lo=1990, hi=2060):
+    try:
+        y = int(value)
+    except (TypeError, ValueError):
+        return None
+    return y if lo <= y <= hi else None
+
+
+def _v2_fields(ev):
+    """A kepesseg-mezok validalasa. Ervenytelen erteket sosem irunk be:
+    inkabb null, mint egy kitalalt kategoria, amire kesobb elemzes epul."""
+    stage = str(ev.get("lifecycle_stage") or "").strip().lower()
+    if stage not in LIFECYCLE_STAGES:
+        stage = STAGE_FALLBACK.get(ev.get("event_type") or "", "other")
+    vtype = str(ev.get("value_type") or "").strip().lower()
+    if vtype not in VALUE_TYPES:
+        vtype = "unknown" if ev.get("value_usd_m") is not None else None
+    dom = str(ev.get("capability_domain") or "").strip().lower()
+    if dom not in CAPABILITY_DOMAINS:
+        dom = None
+    try:
+        lineages = max(1, min(int(ev.get("independent_lineages") or 1), 6))
+    except (TypeError, ValueError):
+        lineages = 1
+    out = {"lifecycle_stage": stage, "value_type": vtype,
+           "capability_domain": dom, "independent_lineages": lineages,
+           "value_currency_year": _year(ev.get("value_currency_year")),
+           "delivery_start_year": _year(ev.get("delivery_start_year")),
+           "delivery_end_year": _year(ev.get("delivery_end_year")),
+           "expected_ioc_year": _year(ev.get("expected_ioc_year"))}
+    ann = str(ev.get("announcement_date") or "")[:10]
+    if re.match(r"^\d{4}-\d{2}-\d{2}$", ann):
+        out["announcement_date"] = ann
+    return out
+
+
 def load_recent_soft_keys():
     """(country_id, type_id, event_type) of non-rejected soft events from the
     last 30 days — used to skip duplicate negotiation/selection/other events
@@ -236,10 +334,19 @@ def main():
                     "unresolved_type_name": None if type_id else ev.get("aircraft_type"),
                     "unresolved_country_name": None if country_id else ev.get("country"),
                 }
+                # v2 kepesseg-mezok, ervenyes ertekkeszletre szoritva. Ha a
+                # migracio meg nem futott le, a beszuras a v2 kulcsok nelkul
+                # ismetlodik (visszafele kompatibilitas).
+                v2 = _v2_fields(ev)
                 try:
-                    db.insert("ac_events", row)
+                    db.insert("ac_events", dict(row, **v2))
                 except Exception as e:  # noqa: BLE001
-                    print("  [WARN] event insert failed: {}".format(str(e)[:200]))
+                    try:
+                        db.insert("ac_events", row)
+                        print("  [warn] v2 columns missing — inserted without "
+                              "capability fields (run add_capability_fields.sql)")
+                    except Exception as e2:  # noqa: BLE001
+                        print("  [WARN] event insert failed: {}".format(str(e2)[:200]))
 
             db.update("ac_articles", {"article_id": "eq." + art["article_id"]},
                       {"status": "processed"})
