@@ -14,8 +14,53 @@ import urllib.request
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
-SUPABASE_URL = os.environ["SUPABASE_URL"].strip().rstrip("/")
-SERVICE_KEY = os.environ["SUPABASE_SERVICE_ROLE_KEY"].strip()
+def _load_dotenv():
+    """A projekt gyokereben levo .env betoltese, ha a valtozok nincsenek a
+    kornyezetben. Igy nem kell minden uj cmd-ablakban ujra beallitani oket
+    (a .env a .gitignore-ban van, tehat nem kerul a repoba)."""
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    for name in (".env", "scripts/.env"):
+        path = os.path.join(root, name)
+        if not os.path.exists(path):
+            continue
+        try:
+            with open(path, "r") as fh:
+                for line in fh:
+                    line = line.strip()
+                    if not line or line.startswith("#") or "=" not in line:
+                        continue
+                    k, v = line.split("=", 1)
+                    os.environ.setdefault(k.strip(),
+                                          v.strip().strip('"').strip("'"))
+        except OSError:
+            pass
+
+
+_load_dotenv()
+
+
+def _require(name, hint):
+    value = os.environ.get(name)
+    if not value:
+        raise SystemExit(
+            "\nMISSING ENVIRONMENT VARIABLE: {0}\n"
+            "  {1}\n"
+            "  Fix it in one of two ways:\n"
+            "    1) create a .env file in the project root with lines like\n"
+            "         SUPABASE_URL=https://<project>.supabase.co\n"
+            "         SUPABASE_SERVICE_ROLE_KEY=<service_role key>\n"
+            "         ANTHROPIC_API_KEY=<key>\n"
+            "    2) or set it for this window:  set {0}=<value>\n".format(
+                name, hint))
+    return value.strip()
+
+
+SUPABASE_URL = _require(
+    "SUPABASE_URL", "Supabase project URL, e.g. https://xxxx.supabase.co"
+).rstrip("/")
+SERVICE_KEY = _require(
+    "SUPABASE_SERVICE_ROLE_KEY",
+    "Supabase Dashboard -> Settings -> API -> service_role key")
 
 _PAGE_SIZE = 1000
 _MAX_PAGES = 50
