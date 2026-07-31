@@ -127,12 +127,25 @@ def main():
                 cur = datetime.strptime(str(r["event_date"])[:10], "%Y-%m-%d")
             except ValueError:
                 cur = None
+        # AZ EVSZAM-PONTOSSAG GYENGE BIZONYITEK, ket kovetkezmennyel:
+        #  a) a FOLYO EVBEN januar 1-re datalna — ezzel egy tenylegesen e heti
+        #     esemenyt tolna ki az ablakbol (pl. a francia-ukran Rafale-ugy);
+        #  b) egy MEGLEVO datumot sosem irhat felul, mert tipikusan hattér-
+        #     hivatkozas ("the 2018 contract"), nem az esemeny datuma.
+        # Felulirni csak honap- vagy nap-pontossagu talalat jogosult.
+        weak = (prec == "year")
         if cur is None:
-            (missing if len(distinct_years) == 1 else ambiguous).append(
-                (r, cand, prec, found))
+            if weak and cand.year >= collected.year:
+                ambiguous.append((r, cand, prec, found))
+            elif len(distinct_years) == 1:
+                missing.append((r, cand, prec, found))
+            else:
+                ambiguous.append((r, cand, prec, found))
         elif cand.year < cur.year:
-            (contradict if len(distinct_years) == 1 else ambiguous).append(
-                (r, cand, prec, found))
+            if weak or len(distinct_years) > 1:
+                ambiguous.append((r, cand, prec, found))
+            else:
+                contradict.append((r, cand, prec, found))
 
     def show(title, items, limit=40):
         if not items:
