@@ -44,7 +44,9 @@ DMY_RX = re.compile(r"\b(\d{1,2})\s+([A-Za-z]{3,9})\s+(\d{4})\b")
 MDY_RX = re.compile(r"\b([A-Za-z]{3,9})\s+(\d{1,2}),?\s+(\d{4})\b")
 MY_RX = re.compile(r"\b(?:in|since|during|from)\s+([A-Za-z]{3,9})\s+(\d{4})\b",
                    re.I)
-Y_RX = re.compile(r"\b(?:in|back in|during)\s+(19\d{2}|20\d{2})\b", re.I)
+Y_RX = re.compile(
+    r"\b(?:in|back in|during|from|by|starting in|as early as|before)\s+"
+    r"(19\d{2}|20\d{2})\b", re.I)
 
 
 def dates_in(text):
