@@ -90,16 +90,35 @@ def main():
         "created_at": "gte." + since, "order": "created_at.desc"})
     print("Loaded {} event(s) from the last {} day(s).".format(len(rows), days))
 
-    missing, contradict, ambiguous = [], [], []
+    missing, contradict, ambiguous, timing = [], [], [], []
     for r in rows:
         found = dates_in(r.get("summary"))
         if not found:
             continue
-        # A legkorabbi talalat a mervado: egy cikk tipikusan az esemenyt
-        # datalja, majd a mai napra hivatkozik.
-        found.sort(key=lambda x: x[0])
-        cand, prec = found[0]
-        distinct_years = {d.year for d, _ in found}
+        collected = (datetime.strptime(str(r.get("created_at"))[:10],
+                                       "%Y-%m-%d")
+                     if str(r.get("created_at"))[:4].isdigit()
+                     else datetime.now())
+        # KRITIKUS MEGKULONBOZTETES: a szovegben szereplo JOVOBELI evszam nem
+        # az esemeny datuma, hanem menetrend ("withdrawal starting in 2027",
+        # "deliveries from 2028"). Ilyet SOSEM irunk event_date-be — abbol egy
+        # 2026-os bejelentes 2027-es esemeny lenne, amit a jelentes utana
+        # jogosan kizarna. A jovobeli evek a szallitasi/IOC-mezokbe valok.
+        past = [(d, p) for d, p in found if d <= collected]
+        future = [(d, p) for d, p in found if d > collected]
+        if future and not past:
+            timing.append((r, min(future)[0], "future", found))
+            continue
+        if not past:
+            continue
+        past.sort(key=lambda x: x[0])
+        cand, prec = past[0]
+        # 15 evnel regebbi emlites tipikusan tortenelmi hivatkozas, nem az
+        # esemeny datuma (pl. "the 2018 contract") — kezi ellenorzesre megy.
+        if (collected - cand).days > 365 * 15:
+            ambiguous.append((r, cand, prec, found))
+            continue
+        distinct_years = {d.year for d, _ in past}
         cur = None
         if r.get("event_date"):
             try:
@@ -125,15 +144,21 @@ def main():
         if len(items) > limit:
             print("  ... and {} more".format(len(items) - limit))
 
-    show("MISSING event_date but a date is stated in the text", missing)
+    show("MISSING event_date but a PAST date is stated in the text", missing)
     show("CONTRADICTION — text describes an OLDER event than event_date",
          contradict)
-    show("AMBIGUOUS — several different years in the text (manual review)",
-         ambiguous)
+    show("FUTURE SCHEDULE — only forward-looking years in the text; these are "
+         "delivery/withdrawal plans, NOT the event date", timing)
+    show("AMBIGUOUS — several years, or a reference older than 15 years "
+         "(manual review)", ambiguous)
 
     fixable = missing + contradict
+    if timing:
+        print("\nNote: the {} 'future schedule' item(s) are left untouched. "
+              "Their years belong in delivery_start_year / expected_ioc_year, "
+              "which new extractions fill automatically.".format(len(timing)))
     if not fixable:
-        print("\nNothing to fix.")
+        print("\nNothing to re-date. event_date discipline looks sound.")
         return
     if not apply_mode:
         print("\nDRY-RUN — nothing changed. {} event(s) would be re-dated. "
