@@ -48,18 +48,24 @@ export interface ReportPayload {
   }[];
   intelligence_gaps?: string[];
   orbat_delta?: {
-    country?: string; region?: string;
+    country?: string; region?: string; baseline_scope?: string;
     entries?: {
       type?: string; domain?: string; active?: number; on_order?: number;
       stored?: number; this_week_stage?: string; this_week_quantity?: number | null;
       expected_ioc_year?: number | null; delivery_window?: string | null;
+      baseline_missing?: boolean;
     }[];
   }[];
   capability_timeline?: {
-    year?: number; basis?: string; country?: string; type?: string;
-    domain?: string; quantity?: number | null; stage?: string;
+    year?: number; basis?: string; label?: string; country?: string;
+    type?: string; domain?: string; quantity?: number | null; stage?: string;
+    is_withdrawal?: boolean;
   }[];
   maturity_matrix?: Record<string, Record<string, string[]>>;
+  capability_withdrawal?: {
+    domain?: string; label?: string; stage?: string;
+    effect_timing?: string; note?: string;
+  }[];
   self_checks?: { check?: string; item?: string }[];
   annex_events?: ReportEvent[];
   // ---- v1 mezok (visszafele kompatibilitas) ----
@@ -87,7 +93,9 @@ interface Development {
   novelty?: string; significance?: number; confidence?: string;
   reports_count?: number; independent_lineages?: number; lineage_note?: string;
   value_usd_m?: number | null; value_type?: string;
-  expected_ioc_year?: number | null; indicators_to_watch?: string[];
+  expected_ioc_year?: number | null; first_delivery_year?: number | null;
+  ioc_year?: number | null; meaningful_capability_year?: number | null;
+  indicators_to_watch?: string[];
   auto_adjustment?: string;
 }
 
@@ -259,6 +267,13 @@ export function WeeklyReportView({
         )}
       </section>
 
+      {/* ---------- 1. COMMAND BRIEF ---------- */}
+      {(payload.key_judgements?.length ?? 0) > 0 && (
+        <p className="mb-2 text-center text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-600">
+          Command brief
+        </p>
+      )}
+
       {/* ---------- KEY JUDGEMENTS ---------- */}
       {(payload.key_judgements?.length ?? 0) > 0 && (
         <section className="print-card mb-8 rounded-xl border border-blue-500/25 bg-blue-500/5 p-5 print:border-slate-300">
@@ -338,6 +353,15 @@ export function WeeklyReportView({
         </section>
       )}
 
+      {/* ---------- 2. ANALYST LAYER ---------- */}
+      {(payload.developments?.length ?? 0) > 0 && (
+        <div className="mb-4 border-t border-slate-800 pt-3">
+          <p className="text-center text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-600">
+            Analyst layer
+          </p>
+        </div>
+      )}
+
       {/* ---------- CAPABILITY DEVELOPMENTS ---------- */}
       {(payload.developments?.length ?? 0) > 0 && (
         <section className="mb-8">
@@ -356,8 +380,16 @@ export function WeeklyReportView({
                   <Chip>{STAGE_LABELS[d.lifecycle_stage ?? ""] ?? d.lifecycle_stage}</Chip>
                   <Chip cls={TIMING_STYLE[d.effect_timing ?? "unknown"] ?? ""}>
                     effect: {d.effect_timing ?? "unknown"}
-                    {d.expected_ioc_year ? ` · IOC ${d.expected_ioc_year}` : ""}
                   </Chip>
+                  {(d.first_delivery_year || d.ioc_year || d.expected_ioc_year ||
+                    d.meaningful_capability_year) && (
+                    <Chip>
+                      {[d.first_delivery_year ? `1st delivery ${d.first_delivery_year}` : null,
+                        (d.ioc_year ?? d.expected_ioc_year) ? `IOC ${d.ioc_year ?? d.expected_ioc_year}` : null,
+                        d.meaningful_capability_year ? `usable ${d.meaningful_capability_year}` : null,
+                      ].filter(Boolean).join(" · ")}
+                    </Chip>
+                  )}
                   <Chip>sig {d.significance}/5 · conf {d.confidence}</Chip>
                   <Chip>
                     {d.reports_count ?? 1} report{(d.reports_count ?? 1) === 1 ? "" : "s"} ·{" "}
@@ -426,12 +458,37 @@ export function WeeklyReportView({
         </section>
       )}
 
+      {/* ---------- CAPABILITY WITHDRAWAL (kulon ontologia) ---------- */}
+      {(payload.capability_withdrawal?.length ?? 0) > 0 && (
+        <section className="print-card mb-8 rounded-lg border border-rose-500/25 bg-rose-500/5 p-4 print:border-slate-300">
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-rose-300">
+            Capability transition / withdrawal
+          </h2>
+          <p className="mt-0.5 text-[11px] text-slate-500">
+            Retirements run parallel to the introduction lifecycle above, not inside it —
+            an out-of-service milestone is not a maturity stage.
+          </p>
+          <ul className="mt-2 space-y-1 text-xs text-slate-300">
+            {payload.capability_withdrawal!.map((w, i) => (
+              <li key={i}>
+                <span className="font-medium">{w.label}</span>
+                <span className="text-slate-500"> · {DOMAIN_LABELS[w.domain ?? ""] ?? w.domain}</span>
+                {w.effect_timing ? <span className="text-slate-500"> · effect {w.effect_timing}</span> : null}
+                {w.note ? <span className="text-slate-400"> — {w.note}</span> : null}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       {/* ---------- ORBAT DELTA ---------- */}
       {(payload.orbat_delta?.length ?? 0) > 0 && (
         <section className="mb-8">
           <h2 className="mb-1 text-sm font-semibold text-slate-200">ORBAT delta — affected fleets</h2>
           <p className="mb-2 text-[11px] text-slate-500">
-            Fleet baseline from the catalogue (approximate, open sources) against this period&apos;s activity.
+            National fleet baseline from the catalogue (approximate, open sources) against this
+            period&apos;s activity. A unit-level event does not describe the national total;
+            &quot;n/d&quot; means no baseline data for that type — never read it as zero aircraft.
           </p>
           <div className="grid gap-3 md:grid-cols-2">
             {payload.orbat_delta!.map((c, i) => (
@@ -439,6 +496,9 @@ export function WeeklyReportView({
                 <p className="text-sm font-medium text-slate-200">
                   {c.country} <span className="text-[11px] font-normal text-slate-500">{c.region}</span>
                 </p>
+                {c.baseline_scope && (
+                  <p className="text-[10px] text-slate-600">Scope: {c.baseline_scope}</p>
+                )}
                 <table className="mt-1.5 w-full border-collapse text-[11px]">
                   <thead>
                     <tr className="text-slate-500">
@@ -453,8 +513,14 @@ export function WeeklyReportView({
                     {(c.entries ?? []).map((e, k) => (
                       <tr key={k} className="border-t border-slate-800/70 text-slate-300">
                         <td className="p-1">{e.type}</td>
-                        <td className="p-1 text-right">{e.active ?? 0}</td>
-                        <td className="p-1 text-right">{e.on_order ?? 0}</td>
+                        <td className="p-1 text-right">
+                          {e.baseline_missing
+                            ? <span className="text-amber-300/80" title="No catalogue baseline for this type — 0 here is missing data, not a fact">n/d</span>
+                            : (e.active ?? 0)}
+                        </td>
+                        <td className="p-1 text-right">
+                          {e.baseline_missing ? "n/d" : (e.on_order ?? 0)}
+                        </td>
                         <td className="p-1 text-slate-400">
                           {STAGE_LABELS[e.this_week_stage ?? ""] ?? e.this_week_stage}
                           {e.this_week_quantity ? ` ×${e.this_week_quantity}` : ""}
@@ -494,8 +560,9 @@ export function WeeklyReportView({
                 <span className="w-12 shrink-0 font-semibold text-slate-300">{year}</span>
                 <span className="text-slate-400">
                   {items.map((t, i) => (
-                    <span key={i}>
-                      {i > 0 ? " · " : ""}{t.country} {t.type}
+                    <span key={i} className={t.is_withdrawal ? "text-rose-200/80" : undefined}>
+                      {i > 0 ? " · " : ""}
+                      {t.label ?? `${t.country ?? ""} ${t.type ?? ""}`.trim()}
                       {t.quantity ? ` ×${t.quantity}` : ""}
                       <span className="text-slate-600"> ({t.basis})</span>
                     </span>

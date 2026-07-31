@@ -175,6 +175,15 @@ def main():
                       "review: {}".format(len(gated),
                                           ", ".join(str(g.get("id"))
                                                     for g in gated)))
+                # A KAPU NEM MEGKERULHETO: a nyitó bekezdes ujraepul kizarolag
+                # az atment tartalombol, majd szivargas-ellenorzest kap.
+                ac_intel.rebuild_bottom_line(client, judgements,
+                                             developments, stats)
+                leak = ac_intel.check_bottom_line_leak(judgements)
+                if leak:
+                    self_checks.extend(leak)
+                    print("  [warn] bottom line still echoes a withheld "
+                          "judgement — flagged in the report")
             if self_checks:
                 print("  self-checks raised {} issue(s):".format(
                     len(self_checks)))
@@ -190,7 +199,8 @@ def main():
         dev_events = [e for e in this_week
                       if e.get("event_id") in dev_event_ids] or this_week
         orbat = ac_intel.orbat_delta(dev_events, fleets, types, countries)
-        timeline = ac_intel.capability_timeline(this_week, types, countries)
+        timeline = ac_intel.capability_timeline(
+            developments, this_week, types, countries)
         matrix = ac_intel.maturity_matrix(developments)
 
         def event_view(e):
@@ -238,7 +248,8 @@ def main():
                 "intelligence_gaps") or [],
             "orbat_delta": orbat,
             "capability_timeline": timeline,
-            "maturity_matrix": matrix,
+            "maturity_matrix": matrix.get("introduction"),
+            "capability_withdrawal": matrix.get("withdrawal"),
             "self_checks": self_checks,
             "annex_events": [event_view(e) for e in sorted(
                 this_week,

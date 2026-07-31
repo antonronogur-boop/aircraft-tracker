@@ -223,8 +223,15 @@ def orbat_delta(events, fleets, types_by_id, countries_by_id, max_countries=4):
             best = sorted(evs, key=lambda x: -(float(x.get("value_usd_m") or 0)
                                                or (x.get("quantity") or 0)))[0]
             t = types_by_id.get(tid) or {}
+            act = fl.get("active") or 0
+            oo = fl.get("on_order") or 0
             entries.append({
                 "type_id": tid, "type": t.get("name") or tid,
+                # A katalogus-baseline ORSZAGOS/HADERONEMI szintu. Egy
+                # egyseg-szintu esemeny (egy szazad utolso gepe) NEM jelenti,
+                # hogy az orszagos allomany nulla — a 0 ertek ilyenkor
+                # hianyzo adat, nem teny.
+                "baseline_missing": bool(act == 0 and oo == 0),
                 "domain": domain_of(best, types_by_id),
                 "active": fl.get("active") or 0,
                 "on_order": fl.get("on_order") or 0,
@@ -241,6 +248,8 @@ def orbat_delta(events, fleets, types_by_id, countries_by_id, max_countries=4):
         c = countries_by_id.get(cid) or {}
         rows.append({"country_id": cid, "country": c.get("name") or cid,
                      "region": c.get("region"), "entries": entries[:6],
+                     "baseline_scope": "national fleet baseline (catalogue, "
+                                       "open sources) — not unit-level",
                      "_weight": sum(e["on_order"] + e["active"] for e in entries)})
     rows.sort(key=lambda r: -r["_weight"])
     for r in rows:
@@ -248,45 +257,91 @@ def orbat_delta(events, fleets, types_by_id, countries_by_id, max_countries=4):
     return rows[:max_countries]
 
 
-def capability_timeline(events, types_by_id, countries_by_id, horizon=2035):
-    """Kepesseg-hatalybalepesi idovonal: mikor valik a beszerzes tenyleges
-    kepesseggé. Egy 7,7 mrd USD-s szerzodes near-term hatasa nulla, ha az elso
-    szazad 2030-ban all fel."""
+def capability_timeline(developments, events, types_by_id, countries_by_id,
+                        horizon=2035):
+    """Kepesseg-hatalybalepesi idovonal a FEJLEMENYEKBOL.
+
+    A korabbi valtozat nyers esemenyekbol epult, es a KC-46 RVS 2.0 retrofit
+    kezdetet "first delivery"-kent irta ki — miközben ugyanabban a jelentesben
+    89 KC-46 mar aktiv allomanyban van. Egy upgrade-milestone NEM uj gep
+    erkezese; a megnevezes az eletciklus-stadiumbol szarmazik."""
+    basis_by_stage = {
+        "upgrade_programme": "upgrade milestone",
+        "retirement": "withdrawal milestone",
+        "ioc": "declared IOC", "foc": "full operational capability",
+        "delivery": "delivery", "production": "production start",
+    }
     out = []
-    for e in events:
-        y = e.get("expected_ioc_year") or e.get("delivery_start_year")
+    for d in (developments or []):
+        year = (d.get("meaningful_capability_year")
+                or d.get("expected_ioc_year") or d.get("ioc_year")
+                or d.get("first_delivery_year"))
         try:
-            y = int(y)
+            year = int(year)
         except (TypeError, ValueError):
             continue
-        if not (2000 <= y <= horizon):
+        if not (2000 <= year <= horizon):
             continue
-        c = countries_by_id.get(e.get("country_id") or "") or {}
-        t = types_by_id.get(e.get("type_id") or "") or {}
-        out.append({
-            "year": y,
-            "basis": "expected IOC" if e.get("expected_ioc_year")
-                     else "first delivery",
-            "country": c.get("name") or e.get("unresolved_country_name") or "?",
-            "type": t.get("name") or e.get("unresolved_type_name") or "?",
-            "domain": domain_of(e, types_by_id),
-            "quantity": e.get("quantity"),
-            "stage": stage_of(e),
-        })
-    out.sort(key=lambda x: (x["year"], x["country"]))
+        stage = d.get("lifecycle_stage") or "other"
+        if d.get("meaningful_capability_year"):
+            basis = "meaningful capability"
+        elif d.get("expected_ioc_year") or d.get("ioc_year"):
+            basis = "expected IOC"
+        elif stage in basis_by_stage:
+            basis = basis_by_stage[stage] + " begins"
+        else:
+            basis = "first delivery"
+        out.append({"year": year, "basis": basis,
+                    "label": d.get("display_label") or d.get("title"),
+                    "domain": d.get("capability_domain"),
+                    "stage": stage,
+                    "quantity": None,
+                    "is_withdrawal": stage in ("retirement", "loss")})
+    if not out:
+        # Fallback: nyers esemenyek, de ugyanazzal a stadium-tudatos logikaval.
+        for e in (events or []):
+            year = e.get("expected_ioc_year") or e.get("delivery_start_year")
+            try:
+                year = int(year)
+            except (TypeError, ValueError):
+                continue
+            if not (2000 <= year <= horizon):
+                continue
+            st = stage_of(e)
+            c = countries_by_id.get(e.get("country_id") or "") or {}
+            t = types_by_id.get(e.get("type_id") or "") or {}
+            out.append({
+                "year": year,
+                "basis": ("expected IOC" if e.get("expected_ioc_year")
+                          else basis_by_stage.get(st, "first delivery")),
+                "label": "{} {}".format(c.get("name") or "?",
+                                        t.get("name") or "?"),
+                "domain": domain_of(e, types_by_id), "stage": st,
+                "quantity": e.get("quantity"),
+                "is_withdrawal": st in ("retirement", "loss")})
+    out.sort(key=lambda x: (x["year"], x["label"] or ""))
     return out
 
 
 def maturity_matrix(developments):
-    """Kepesseg-domain x programme-erettseg. Egy pillantasra megmutatja, mi
-    csak szandek es mi lesz tenyleges katonai kepesseg."""
-    grid = {}
+    """Kepesseg-domain x programme-erettseg — CSAK a kepessegBEVEZETESI
+    eletciklusra. A kivonas (retirement/loss) parhuzamos, de mas folyamat:
+    az Intent -> Committed -> Contracted -> Fielding -> Operational lanc nem
+    ertelmezheto ra, ezert kulon retegbe kerul."""
+    grid, withdrawal = {}, []
     for d in developments:
         dom = d.get("capability_domain") or "other"
-        mat = STAGE_MATURITY.get(d.get("lifecycle_stage") or "other", "Intent")
-        grid.setdefault(dom, {}).setdefault(mat, []).append(
-            d.get("display_label") or d.get("title"))
-    return grid
+        stage = d.get("lifecycle_stage") or "other"
+        label = d.get("display_label") or d.get("title")
+        if stage in ("retirement", "loss"):
+            withdrawal.append({
+                "domain": dom, "label": label, "stage": stage,
+                "effect_timing": d.get("effect_timing"),
+                "note": (d.get("capability_delta") or "")[:160]})
+            continue
+        mat = STAGE_MATURITY.get(stage, "Intent")
+        grid.setdefault(dom, {}).setdefault(mat, []).append(label)
+    return {"introduction": grid, "withdrawal": withdrawal}
 
 
 # --------------------------------------------------------------------------
@@ -348,6 +403,9 @@ Return STRICT JSON only:
      "lifecycle_stage": "<the stage actually reached — see the rules>",
      "fact": "<2-4 sentences, attributed: 'the ministry stated', 'Janes reported'. Numbers exactly as reported.>",
      "capability_delta": "<WHAT CHANGES in capability terms: type entering/leaving service, quantity, range/payload/LO/BVR/EW/lift, new basing, new ecosystem. If nothing changes yet — an intent, a study, a talks round — write 'no capability change at this stage'.>",
+     "first_delivery_year": <int or null — when the first airframe/kit is handed over>,
+     "ioc_year": <int or null — when the first unit is declared operational>,
+     "meaningful_capability_year": <int or null — when the capability is militarily usable at scale (crews, weapons, sustainment)>,
      "effect_timing": "immediate|<12 months|1-3 years|>3 years|unknown",
      "effect_timing_basis": "<why: stated IOC, delivery window, production rate, or 'not stated in reporting'>",
      "so_what": "<1-2 sentences for an air staff: what it means for force structure, regional balance or our own planning. If it means little, say so.>",
@@ -400,6 +458,29 @@ RULES — each traces to a specific failure in earlier editions:
   means more confirmation.
 - PROPER NOUNS AND NUMBERS copied exactly. Never re-spell a designation from
   memory. Do not convert or re-base currency figures.
+- CONTRACT != DELIVERY != OPERATIONAL CAPABILITY. Give the three dates
+  separately where reported. effect_timing describes MEANINGFUL CAPABILITY,
+  not first delivery: a 2028 first delivery of an immature type whose engine
+  and weapons integration are unresolved is NOT a 1-3 year effect. If only the
+  delivery year is known, say so in effect_timing_basis and stay conservative.
+- UNKNOWN ACTOR -> NO ACTOR BASELINE. If the customer, operator or recipient
+  is undisclosed, you may NOT assert anything about their existing inventory,
+  their prior capability level or what this adds for them ("currently operates
+  no X", "a previously AEW&C-deficient state"). State the contract fact and
+  put the identity in the intelligence gap. The fleet_baseline block is only
+  valid for a NAMED country.
+- LIFECYCLE HONESTY: set lifecycle_stage from what is evidenced, not from the
+  event_type label. If no contract date, value or signing party is reported,
+  it is a plan — use selection or requirement, not contract_signed. Never let
+  your own narrative contradict the stage you assigned.
+- CERTIFICATION IS NOT COMPLETION: an upgrade "will remove" a restriction only
+  after operational clearance. Write "is designed to remove ... subject to
+  certification and operational clearance".
+- A CONTRACT TO ESTABLISH A CAPABILITY IS NOT THE CAPABILITY. Depot, training
+  or infrastructure awards start a process: use future tense ("will establish",
+  "once stood up"), never "establishes domestic heavy maintenance capability".
+- KEEP FIGURES WITH THEIR PROGRAMME. Never carry a date, quantity or value
+  from one programme into a statement about another.
 - Write nothing you cannot trace to the events given. BE COMPACT — stay within
   the stated sentence limits so the JSON fits the response budget."""
 
@@ -452,9 +533,184 @@ RULES:
 - priority_watch: MAXIMUM 5, ranked by impact. Everything else belongs in the
   annex. A paramotor solicitation does not outrank a national fighter
   decision.
+- INTELLIGENCE GAPS MUST NAME THE RIGHT PROGRAMME. Every figure or date in a
+  gap must belong to the programme it is attributed to; never mix milestones
+  from two programmes in one gap statement.
 - If the period supports NO real judgement, return one saying exactly that and
   what would be needed. Do not force a narrative: if nothing happened in
   fighters this week, write no fighter judgement."""
+
+
+
+# --------------------------------------------------------------------------
+# Determinisztikus konzisztencia-kenyszerek
+#
+# A narrativa es a strukturalt mezok nem mondhatnak ellent egymasnak. Ahol a
+# szoveg maga cafolja a cimket (a KAAN "production plan" es a francia H160M
+# "no contract date or value" contract_signed jelolessel), ott a kod
+# visszaminositi a stadiumot — lathato indoklassal.
+# --------------------------------------------------------------------------
+
+PLAN_LANGUAGE_RX = re.compile(
+    r"\bno (?:formal )?contract (?:date|value|signature)\b|"
+    r"\bplans? to (?:order|procure|acquire|buy)\b|\bplanned (?:order|serial "
+    r"production|production)\b|\btargeted for\b|\bintends to\b|"
+    r"\btreated as plan\b|\bno contract value is reported\b|"
+    r"\bnot yet signed\b|\bformal (?:production )?contract .{0,30}would\b",
+    re.I)
+CONTRACT_EVIDENCE_RX = re.compile(
+    r"\bsigned a contract\b|\bcontract (?:was )?signed\b|\bawarded\b|"
+    r"\bcontract award\b|\bfirm-fixed-price\b|\bbooked\b", re.I)
+UNKNOWN_ACTOR_RX = re.compile(
+    r"\b(undisclosed|unidentified|unnamed|not disclosed|not identified)\b",
+    re.I)
+ACTOR_BASELINE_RX = re.compile(
+    r"\b(currently (?:operates|has|holds) no|operates no|has no .{0,25}"
+    r"(?:in service|on order)|previously .{0,20}-deficient|"
+    r"first .{0,25}(?:for|in) (?:the|this) (?:operator|country|air force)|"
+    r"no .{0,20}aircraft (?:currently )?(?:in service|on order))\b", re.I)
+CATEGORICAL_FIX_RX = re.compile(
+    r"\b(?:will|would)\s+(?:remove|eliminate|resolve|clear)\b", re.I)
+CLEARANCE_HEDGE_RX = re.compile(
+    r"subject to (?:certification|clearance|testing)|once (?:certified|cleared|"
+    r"fielded)|pending (?:certification|clearance)|is designed to", re.I)
+PRESENT_ESTABLISH_RX = re.compile(
+    r"\bestablishes\s+(?:[\w-]+\s+){0,3}(?:capability|capacity|depot)\b",
+    re.I)
+
+_TIMING_ORDER = ["immediate", "<12 months", "1-3 years", ">3 years", "unknown"]
+
+
+def _timing_from_year(year, now_year=None):
+    """A KEPESSEG hatalybalepese a mervado, nem a szerzodes datuma."""
+    if not year:
+        return None
+    now_year = now_year or datetime.now().year
+    delta = int(year) - now_year
+    if delta <= 0:
+        return "immediate"
+    if delta <= 1:
+        return "<12 months"
+    if delta <= 3:
+        return "1-3 years"
+    return ">3 years"
+
+
+def _enforce_lifecycle(d):
+    """Ha a narrativa cafolja a stadiumot, a stadium veszit."""
+    text = " ".join(str(d.get(k) or "") for k in
+                    ("fact", "capability_delta", "so_what", "lineage_note"))
+    if d.get("lifecycle_stage") in ("contract_signed", "production") \
+            and PLAN_LANGUAGE_RX.search(text) \
+            and not CONTRACT_EVIDENCE_RX.search(text):
+        d["lifecycle_stage"] = "selection"
+        d["auto_adjustment"] = _add_adj(
+            d, "lifecycle downgraded to selection: the narrative reports a "
+               "plan or intent, with no contract date, value or signing party")
+
+
+def _enforce_effect_timing(d):
+    """A hatalybalepes a MEANINGFUL CAPABILITY eve szerint szamol; ha csak
+    elso atadas ismert, az onmagaban nem tesz egy eromuvi-fegyverintegracios
+    szempontbol eretlen tipust 1-3 eves hatasuva."""
+    year = d.get("meaningful_capability_year") or d.get("expected_ioc_year")
+    derived = _timing_from_year(year)
+    if derived and derived != d.get("effect_timing"):
+        d["auto_adjustment"] = _add_adj(
+            d, "effect timing set to '{}' from the stated capability year {}"
+               .format(derived, year))
+        d["effect_timing"] = derived
+    elif not year and d.get("first_delivery_year") \
+            and d.get("effect_timing") in ("immediate", "<12 months",
+                                           "1-3 years"):
+        # Csak elso atadas ismert: konzervativ marad.
+        d["auto_adjustment"] = _add_adj(
+            d, "only a first-delivery year is reported; meaningful capability "
+               "date unknown, so effect timing is not shortened")
+
+
+def _add_adj(d, text):
+    cur = d.get("auto_adjustment")
+    return (cur + "; " + text) if cur else text
+
+
+BOTTOM_LINE_PROMPT = """You rewrite the opening paragraph of an air force
+weekly brief AFTER analytical QA. Return STRICT JSON only:
+{"bottom_line": "<3-5 sentences>"}
+
+You are given ONLY the judgements and developments that PASSED QA. Some
+material was withheld from this edition; its topics are listed in
+"withheld_topics".
+
+RULES:
+- Use nothing but the passed content. Do NOT restate, summarise, allude to or
+  re-derive any withheld topic — not even in weaker wording. If a withheld
+  topic was the week's biggest story, the correct brief says the period's
+  assessable developments were smaller, and notes that one item is held for
+  analyst review.
+- Do not introduce numbers, dates or programme names that are absent from the
+  passed content.
+- If volume_not_comparable is true, do not explain event-count changes with a
+  cause.
+- Sober, factual, no adjectives of scale that the data does not support."""
+
+
+def rebuild_bottom_line(client, judgements, developments, stats):
+    """A QA-KAPU NEM MEGKERULHETO. Ha egy iteletet visszatartunk, a nyitó
+    bekezdes nem csempeszheti vissza ugyanazt az allitast — ezert a bottom
+    line a kapu UTAN, kizarolag az atment tartalombol keszul ujra."""
+    withheld = (judgements or {}).get("judgements_requiring_review") or []
+    if client is None or not judgements or not withheld:
+        return 0
+    passed_kjs = [{k: j.get(k) for k in ("id", "domain", "judgement",
+                                         "confidence", "effect_timing")}
+                  for j in (judgements.get("key_judgements") or [])]
+    passed_devs = [{k: d.get(k) for k in ("title", "capability_delta",
+                                          "effect_timing", "confidence",
+                                          "lifecycle_stage")}
+                   for d in (developments or [])]
+    payload = {
+        "key_judgements": passed_kjs,
+        "developments": passed_devs,
+        "withheld_topics": [str(j.get("judgement") or "")[:120]
+                            for j in withheld],
+        "volume_not_comparable": bool((stats or {}).get(
+            "volume_not_comparable")),
+    }
+    print("  Bottom line: rebuilding from QA-passed content only "
+          "({} withheld)".format(len(withheld)))
+    out = _call(client, BOTTOM_LINE_PROMPT, payload, 2000)
+    if out and out.get("bottom_line"):
+        judgements["bottom_line"] = out["bottom_line"]
+        judgements["bottom_line_rebuilt"] = True
+        return 1
+    return 0
+
+
+def check_bottom_line_leak(judgements):
+    """Vedohalo a kapu moge: ha a nyitó bekezdes tartalmi atfedest mutat egy
+    visszatartott itelettel, azt jelezzuk (es a jelentes publikalja)."""
+    withheld = (judgements or {}).get("judgements_requiring_review") or []
+    bl = str((judgements or {}).get("bottom_line") or "")
+    if not withheld or not bl:
+        return []
+    stop = {"the", "and", "that", "with", "for", "from", "this", "its", "are",
+            "was", "were", "has", "have", "not", "but", "which", "would",
+            "will", "been", "than", "into", "over", "all", "any", "our"}
+
+    def toks(t):
+        return {w for w in re.findall(r"[a-z0-9\-]{4,}", t.lower())
+                if w not in stop}
+
+    bl_t = toks(bl)
+    out = []
+    for j in withheld:
+        jt = toks(str(j.get("judgement") or ""))
+        if jt and len(bl_t & jt) >= 6:
+            out.append({"check": "withheld judgement reappears in the bottom "
+                                 "line — QA gate bypassed",
+                        "item": str(j.get("id") or "KJ")})
+    return out
 
 
 def event_payload(e, types_by_id, countries_by_id, fleets_idx):
@@ -549,6 +805,10 @@ def build_developments(client, events, types_by_id, countries_by_id, fleets,
         ioc = [int(y) for y in ioc if y]
         if ioc:
             d["expected_ioc_year"] = min(ioc)
+        elif d.get("ioc_year"):
+            d["expected_ioc_year"] = d.get("ioc_year")
+        _enforce_lifecycle(d)
+        _enforce_effect_timing(d)
     used = {i for d in devs for i in (d.get("event_ids") or [])}
     declared = {x.get("event_id"): x.get("reason") or ""
                 for x in (out.get("dropped_event_ids") or [])
@@ -753,14 +1013,95 @@ def run_self_checks(developments, judgements, window_start, window_end,
                                label))
                 break
 
-    # 9. volumen mint aktivitas
+    # 9. UNKNOWN ACTOR -> tilos a szereplo baseline-jarol kovetkeztetni
+    for d in developments:
+        full_d = prose(d, ("fact", "capability_delta", "so_what"))
+        if UNKNOWN_ACTOR_RX.search(full_d) and ACTOR_BASELINE_RX.search(full_d):
+            issues.append(("baseline inference about an undisclosed operator",
+                           d.get("display_label") or d.get("title")))
+        # 9b. kategorikus javitas-allitas hitelesites elott
+        if CATEGORICAL_FIX_RX.search(full_d) and not CLEARANCE_HEDGE_RX.search(
+                full_d):
+            issues.append(("upgrade presented as completed before "
+                           "certification/clearance",
+                           d.get("display_label") or d.get("title")))
+        # 9c. jelen ideju "establishes" egy meg le nem szallitott kepessegre
+        if PRESENT_ESTABLISH_RX.search(full_d):
+            issues.append(("a contract to build a capability described as the "
+                           "capability itself (use future tense)",
+                           d.get("display_label") or d.get("title")))
+        # 9d. narrativa vs eletciklus
+        if d.get("lifecycle_stage") in ("contract_signed", "production") \
+                and PLAN_LANGUAGE_RX.search(full_d) \
+                and not CONTRACT_EVIDENCE_RX.search(full_d):
+            issues.append(("lifecycle stage contradicted by its own narrative",
+                           d.get("display_label") or d.get("title")))
+
+    # 9e. CROSS-PROGRAMME FIGURE: egy evszam nem vandorolhat at egyik
+    # programrol a masikra. Programonkent osszegyujtjuk a sajat eveiket, majd
+    # a KJ/gap mondatokban ellenorizzuk az attribuciot.
+    prog_years, prog_tokens = {}, {}
+    for d in developments:
+        label = d.get("display_label") or d.get("title") or ""
+        body = prose(d, ("fact", "capability_delta", "so_what",
+                         "effect_timing_basis"))
+        years = set(re.findall(r"\b(20[2-4]\d)\b", body))
+        for y in (d.get("expected_ioc_year"), d.get("first_delivery_year"),
+                  d.get("meaningful_capability_year")):
+            if y:
+                years.add(str(y))
+        prog_years[label] = years
+        toks = {t for t in re.findall(r"[A-Za-z][A-Za-z0-9.\-]{2,}",
+                                      label + " " + str(d.get("title") or ""))
+                if any(c.isdigit() for c in t) or t.isupper()}
+        prog_tokens[label] = {t.lower() for t in toks}
+    checked = list((judgements or {}).get("intelligence_gaps") or [])
+    for j in kjs:
+        checked.append(prose(j, ("judgement", "basis", "assessment")))
+    for text in checked:
+        for sent in _sentences(str(text)):
+            low = sent.lower()
+            years = set(re.findall(r"\b(20[2-4]\d)\b", sent))
+            if not years:
+                continue
+            for label, toks in prog_tokens.items():
+                if not toks or not (toks & set(re.findall(
+                        r"[a-z0-9.\-]{3,}", low))):
+                    continue
+                stray = years - prog_years.get(label, set())
+                if stray and prog_years.get(label):
+                    issues.append((
+                        "figure attributed to the wrong programme "
+                        "(year {} does not appear in this programme's "
+                        "reporting)".format(sorted(stray)[0]),
+                        "{} — {}".format(label, sent[:60])))
+                break
+
+    # 9f. DEV vs KJ idozites-ellentmondas ugyanarra a programra
+    dev_timing = {}
+    for d in developments:
+        for i in (d.get("event_ids") or []):
+            dev_timing[i] = (d.get("effect_timing"),
+                             d.get("display_label") or d.get("title"))
+    for j in kjs:
+        for i in (j.get("supporting_event_ids") or []):
+            t = dev_timing.get(i)
+            if t and t[0] and j.get("effect_timing") and \
+                    t[0] != j.get("effect_timing"):
+                issues.append((
+                    "effect timing contradicts the supporting development "
+                    "({} vs {})".format(j.get("effect_timing"), t[0]),
+                    "{} / {}".format(j.get("id"), t[1])))
+                break
+
+    # 10. volumen mint aktivitas
     if stats and stats.get("volume_not_comparable"):
         bl = str((judgements or {}).get("bottom_line") or "")
         if re.search(r"\b(increase|surge|rose|jump|spike|decline|fell)\w*\b",
                      bl, re.I) and "collection" not in bl.lower():
             issues.append(("volume change may be presented as activity trend",
                            "bottom_line"))
-    # 10. az annex esemenyszovegeiben is: kepesseg-tulallitas
+    # 11. az annex esemenyszovegeiben is: kepesseg-tulallitas
     n = 0
     for e in (events or []):
         s = str(e.get("summary") or "")
