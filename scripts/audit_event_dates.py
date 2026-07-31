@@ -92,15 +92,29 @@ def main():
         "created_at": "gte." + since, "order": "created_at.desc"})
     print("Loaded {} event(s) from the last {} day(s).".format(len(rows), days))
 
-    missing, contradict, ambiguous, timing = [], [], [], []
+    missing, contradict, ambiguous, timing, future_dated = [], [], [], [], []
+    now = datetime.now()
     for r in rows:
-        found = dates_in(r.get("summary"))
-        if not found:
-            continue
         collected = (datetime.strptime(str(r.get("created_at"))[:10],
                                        "%Y-%m-%d")
                      if str(r.get("created_at"))[:4].isdigit()
-                     else datetime.now())
+                     else now)
+        # ONALLO HIBAOSZTALY: maga az EVENT_DATE mezo jovobeli. Ilyenkor a
+        # terv eve kerult az esemeny napja helyere ("to be retired by 2030").
+        # Az uj generator a jovobeli datumu esemenyt kizarja — vagyis egy
+        # valodi, e heti bejelentes NYOMTALANUL eltunne a jelentesbol.
+        # Javitas: az esemeny datuma a bejelentes/gyujtes napja, a terv eve
+        # pedig a menetrend-mezobe valo.
+        try:
+            ed = datetime.strptime(str(r.get("event_date"))[:10], "%Y-%m-%d")
+        except (ValueError, TypeError):
+            ed = None
+        if ed and ed > now:
+            future_dated.append((r, collected, "future_field", [(ed, "day")]))
+            continue
+        found = dates_in(r.get("summary"))
+        if not found:
+            continue
         # KRITIKUS MEGKULONBOZTETES: a szovegben szereplo JOVOBELI evszam nem
         # az esemeny datuma, hanem menetrend ("withdrawal starting in 2027",
         # "deliveries from 2028"). Ilyet SOSEM irunk event_date-be — abbol egy
@@ -159,6 +173,8 @@ def main():
         if len(items) > limit:
             print("  ... and {} more".format(len(items) - limit))
 
+    show("FUTURE-DATED event_date — the plan year was stored as the event "
+         "date; these would vanish from the weekly report", future_dated)
     show("MISSING event_date but a PAST date is stated in the text", missing)
     show("CONTRADICTION — text describes an OLDER event than event_date",
          contradict)
@@ -167,7 +183,7 @@ def main():
     show("AMBIGUOUS — several years, or a reference older than 15 years "
          "(manual review)", ambiguous)
 
-    fixable = missing + contradict
+    fixable = future_dated + missing + contradict
     if timing:
         print("\nNote: the {} 'future schedule' item(s) are left untouched. "
               "Their years belong in delivery_start_year / expected_ioc_year, "
@@ -181,17 +197,25 @@ def main():
         return
 
     now_iso = datetime.now(timezone.utc).isoformat()
-    for r, cand, prec, _ in fixable:
+    for r, cand, prec, found in fixable:
         patch = {"event_date": cand.strftime("%Y-%m-%d")}
+        extra = {}
+        if prec == "future_field":
+            # A terv eve nem vesz el: atkerul a menetrend-mezobe.
+            extra["delivery_start_year"] = found[0][0].year
         try:
             db.update("ac_events", {"event_id": "eq." + str(r["event_id"])},
-                      dict(patch, updated_at=now_iso))
-        except Exception:  # noqa: BLE001 — updated_at may not exist yet
+                      dict(patch, updated_at=now_iso, **extra))
+        except Exception:  # noqa: BLE001 — v2 columns may not exist yet
             db.update("ac_events", {"event_id": "eq." + str(r["event_id"])},
                       patch)
-        print("  #{} -> {}".format(r["event_id"], patch["event_date"]))
-    print("\nDone. {} event(s) re-dated from their own text.".format(
-        len(fixable)))
+        print("  #{} -> {}{}".format(
+            r["event_id"], patch["event_date"],
+            " (plan year {} moved to delivery_start_year)".format(
+                extra["delivery_start_year"]) if extra else ""))
+    print("\nDone. {} event(s) re-dated ({} future-dated fields corrected, "
+          "{} dated from their own text).".format(
+              len(fixable), len(future_dated), len(missing) + len(contradict)))
 
 
 if __name__ == "__main__":
