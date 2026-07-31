@@ -232,6 +232,14 @@ def orbat_delta(events, fleets, types_by_id, countries_by_id, max_countries=4):
                 # hogy az orszagos allomany nulla — a 0 ertek ilyenkor
                 # hianyzo adat, nem teny.
                 "baseline_missing": bool(act == 0 and oo == 0),
+                # Ha nincs aktiv gep, es a katalogus megis nagy rendelesi
+                # allomanyt mutat, amit a HETI akcio nem magyaraz, akkor a
+                # baseline gyanus (pl. Ukrajna: 0 aktiv Gripen, 116 on order,
+                # miközben a heti szerzodes 16 gepre szol es a fejlemeny
+                # szerint ez az ELSO Gripen-beszerzes).
+                "baseline_anomaly": bool(
+                    act == 0 and oo >= 3 * max(int(best.get("quantity") or 1), 1)
+                    and oo >= 20),
                 "domain": domain_of(best, types_by_id),
                 "active": fl.get("active") or 0,
                 "on_order": fl.get("on_order") or 0,
@@ -574,24 +582,97 @@ CATEGORICAL_FIX_RX = re.compile(
 CLEARANCE_HEDGE_RX = re.compile(
     r"subject to (?:certification|clearance|testing)|once (?:certified|cleared|"
     r"fielded)|pending (?:certification|clearance)|is designed to", re.I)
+# ABSZOLUT fuggetlenseg-allitas: ez akkor is hibas, ha a mondat egyebkent
+# feltetelesen fogalmaz ("would provide ... independent of foreign supply
+# chains"), mert nem a szallitastol, hanem a FUGGOSEG feloldasatol fugg —
+# amit eppen ismeretlennek jelolunk.
+ABSOLUTE_INDEPENDENCE_RX = re.compile(
+    r"independent of foreign|free (?:from|of) foreign|without foreign|"
+    r"self-sufficien|no foreign dependenc", re.I)
+# Relativ allitas: ez elfogadhato, ha feltetelesen fogalmaz.
+REDUCE_DEPENDENCE_RX = re.compile(
+    r"reduc\w+ (?:the )?foreign (?:supply[- ]chain )?dependenc", re.I)
+DEPENDENCY_UNRESOLVED_RX = re.compile(
+    r"engine (?:sourcing|supply|selection).{0,40}(?:uncertain|unresolved|"
+    r"unconfirmed|not confirmed|remain)|foreign (?:technology )?dependenc"
+    r"\w*.{0,30}(?:unconfirmed|not confirmed|unknown)|pending a domestic|"
+    r"currently us\w+ (?:GE|General Electric|foreign)", re.I)
 PRESENT_ESTABLISH_RX = re.compile(
-    r"\bestablishes\s+(?:[\w-]+\s+){0,3}(?:capability|capacity|depot)\b",
-    re.I)
+    r"\b(?:establishes|introduces|adds|delivers|provides)\s+"
+    r"(?:[\w-]+\s+){0,4}(?:capability|capacity|depot|infrastructure|"
+    r"ecosystem|fleet)\b", re.I)
 
 _TIMING_ORDER = ["immediate", "<12 months", "1-3 years", ">3 years", "unknown"]
 
+# Szovetsegi tagsag — entity-szintu tenyellenorzeshez. Egy jelentesben a
+# "NATO-adjacent Turkey" tipusu tevedes (Torokorszag 1952 ota TAG) a termek
+# hitelet rontja, ezert ez KEMENY ellenorzes, nem stilisztikai kerdes.
+NATO_MEMBERS = {
+    "albania", "belgium", "bulgaria", "canada", "croatia", "czechia",
+    "czech republic", "denmark", "estonia", "finland", "france", "germany",
+    "greece", "hungary", "iceland", "italy", "latvia", "lithuania",
+    "luxembourg", "montenegro", "netherlands", "north macedonia", "norway",
+    "poland", "portugal", "romania", "slovakia", "slovenia", "spain",
+    "sweden", "turkey", "türkiye", "turkiye", "united kingdom",
+    "united states", "usa", "uk",
+}
+EU_MEMBERS = {
+    "austria", "belgium", "bulgaria", "croatia", "cyprus", "czechia",
+    "czech republic", "denmark", "estonia", "finland", "france", "germany",
+    "greece", "hungary", "ireland", "italy", "latvia", "lithuania",
+    "luxembourg", "malta", "netherlands", "poland", "portugal", "romania",
+    "slovakia", "slovenia", "spain", "sweden",
+}
+# A tagsagot TAGADO vagy relativizalo megfogalmazasok.
+NON_MEMBER_PHRASES = (
+    "nato-adjacent", "nato adjacent", "nato-aligned", "nato aligned",
+    "nato partner", "nato-partner", "non-nato", "outside nato",
+    "nato candidate", "aspiring nato", "eu-adjacent", "eu-aligned",
+    "eu candidate", "non-eu",
+)
 
-def _timing_from_year(year, now_year=None):
-    """A KEPESSEG hatalybalepese a mervado, nem a szerzodes datuma."""
+
+def alliance_check(text, countries_by_id=None):
+    """Talalatok: (orszag, hibas megfogalmazas). A tagorszagokat nem szabad
+    'adjacent', 'aligned', 'partner' vagy 'candidate' jelzovel illetni."""
+    hits, low = [], (text or "").lower()
+    for phrase in NON_MEMBER_PHRASES:
+        for m in re.finditer(re.escape(phrase), low):
+            window = low[max(0, m.start() - 60):m.end() + 60]
+            alliance = "eu" if phrase.startswith(("eu-", "eu ", "non-eu")) \
+                else "nato"
+            members = EU_MEMBERS if alliance == "eu" else NATO_MEMBERS
+            for country in members:
+                if len(country) < 4:
+                    continue
+                if re.search(r"\b" + re.escape(country) + r"\b", window):
+                    hits.append((country.title(), phrase, alliance.upper()))
+    return hits
+
+
+FISCAL_RX = re.compile(r"\b(fy|fiscal year|jfy|japanese fiscal)\b", re.I)
+
+
+def _timing_from_year(year, now=None, fiscal=False):
+    """A KEPESSEG hatalybalepese a mervado, nem a szerzodes datuma.
+
+    Evszam-pontossagnal az EV VEGEIG szamolunk: egy "FY2027" jeloles 2026
+    juliusabol nezve 6-18 honap kozott barmi lehet, es a rovidebb vegere
+    kerekiteni ("<12 months") tulzas — a konzervativ olvasat a helyes."""
     if not year:
         return None
-    now_year = now_year or datetime.now().year
-    delta = int(year) - now_year
-    if delta <= 0:
+    now = now or datetime.now()
+    # Evszam-pontossagnal az EV VEGEIG szamolunk. Penzugyi evnel az ablak
+    # meg tovabb nyulik (a japan FY2027 = 2027. aprilis - 2028. marcius),
+    # ezert a forras altal megengedettnel pontosabb horizontot nem adunk.
+    end_year = int(year) + (1 if fiscal else 0)
+    end_month = 3 if fiscal else 12
+    months = (end_year - now.year) * 12 + (end_month - now.month)
+    if months <= 0:
         return "immediate"
-    if delta <= 1:
+    if months <= 12:
         return "<12 months"
-    if delta <= 3:
+    if months <= 36:
         return "1-3 years"
     return ">3 years"
 
@@ -609,16 +690,20 @@ def _enforce_lifecycle(d):
                "plan or intent, with no contract date, value or signing party")
 
 
-def _enforce_effect_timing(d):
+def _enforce_effect_timing(d, now=None):
     """A hatalybalepes a MEANINGFUL CAPABILITY eve szerint szamol; ha csak
     elso atadas ismert, az onmagaban nem tesz egy eromuvi-fegyverintegracios
     szempontbol eretlen tipust 1-3 eves hatasuva."""
     year = d.get("meaningful_capability_year") or d.get("expected_ioc_year")
-    derived = _timing_from_year(year)
+    basis_text = " ".join(str(d.get(k) or "") for k in
+                          ("effect_timing_basis", "fact", "capability_delta"))
+    fiscal = bool(FISCAL_RX.search(basis_text))
+    derived = _timing_from_year(year, now, fiscal)
     if derived and derived != d.get("effect_timing"):
         d["auto_adjustment"] = _add_adj(
-            d, "effect timing set to '{}' from the stated capability year {}"
-               .format(derived, year))
+            d, "effect timing set to '{}' from the stated {}{} — the source "
+               "does not permit a narrower horizon".format(
+                   derived, "fiscal year " if fiscal else "year ", year))
         d["effect_timing"] = derived
     elif not year and d.get("first_delivery_year") \
             and d.get("effect_timing") in ("immediate", "<12 months",
@@ -895,11 +980,29 @@ SUPERL_RX = re.compile(
 # ("available data does not establish whether deliveries are on schedule",
 # "no baseline is available to characterise this as an acceleration"), akkor
 # az mar a helyes, fegyelmezett megfogalmazas.
+# Tagadja-e a gap-mondat az ismeretet? A korabbi, szo szerinti minta
+# ("not confirmed") kihagyta a "No delivery schedule ... has been confirmed"
+# format, ezert a helyesen hedgelt iteletek is atmentek — illetve a valodi
+# ellentmondasok NEM buktak el.
+GAP_DENIAL_RX = re.compile(
+    r"\b(no|not|never|none|unknown|undisclosed|unconfirmed|unavailable|"
+    r"cannot|impossible|unclear|lacks?)\b", re.I)
 NEGATION_RX = re.compile(
     r"\b(does not establish|do not establish|cannot be|can not be|is not "
     r"established|are not established|not confirmed|no baseline|"
     r"available data does not|not available|unknown|unverified|"
     r"does not indicate|no evidence|not stated|not reported)\b", re.I)
+
+
+_KW_STOP = {"the", "and", "that", "with", "for", "from", "this", "its", "are",
+            "was", "were", "has", "have", "not", "but", "which", "would",
+            "will", "been", "than", "into", "over", "all", "any", "our",
+            "available", "reporting", "data", "does", "establish", "confirmed"}
+
+
+def _kw(text):
+    return {w for w in re.findall(r"[a-z0-9\-]{4,}", (text or "").lower())
+            if w not in _KW_STOP}
 
 
 def _sentences(text):
@@ -920,10 +1023,38 @@ HEDGE_RX = re.compile(
     r"\b(may|might|could|appears|suggests?|indication|potential|if confirmed|"
     r"not established|cannot be|would)\b", re.I)
 DOUBLE_WORD_RX = re.compile(r"\b(\w{3,})\s+\1\b", re.I)
+# Az atiras utan maradt nyelvtani torzsek ("A operational KAAN fleet").
+ARTICLE_RX = re.compile(r"\bA\s+(?=[aeiouAEIOU])[a-z]", re.M)
+
+
+DESIGNATION_RX = re.compile(
+    r"\b(?:[A-Z]{1,4}[- ]?\d{1,4}[A-Z]{0,3}|[A-Z]{2,4}\d{2,5})\b")
+# Altalanos, minden hetre ervenyes megnevezesek, amelyek nem igenyelnek
+# forras-egyezest (szervezetek, szabvanyok).
+DESIGNATION_ALLOW = {
+    "NATO", "USAF", "USN", "RAF", "JASDF", "EU", "UN", "FMS", "IOC", "FOC",
+    "CDR", "RFI", "RFP", "IDIQ", "DSCA", "MRO", "AEW", "ISR", "BVR", "AAR",
+    "UAS", "CCA", "TTP", "C2", "EW", "MOU", "LOI", "QA", "P3", "Q1", "Q2",
+    "Q3", "Q4",
+}
+
+
+def _source_designations(events):
+    """Minden tipus-/programjel, amely a HETI FORRASSZOVEGEKBEN tenylegesen
+    szerepel. Ami ezen kivul esik, azt a modell a sajat emlekezetebol hozta —
+    ilyenkor keletkezik a 'TEI TF-6000' tipusu, nevben kozeli, de tenyszeruen
+    rossz entitas."""
+    out = set()
+    for e in (events or []):
+        for field in ("summary", "unresolved_type_name"):
+            for m in DESIGNATION_RX.findall(str(e.get(field) or "")):
+                out.add(m.replace(" ", "-").upper())
+    return out
 
 
 def run_self_checks(developments, judgements, window_start, window_end,
-                    stats=None, events=None):
+                    stats=None, events=None, countries_by_id=None,
+                    orbat=None):
     """Analitikai onellenorzes. Nem javit: JELEZ. A jelentes publikalja."""
     issues = []
     kjs = (judgements or {}).get("key_judgements") or []
@@ -972,6 +1103,9 @@ def run_self_checks(developments, judgements, window_start, window_end,
                 issues.append(("ERROR: development built on an event older "
                                "than the period by >60 days", "{} ({})".format(
                                    label, d.get("event_date"))))
+        if ARTICLE_RX.search(full):
+            issues.append(("grammar artifact: 'a' before a vowel — rewrite "
+                           "left the sentence malformed", label))
         dw = DOUBLE_WORD_RX.search(full)
         if dw:
             issues.append(("duplicated word in prose ('{}')".format(
@@ -1006,11 +1140,34 @@ def run_self_checks(developments, judgements, window_start, window_end,
         if j.get("effect_timing") in (None, "", "unknown"):
             issues.append(("judgement without a capability effect horizon",
                            label))
-        for w in ("confirmed", "verified", "independent", "quantified"):
-            if w in str(j.get("judgement") or "").lower() and \
-                    (("not " + w) in gaps or ("no " + w) in gaps):
-                issues.append(("judgement asserts what the gaps say is unknown",
-                               label))
+        # A KORABBI VALTOZAT HAMIS POZITIVOT GYARTOTT: barmely "confirmed"
+        # szo a KJ-ben osszeakadt barmilyen targyu "not confirmed" gappel, es
+        # olyan iteleteket tartott vissza, amelyek EPPEN a helyes, hedgelt
+        # formaban fogalmaztak ("available data does not establish ...").
+        # Ket szigoritas: (a) a talalat mondata ne legyen maga is tagado —
+        # aki kimondja a bizonytalansagot, az nem allitja az ellenkezojet;
+        # (b) legyen tenyleges TEMAEGYEZES a konkret gappel.
+        jud = str(j.get("judgement") or "")
+        jud_t = _kw(jud)
+        flagged = False
+        for g in ((judgements or {}).get("intelligence_gaps") or []):
+            gl = str(g).lower()
+            if not GAP_DENIAL_RX.search(gl):
+                continue
+            for w in ("confirmed", "verified", "independent", "quantified",
+                      "established", "disclosed", "stated"):
+                if w not in gl:
+                    continue
+                for sent in _sentences(jud):
+                    if w in sent.lower() and not NEGATION_RX.search(sent) \
+                            and len(jud_t & _kw(gl)) >= 3:
+                        issues.append(("judgement asserts what the gaps say "
+                                       "is unknown", label))
+                        flagged = True
+                        break
+                if flagged:
+                    break
+            if flagged:
                 break
 
     # 9. UNKNOWN ACTOR -> tilos a szereplo baseline-jarol kovetkeztetni
@@ -1025,10 +1182,25 @@ def run_self_checks(developments, judgements, window_start, window_end,
             issues.append(("upgrade presented as completed before "
                            "certification/clearance",
                            d.get("display_label") or d.get("title")))
-        # 9c. jelen ideju "establishes" egy meg le nem szallitott kepessegre
-        if PRESENT_ESTABLISH_RX.search(full_d):
-            issues.append(("a contract to build a capability described as the "
-                           "capability itself (use future tense)",
+        # 9c. jelen ideju kepesseg-ige egy meg le nem szallitott kepessegre.
+        # "Establishes/introduces ... capability" mikozben a szerzodes csak
+        # most indul: a szerzodes nem maga a kepesseg.
+        if PRESENT_ESTABLISH_RX.search(full_d) and d.get(
+                "lifecycle_stage") not in ("ioc", "foc", "delivery"):
+            issues.append(("a contracted item described with a present-tense "
+                           "capability verb (use 'would introduce' / "
+                           "'initiates establishment of')",
+                           d.get("display_label") or d.get("title")))
+        # 9c2. onellentmondas: fuggetlenseg-allitas feloldatlan fuggoseg mellett
+        _dep_open = DEPENDENCY_UNRESOLVED_RX.search(full_d)
+        _abs_claim = ABSOLUTE_INDEPENDENCE_RX.search(full_d)
+        # A relativ allitas rendben van, ha a SAJAT mondata felteteles.
+        _rel_claim = any(
+            REDUCE_DEPENDENCE_RX.search(sent) and not HEDGE_RX.search(sent)
+            for sent in _sentences(full_d))
+        if _dep_open and (_abs_claim or _rel_claim):
+            issues.append(("self-sufficiency claim contradicted by an "
+                           "unresolved dependency in the same block",
                            d.get("display_label") or d.get("title")))
         # 9d. narrativa vs eletciklus
         if d.get("lifecycle_stage") in ("contract_signed", "production") \
@@ -1051,10 +1223,13 @@ def run_self_checks(developments, judgements, window_start, window_end,
             if y:
                 years.add(str(y))
         prog_years[label] = years
-        toks = {t for t in re.findall(r"[A-Za-z][A-Za-z0-9.\-]{2,}",
-                                      label + " " + str(d.get("title") or ""))
-                if any(c.isdigit() for c in t) or t.isupper()}
-        prog_tokens[label] = {t.lower() for t in toks}
+        # Csak betut IS tartalmazo, programra jellemzo tokenek. A puszta
+        # "12" vagy "35" tul general — a JP F-2 kartya igy kapott hamis
+        # "2030 nem ehhez a programhoz tartozik" jelzest.
+        toks = {t.lower() for t in re.findall(
+            r"[A-Za-z][A-Za-z0-9]*(?:-[A-Za-z0-9]+)+|[A-Z]{3,}",
+            label + " " + str(d.get("title") or ""))}
+        prog_tokens[label] = {t for t in toks if len(t) >= 3}
     checked = list((judgements or {}).get("intelligence_gaps") or [])
     for j in kjs:
         checked.append(prose(j, ("judgement", "basis", "assessment")))
@@ -1065,8 +1240,10 @@ def run_self_checks(developments, judgements, window_start, window_end,
             if not years:
                 continue
             for label, toks in prog_tokens.items():
-                if not toks or not (toks & set(re.findall(
-                        r"[a-z0-9.\-]{3,}", low))):
+                # Legalabb KET egyezo programtoken kell — egyetlen general
+                # egyezes nem azonositja a programot.
+                if len(toks & set(re.findall(r"[a-z0-9]+(?:-[a-z0-9]+)+|"
+                                             r"[a-z]{3,}", low))) < 2:
                     continue
                 stray = years - prog_years.get(label, set())
                 if stray and prog_years.get(label):
@@ -1094,6 +1271,50 @@ def run_self_checks(developments, judgements, window_start, window_end,
                     "{} / {}".format(j.get("id"), t[1])))
                 break
 
+    # 9g. SZOVETSEGI TAGSAG (kemeny tenyellenorzes)
+    for scope, texts in (("development",
+                          [prose(d, ("fact", "capability_delta", "so_what"))
+                           for d in developments]),
+                         ("judgement",
+                          [prose(j, ("judgement", "basis", "assessment"))
+                           for j in kjs])):
+        labels = ([d.get("display_label") or d.get("title")
+                   for d in developments] if scope == "development"
+                  else [j.get("id") for j in kjs])
+        for text, label in zip(texts, labels):
+            for country, phrase, alliance in alliance_check(text):
+                issues.append((
+                    "FACT ERROR: {} is a {} member, described as '{}'".format(
+                        country, alliance, phrase), label))
+
+    # 9h. MEGNEVEZES A FORRASON KIVULROL
+    src = _source_designations(events)
+    if src:
+        for d in developments:
+            body = " ".join([prose(d, ("fact", "capability_delta", "so_what"))]
+                            + list(d.get("indicators_to_watch") or []))
+            unknown = {m.replace(" ", "-").upper()
+                       for m in DESIGNATION_RX.findall(body)} - src
+            unknown -= DESIGNATION_ALLOW
+            unknown = {u for u in unknown if not re.fullmatch(r"20\d\d", u)}
+            if unknown:
+                issues.append((
+                    "designation not present in this period's source "
+                    "reporting ({}) — verify the entity".format(
+                        ", ".join(sorted(unknown)[:3])),
+                    d.get("display_label") or d.get("title")))
+
+    # 9i. ORBAT-BASELINE ANOMALIA (a jelentes sajat adatai nem stimmelnek)
+    for row in (orbat or []):
+        for ent in (row.get("entries") or []):
+            if ent.get("baseline_anomaly"):
+                issues.append((
+                    "ORBAT baseline anomaly: on-order {} is not explained by "
+                    "this period's action ({}) and the type shows no active "
+                    "airframes — verify the fleet baseline".format(
+                        ent.get("on_order"), ent.get("this_week_quantity")),
+                    "{} / {}".format(row.get("country"), ent.get("type"))))
+
     # 10. volumen mint aktivitas
     if stats and stats.get("volume_not_comparable"):
         bl = str((judgements or {}).get("bottom_line") or "")
@@ -1120,6 +1341,8 @@ def run_self_checks(developments, judgements, window_start, window_end,
 
 
 REWRITABLE = (
+    "FACT ERROR:", "designation not present in this period's source",
+    "self-sufficiency claim contradicted", "grammar artifact",
     "capability claim beyond procurement", "delivery events presented as",
     "trend claim without", "unqualified superlative",
     "export clearance described as", "judgement uses trend language",
@@ -1157,7 +1380,17 @@ Downgrade rules:
   ... could".
 - judgement asserting what gaps call unknown -> state the observation, then
   explicitly decline the unproven part.
-- duplicated word -> fix the typo only.
+- duplicated word or grammar artifact -> fix the typo only.
+- alliance fact error -> use the correct status ("a NATO Ally"), never
+  "NATO-adjacent/aligned/partner" for a member state.
+- designation not in source -> remove the specific designation and refer to
+  the programme generically ("the indigenous engine programme").
+- self-sufficiency claim contradicted by an unresolved dependency in the same
+  block -> make it conditional ("could reduce foreign dependency if an
+  indigenous engine and associated subsystems mature").
+- a contracted item described with a present-tense capability verb
+  ("introduces", "adds", "establishes") -> conditional/future ("would
+  introduce", "initiates establishment of").
 Rewrite every listed item. No commentary."""
 
 

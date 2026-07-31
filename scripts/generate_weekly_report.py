@@ -148,16 +148,24 @@ def main():
 
         # ---------------- elemzoi retegek ----------------
         developments, background = [], []
-        judgements, self_checks = None, []
+        judgements, self_checks, orbat = None, [], []
         try:
             developments, background = ac_intel.build_developments(
                 client, this_week, types, countries, fleets)
             if developments:
                 judgements = ac_intel.build_judgements(
                     client, developments, stats)
+            # Az ORBAT mar a QA ELOTT elkeszul, hogy a baseline-anomaliak
+            # (pl. 0 aktiv Gripen / 116 on order) bekeruljenek az
+            # onellenorzesbe.
+            dev_ids = {i for d in developments
+                       for i in (d.get("event_ids") or [])}
+            orbat = ac_intel.orbat_delta(
+                [e for e in this_week if e.get("event_id") in dev_ids]
+                or this_week, fleets, types, countries)
             self_checks = ac_intel.run_self_checks(
                 developments, judgements, wk_start, naive_now, stats,
-                events=this_week)
+                events=this_week, countries_by_id=countries, orbat=orbat)
             if self_checks:
                 applied = ac_intel.qa_language_gate(
                     client, developments, judgements, self_checks)
@@ -166,7 +174,8 @@ def main():
                         applied))
                     rechecked = ac_intel.run_self_checks(
                         developments, judgements, wk_start, naive_now, stats,
-                        events=this_week)
+                        events=this_week, countries_by_id=countries,
+                        orbat=orbat)
                     self_checks = ac_intel.mark_unresolved(
                         self_checks, rechecked)
             gated = ac_intel.gate_key_judgements(judgements, self_checks)
@@ -194,11 +203,6 @@ def main():
                 type(exc).__name__, str(exc)[:200]))
 
         # ---------------- szarmaztatott nezetek ----------------
-        dev_event_ids = {i for d in developments
-                         for i in (d.get("event_ids") or [])}
-        dev_events = [e for e in this_week
-                      if e.get("event_id") in dev_event_ids] or this_week
-        orbat = ac_intel.orbat_delta(dev_events, fleets, types, countries)
         timeline = ac_intel.capability_timeline(
             developments, this_week, types, countries)
         matrix = ac_intel.maturity_matrix(developments)
