@@ -194,6 +194,13 @@ def platform_breakdown(events, types_by_id):
     return out
 
 
+def _window(start, end):
+    """Szallitasi ablak szoveggé: a hianyzo zaroev ne "2027–None" legyen."""
+    if not start:
+        return None
+    return "{}–{}".format(start, end) if end else "from {}".format(start)
+
+
 def orbat_delta(events, fleets, types_by_id, countries_by_id, max_countries=4):
     """ORBAT-delta orszagonkent es tipusonkent: mi van hadrendben, mi van
     rendelesben, mit erint a heti esemeny. Ez az, amit egy felderito sejt
@@ -225,10 +232,8 @@ def orbat_delta(events, fleets, types_by_id, countries_by_id, max_countries=4):
                 "this_week_stage": stage_of(best),
                 "this_week_quantity": best.get("quantity"),
                 "expected_ioc_year": best.get("expected_ioc_year"),
-                "delivery_window": ("{}–{}".format(
-                    best.get("delivery_start_year"),
-                    best.get("delivery_end_year"))
-                    if best.get("delivery_start_year") else None),
+                "delivery_window": _window(best.get("delivery_start_year"),
+                                           best.get("delivery_end_year")),
             })
         if not entries:
             continue
@@ -621,9 +626,33 @@ CAPABILITY_OVERREACH_RX = re.compile(
 SCHEDULE_RX = re.compile(
     r"\b(on schedule|meeting schedules?|schedule performance|"
     r"supply chains? (?:are|is) )\b", re.I)
+# "most of the fleet" mennyisegjelzo, nem szuperlativusz — a (?!of\b) zarja ki.
 SUPERL_RX = re.compile(
-    r"\b(most|largest|biggest|strongest|leading)\s+(?:[\w-]+\s+){0,3}"
+    r"\b(most|largest|biggest|strongest|leading)\s+(?!of\b)(?:[\w-]+\s+){0,3}"
     r"(operator|fleet|capability|air force|buyer|programme|program)\b", re.I)
+# A detektorok NE tuzeljenek a sajat maguk altal eloirt javitasra: ha a
+# talalatot tartalmazo mondat maga tagadja vagy korlatozza az allitast
+# ("available data does not establish whether deliveries are on schedule",
+# "no baseline is available to characterise this as an acceleration"), akkor
+# az mar a helyes, fegyelmezett megfogalmazas.
+NEGATION_RX = re.compile(
+    r"\b(does not establish|do not establish|cannot be|can not be|is not "
+    r"established|are not established|not confirmed|no baseline|"
+    r"available data does not|not available|unknown|unverified|"
+    r"does not indicate|no evidence|not stated|not reported)\b", re.I)
+
+
+def _sentences(text):
+    return re.split(r"(?<=[.!?])\s+", text or "")
+
+
+def _flag(rx, text):
+    """Igaz, ha a minta olyan mondatban szerepel, amely NEM tagadja vagy
+    korlatozza az allitast."""
+    for s in _sentences(text):
+        if rx.search(s) and not NEGATION_RX.search(s):
+            return True
+    return False
 DETERMINISTIC_RX = re.compile(
     r"\b(would force|will force|guarantees?|ensures?|removes? all|"
     r"will inevitably)\b", re.I)
@@ -643,27 +672,31 @@ def run_self_checks(developments, judgements, window_start, window_end,
         return " ".join(str(o.get(f) or "") for f in fields)
 
     for d in developments:
-        text = prose(d, ("fact", "capability_delta", "so_what"))
+        # KULON KEZELJUK a FACT reteget (idezett, attribualt beszamolo) es az
+        # ELEMZOI reteget. A "US Air Force accelerates the F135 ECU" a tenyek
+        # kozott idezet — a fegyelem az elemzoi allitasokra vonatkozik.
+        text = prose(d, ("capability_delta", "so_what"))
+        full = prose(d, ("fact", "capability_delta", "so_what"))
         label = d.get("display_label") or d.get("title")
         # 1. kepesseg-tulallitas beszerzesi rekordbol
-        if CAPABILITY_OVERREACH_RX.search(text):
+        if _flag(CAPABILITY_OVERREACH_RX, text):
             issues.append(("capability claim beyond procurement evidence "
                            "(readiness/weapons/enablers unknown)", label))
         # 2. menetrend-teljesitmes allitas
-        if SCHEDULE_RX.search(text):
+        if _flag(SCHEDULE_RX, text):
             issues.append(("delivery events presented as schedule performance",
                            label))
         # 3. trend idosor nelkul
-        if TREND_RX.search(text):
+        if _flag(TREND_RX, text):
             issues.append(("trend claim without temporal baseline", label))
         # 4. szuperlativusz
-        if SUPERL_RX.search(text):
+        if _flag(SUPERL_RX, text):
             issues.append(("unqualified superlative claim", label))
         # 5. export-engedely mint uzlet
         if d.get("lifecycle_stage") == "export_approval" and \
-                re.search(r"\b(contract|deal|purchase|order)\b", text, re.I) \
+                re.search(r"\b(contract|deal|purchase|order)\b", full, re.I) \
                 and not re.search(r"clearance|approval|authoris|authoriz",
-                                  text, re.I):
+                                  full, re.I):
             issues.append(("export clearance described as a purchase", label))
         # 6. hianyzo hatalybalepesi ido nagy tetelnel
         if (d.get("significance") or 0) >= 4 and \
@@ -679,7 +712,7 @@ def run_self_checks(developments, judgements, window_start, window_end,
                 issues.append(("ERROR: development built on an event older "
                                "than the period by >60 days", "{} ({})".format(
                                    label, d.get("event_date"))))
-        dw = DOUBLE_WORD_RX.search(text)
+        dw = DOUBLE_WORD_RX.search(full)
         if dw:
             issues.append(("duplicated word in prose ('{}')".format(
                 dw.group(1)), label))
@@ -697,15 +730,15 @@ def run_self_checks(developments, judgements, window_start, window_end,
     for j in kjs:
         jt = prose(j, ("judgement", "basis", "assessment"))
         label = j.get("id")
-        if TREND_RX.search(jt):
+        if _flag(TREND_RX, jt):
             issues.append(("judgement uses trend language — verify baseline",
                            label))
-        if CAPABILITY_OVERREACH_RX.search(jt):
+        if _flag(CAPABILITY_OVERREACH_RX, jt):
             issues.append(("judgement asserts combat capability from "
                            "procurement data", label))
-        if SUPERL_RX.search(jt):
+        if _flag(SUPERL_RX, jt):
             issues.append(("unqualified superlative in judgement", label))
-        if DETERMINISTIC_RX.search(jt):
+        if _flag(DETERMINISTIC_RX, jt):
             issues.append(("deterministic language in judgement", label))
         if j.get("confidence") == "low" and not HEDGE_RX.search(
                 str(j.get("judgement") or "")):
@@ -731,7 +764,7 @@ def run_self_checks(developments, judgements, window_start, window_end,
     n = 0
     for e in (events or []):
         s = str(e.get("summary") or "")
-        if n < 6 and CAPABILITY_OVERREACH_RX.search(s):
+        if n < 6 and _flag(CAPABILITY_OVERREACH_RX, s):
             issues.append(("capability claim in event-layer summary (annex)",
                            s[:70]))
             n += 1

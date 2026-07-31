@@ -207,13 +207,24 @@ export function WeeklyReportView({
             </p>
             <p className="text-xs text-slate-500">firm procurement actions</p>
           </div>
-          <div>
-            <p className="text-lg font-semibold text-slate-100">
-              {val.firm ? `$${val.firm.usd_m.toLocaleString()}M`
-                : s.disclosed_value_usd_m ? `$${s.disclosed_value_usd_m.toLocaleString()}M` : "—"}
-            </p>
-            <p className="text-xs text-slate-500">signed contract value</p>
-          </div>
+          {(() => {
+            // A fejlec-kartya azt az erteket mutatja, amelyik alapon tenyleg
+            // van adat — es MEGNEVEZI az alapot. Egy "signed contract value"
+            // cimke unknown-alapu osszeg folott felrevezeto lenne.
+            const pick = val.firm ? ["firm", val.firm] as const
+              : (Object.entries(val).sort((a, b) => b[1].usd_m - a[1].usd_m)[0] as
+                 [string, { usd_m: number; events: number; label: string }] | undefined);
+            const amount = pick ? `$${pick[1].usd_m.toLocaleString()}M`
+              : s.disclosed_value_usd_m ? `$${s.disclosed_value_usd_m.toLocaleString()}M` : "—";
+            return (
+              <div>
+                <p className="text-lg font-semibold text-slate-100">{amount}</p>
+                <p className="text-xs text-slate-500">
+                  {pick ? pick[1].label : "disclosed value"}
+                </p>
+              </div>
+            );
+          })()}
         </div>
 
         {/* Ertek ertektipusonkent — az osszeadas tiltva */}
@@ -348,7 +359,10 @@ export function WeeklyReportView({
                     {d.expected_ioc_year ? ` · IOC ${d.expected_ioc_year}` : ""}
                   </Chip>
                   <Chip>sig {d.significance}/5 · conf {d.confidence}</Chip>
-                  <Chip>{d.reports_count ?? 1} reports · {d.independent_lineages ?? 1} lineage</Chip>
+                  <Chip>
+                    {d.reports_count ?? 1} report{(d.reports_count ?? 1) === 1 ? "" : "s"} ·{" "}
+                    {d.independent_lineages ?? 1} lineage{(d.independent_lineages ?? 1) === 1 ? "" : "s"}
+                  </Chip>
                   {d.value_usd_m != null && (
                     <Chip>${d.value_usd_m.toLocaleString()}M · {d.value_type ?? "unknown"}</Chip>
                   )}
