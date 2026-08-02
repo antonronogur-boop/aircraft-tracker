@@ -315,6 +315,40 @@ def main():
                           "verdict": verdict, "status": st,
                           "change": change, "range": txt})
 
+    # ---- UTKOZES-ELLENORZES ---------------------------------------------
+    # Ha KET kulonbozo ellenorzesi sor UGYANARRA a flotta-sorra ir, akkor a
+    # masodik csendben feluliria az elsot, es utolag semmi nem mutatna, hogy
+    # ez megtortent. Tipikus ok: a CSV-ben "F-35A Lightning II" ES
+    # "F-35A/B Lightning II" is szerepel ugyanarra az orszagra, es mindketto
+    # ugyanarra a katalogus-tipusra illeszkedik.
+    #
+    # Ilyenkor NEM valasztunk: mindket erintett sort kihagyjuk, es jelentjuk.
+    # Egy csendben felulirt ellenorzes rosszabb, mint egy elmaradt.
+    per_fleet = defaultdict(list)
+    for p in plans:
+        per_fleet[p["fleet"]["fleet_id"]].append(p)
+    collisions = {fid: ps for fid, ps in per_fleet.items()
+                  if len({pp["row"].get("sor_id") for pp in ps}) > 1}
+    if collisions:
+        print("\n" + "=" * 76)
+        print("UTKOZES — tobb ellenorzesi sor ugyanarra a flotta-sorra ({})"
+              .format(len(collisions)))
+        print("=" * 76)
+        for fid, ps in collisions.items():
+            print("  fleet_id {} ({} / {}):".format(
+                fid, ps[0]["row"]["orszag"], ps[0]["status"]))
+            for pp in ps:
+                print("     sor {:<3} {!r}  active={} on_order={}".format(
+                    pp["row"].get("sor_id"), pp["row"]["tipus"],
+                    pp["row"].get("ellenorzott_active"),
+                    pp["row"].get("firm_on_order")))
+        print("\n  Ezeket KIHAGYJUK. A CSV ket kulonbozo sora ugyanazt a "
+              "katalogus-tipust jeloli — a katalogust kell szetvalasztani "
+              "(pl. kulon F-35A es F-35B rekord), vagy a ket ellenorzesi "
+              "sort osszevonni.")
+        plans = [p for p in plans
+                 if p["fleet"]["fleet_id"] not in collisions]
+
     # ---- riport ----------------------------------------------------------
     per_verdict = defaultdict(int)
     for p in plans:
