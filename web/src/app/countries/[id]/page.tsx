@@ -1,4 +1,4 @@
-import { loadBundle, indexBy, visibleEvents } from "@/lib/db";
+import { loadBundle, indexBy, visibleEvents, type Fleet } from "@/lib/db";
 import { PageHeader, EventCard } from "@/components/ui";
 import Link from "next/link";
 
@@ -10,6 +10,51 @@ const FLEET_STATUS_LABEL: Record<string, string> = {
   selected: "Selected", negotiation: "In negotiation",
   retiring: "Retiring", retired: "Retired",
 };
+
+// A hitelesites allapota. NEM diszites: ez mondja meg, hogy egy szamra
+// szabad-e hivatkozni. A negy ertek negy kulonbozo dolgot jelent, ezert
+// mindegyik sajat szinnel es sajat magyarazattal all — az "ellenorizetlen"
+// es a "nem ellenorizheto" kulonosen nem ugyanaz.
+function VerificationBadge({ row }: { row: Fleet }) {
+  const v = row.verification_verdict;
+  if (!v) {
+    return <span className="text-xs text-slate-600">not reviewed</span>;
+  }
+  const style: Record<string, string> = {
+    confirmed: "border-emerald-700 text-emerald-300",
+    corrected: "border-sky-700 text-sky-300",
+    unverifiable: "border-amber-700 text-amber-300",
+    needs_split: "border-rose-700 text-rose-300",
+  };
+  const label: Record<string, string> = {
+    confirmed: "verified",
+    corrected: "corrected",
+    unverifiable: "not verifiable",
+    needs_split: "record mixes two types",
+  };
+  const tip = [
+    row.verification_note,
+    row.verification_source,
+    row.verification_confidence ? `confidence: ${row.verification_confidence}` : null,
+  ].filter(Boolean).join(" — ");
+  return (
+    <span className="inline-flex flex-col gap-0.5">
+      <span
+        title={tip || undefined}
+        className={`inline-block w-fit rounded border px-1.5 py-0.5 text-[11px] ${style[v] ?? "border-slate-700 text-slate-400"}`}
+      >
+        {label[v] ?? v}
+      </span>
+      {row.program_total != null && (
+        // A programkeret KULON all. Egy 29 gepes program nem 29 uzemelo gep —
+        // ez volt a kulso ellenorzes leggyakoribb talalata.
+        <span className="text-[11px] text-slate-500">
+          programme total: {row.program_total}
+        </span>
+      )}
+    </span>
+  );
+}
 
 export default async function CountryPage({ params }: { params: { id: string } }) {
   const b = await loadBundle();
@@ -48,6 +93,7 @@ export default async function CountryPage({ params }: { params: { id: string } }
                   <th className="px-3 py-2">Status</th>
                   <th className="px-3 py-2 text-right">Qty</th>
                   <th className="px-3 py-2">As of</th>
+                  <th className="px-3 py-2">Verification</th>
                 </tr>
               </thead>
               <tbody>
@@ -66,8 +112,34 @@ export default async function CountryPage({ params }: { params: { id: string } }
                       <td className="px-3 py-2 text-slate-300">
                         {FLEET_STATUS_LABEL[f.fleet_status] ?? f.fleet_status}
                       </td>
-                      <td className="px-3 py-2 text-right text-slate-200">{f.quantity ?? "—"}</td>
-                      <td className="px-3 py-2 text-slate-500">{f.as_of ?? "—"}</td>
+                      {/* A DARABSZAM HELYETT A TUDOTT BIZONYTALANSAG.
+                          Ha a kulso ellenorzes azt allapitotta meg, hogy a
+                          valos ertek tartomany ("kb. 160-165", "legalabb
+                          11"), akkor a regi pontos szamot kiirni hamis
+                          pontossag — pont az a hiba, ami ellen az egesz
+                          ellenorzes szolt. Ilyenkor a tartomany latszik, a
+                          korabbi szam pedig alatta, halvanyan, hogy
+                          nyomon kovetheto maradjon. */}
+                      <td className="px-3 py-2 text-right text-slate-200">
+                        {f.quantity_range_note ? (
+                          <span>
+                            <span className="text-amber-300">{f.quantity_range_note}</span>
+                            {f.quantity != null && (
+                              <span className="ml-2 text-xs text-slate-600 line-through">
+                                {f.quantity}
+                              </span>
+                            )}
+                          </span>
+                        ) : (
+                          f.quantity ?? "—"
+                        )}
+                      </td>
+                      <td className="px-3 py-2 text-slate-500">
+                        {f.verified_as_of ?? f.as_of ?? "—"}
+                      </td>
+                      <td className="px-3 py-2">
+                        <VerificationBadge row={f} />
+                      </td>
                     </tr>
                   );
                 })}

@@ -55,6 +55,18 @@ export interface Fleet {
   variant: string | null;
   as_of: string | null;
   source_note: string | null;
+  // Kulso hitelesites (add_fleet_verification.sql). Mind opcionalis: a meg
+  // nem ellenorzott sorok ugyanugy mukodnek, mint korabban.
+  verification_verdict?: string | null;   // confirmed|corrected|unverifiable|needs_split
+  verification_confidence?: string | null;
+  verification_source?: string | null;
+  verification_source_url?: string | null;
+  verification_note?: string | null;
+  verified_as_of?: string | null;
+  // Ha a valos ertek tartomany, a SZAM helyett EZT kell mutatni — kulonben a
+  // felulet pontosabbnak latszik, mint amennyire tudunk.
+  quantity_range_note?: string | null;
+  program_total?: number | null;
 }
 
 export interface Article {
