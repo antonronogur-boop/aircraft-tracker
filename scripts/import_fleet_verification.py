@@ -122,14 +122,19 @@ def resolve(idx, name):
 
 def main():
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
-    if not args:
-        print(__doc__)
-        return
-    csv_path = Path(args[0])
     apply_mode = "--apply" in sys.argv
+    # Alapertelmezett bemenet: a projektbe bemasolt ellenorzesi CSV. Igy a
+    # szkript utvonal nelkul is fut — egy elgepelt vagy sortorott utvonal
+    # miatt ne legyen ujabb kor.
+    csv_path = Path(args[0]) if args else (
+        OUT_DIR / "verification" / "flotta_ellenorzes_reszletes.csv")
     if not csv_path.exists():
-        print("Nem talalhato: {}".format(csv_path))
+        print("Nem talalhato: {}\n".format(csv_path))
+        print("Add meg a CSV utvonalat argumentumkent, EGY sorban:")
+        print("  python scripts\\import_fleet_verification.py "
+              "data\\verification\\flotta_ellenorzes_reszletes.csv")
         return
+    print("Bemenet: {}".format(csv_path))
 
     with io.open(str(csv_path), "r", encoding="utf-8-sig") as f:
         rows = list(csv.DictReader(f, delimiter=";"))
