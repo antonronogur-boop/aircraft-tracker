@@ -91,33 +91,113 @@ def load_master():
     return countries, types, fleets
 
 
+# Tipusjel: betu(k) + szam, opcionalis kotojellel. A VALTOZAT-BETUT levagjuk,
+# mert a katalogus alapnevet hasznal ("F-35 Lightning II"), a kulso ellenorzes
+# viszont valtozatot ("F-35A Lightning II"). Igy lesz mindkettobol "f35".
+#
+# A valtozatot NEM dobjuk el veglegesen — a fleet-sor `variant` mezoje orzi,
+# es az ellenorzes megjegyzese is tartalmazza. Csak az ILLESZTESHEZ hagyjuk
+# figyelmen kivul; enelkul a 52 sorbol 40 sosem talalna gazdat.
+DESIG_RX = re.compile(r"\b([a-z]{1,3})\s*-?\s*(\d{1,3})([a-z]{0,2})\b")
+
+
+# A "Mk1", "Block 70" nem tipusjel, hanem valtozatjeloles — ha ezeket
+# tipusjelkent kezelnenk, az "MQ-9 ... Mk1" barmely masik "Mk1"-re rallna.
+VARIANT_PREFIX = {"mk", "blk", "block", "batch", "tranche", "lot"}
+
+
+def designators(name):
+    """Visszaadja a nevben talalhato tipusjeleket alap-alakban: 'F-35A' ->
+    'f35', 'AH-64E' -> 'ah64', 'C-130J-30' -> 'c130'."""
+    out = set()
+    for m in DESIG_RX.finditer(fold(name)):
+        if m.group(1) in VARIANT_PREFIX:
+            continue
+        out.add(m.group(1) + m.group(2))
+    return out
+
+
+def name_words(name):
+    """Ertelmes szavak a tipusjeleken kivul: 'lightning', 'apache', 'gripen'.
+    A rovid toredekeket ('ii', 'c', 'd') es a valtozatjeloloket ('block',
+    'tranche') kihagyjuk — azok nem azonositjak a tipust."""
+    stop = {"ii", "iii", "iv", "es", "and", "or", "valtozatok", "csalad",
+            "katonai", "family", "block", "tranche", "batch", "variants"}
+    out = set()
+    for w in fold(name).split():
+        if len(w) > 3 and not any(c.isdigit() for c in w) and w not in stop:
+            out.add(w)
+    return out
+
+
 def build_index(rows, id_col, name_col):
     """nev -> [id, ...]  (a nevbol tobb is lehet: ezt jelezni kell)"""
     idx = defaultdict(list)
+    meta = {}
     for r in rows:
-        idx[fold(r.get(name_col))].append(r[id_col])
+        names = [r.get(name_col)]
         raw = r.get("aliases")
         aliases = raw if isinstance(raw, list) else (
             json.loads(raw) if isinstance(raw, str) and raw.strip().startswith("[")
             else [])
-        for a in aliases:
-            if isinstance(a, str):
-                idx[fold(a)].append(r[id_col])
-    return {k: sorted(set(v)) for k, v in idx.items() if k}
+        names += [a for a in aliases if isinstance(a, str)]
+        for n in names:
+            if fold(n):
+                idx[fold(n)].append(r[id_col])
+        d, w = set(), set()
+        for n in names:
+            d |= designators(n)
+            w |= name_words(n)
+        prev = meta.get(r[id_col], (set(), set(), r.get(name_col)))
+        meta[r[id_col]] = (prev[0] | d, prev[1] | w, r.get(name_col))
+    return {k: sorted(set(v)) for k, v in idx.items() if k}, meta
 
 
-def resolve(idx, name):
+def resolve(idx, name, meta=None):
+    """Visszaad: ([id, ...], mod, [javasolt nevek])"""
     key = fold(name)
     if key in idx:
-        return idx[key], "pontos"
-    # Reszhalmaz: minden szava szerepel egy kulcsban. Csak EGYERTELMU
-    # talalatot fogadunk el.
+        return idx[key], "pontos", []
+
     words = key.split()
     cands = {k: v for k, v in idx.items()
              if words and all(w in k.split() for w in words)}
     if len(cands) == 1:
-        return list(cands.values())[0], "reszleges"
-    return [], "nincs" if not cands else "tobbertelmu"
+        return list(cands.values())[0], "reszleges", []
+
+    if meta is None:
+        return [], ("tobbertelmu" if cands else "nincs"), []
+
+    # TIPUSJEL-ALAPU ILLESZTES. Ez fogja meg az "F-35A" <-> "F-35" esetet.
+    # KOVETELMENY: a tipusjel egyezzen, ES ha a nevben van beszelo szo
+    # (Apache, Gripen, Lightning), az is. Csak igy kerulheto el, hogy a
+    # "F-16C/D Block 70" barmelyik F-16 rekordra ralljon.
+    d, w = designators(name), name_words(name)
+    hits = []
+    for tid, (td, tw, tname) in meta.items():
+        if d and td:
+            # Mindketto oldalon van tipusjel: az EGYEZES kotelezo. Ha ezen
+            # felul mindket oldalon van beszelo nev is, annak is egyeznie
+            # kell — kulonben az "F-16C/D Block 70" barmelyik F-16-ra rallna.
+            if not (d & td):
+                continue
+            if w and tw and not (w & tw):
+                continue
+        else:
+            # Legalabb az egyik oldalon nincs tipusjel (pl. "Rafale B/C/M",
+            # "GlobalEye"). Ilyenkor a nev donthet — de csak akkor, ha van
+            # mit osszehasonlitani.
+            if not (w and tw and (w & tw)):
+                continue
+        hits.append((tid, tname))
+    if len(hits) == 1:
+        return [hits[0][0]], "tipusjel", []
+    if len(hits) > 1:
+        # TOBB TALALAT: nem valasztunk. Egy rossz sorra irt ellenorzes
+        # rosszabb, mint egy elmaradt frissites — de megmutatjuk, mik a
+        # jeloltek, hogy kezzel egy perc alatt rendezheto legyen.
+        return [], "tobbertelmu", [n for _i, n in hits][:6]
+    return [], "nincs", []
 
 
 def main():
@@ -141,10 +221,25 @@ def main():
     print("Ellenorzesi sorok: {}".format(len(rows)))
 
     countries, types, fleets = load_master()
-    cidx = build_index(countries, "country_id", "name")
-    tidx = build_index(types, "type_id", "name")
-    print("Torzsadat: {} orszag, {} tipus, {} flotta-sor\n".format(
+    cidx, _cmeta = build_index(countries, "country_id", "name")
+    tidx, tmeta = build_index(types, "type_id", "name")
+    print("Torzsadat: {} orszag, {} tipus, {} flotta-sor".format(
         len(countries), len(types), len(fleets)))
+
+    # Kezi megfeleltetes. Ha egy tipusnevet a szkript nem tud egyertelmuen
+    # feloldani, ide beirva egyszer s mindenkorra rendezheto — a kovetkezo
+    # ellenorzesi kornel is ervenyes marad.
+    overrides = {}
+    omap = OUT_DIR / "verification" / "type_name_map.csv"
+    if omap.exists():
+        with io.open(str(omap), "r", encoding="utf-8-sig") as f:
+            for row in csv.DictReader(f, delimiter=";"):
+                src = fold(row.get("csv_tipusnev"))
+                tid = (row.get("type_id") or "").strip()
+                if src and tid:
+                    overrides[src] = tid
+        print("Kezi megfeleltetes: {} sor ({})".format(len(overrides), omap.name))
+    print("")
 
     by_pair = defaultdict(list)
     for f in fleets:
@@ -155,8 +250,12 @@ def main():
 
     for r in rows:
         verdict = VERDICT_MAP.get((r.get("itelet") or "").strip())
-        cids, cway = resolve(cidx, r.get("orszag"))
-        tids, tway = resolve(tidx, r.get("tipus"))
+        cids, cway, _ = resolve(cidx, r.get("orszag"))
+        ov = overrides.get(fold(r.get("tipus")))
+        if ov:
+            tids, tway, tsug = [ov], "kezi", []
+        else:
+            tids, tway, tsug = resolve(tidx, r.get("tipus"), tmeta)
 
         if len(cids) != 1 or len(tids) != 1:
             problems.append({
@@ -164,6 +263,7 @@ def main():
                 "tipus": r.get("tipus"),
                 "ok": "orszag: {} ({}), tipus: {} ({})".format(
                     len(cids), cway, len(tids), tway),
+                "javasolt_katalogus_nevek": " | ".join(tsug),
             })
             continue
         cid, tid = cids[0], tids[0]
@@ -250,6 +350,9 @@ def main():
         for p in problems:
             print("  [{}] {:<16} {:<28} {}".format(
                 p["sor_id"], p["orszag"][:16], p["tipus"][:28], p["ok"]))
+            if p.get("javasolt_katalogus_nevek"):
+                print("       jeloltek: {}".format(
+                    p["javasolt_katalogus_nevek"]))
         OUT_DIR.mkdir(parents=True, exist_ok=True)
         pp = OUT_DIR / "fleet_verification_unmatched.csv"
         with io.open(str(pp), "w", encoding="utf-8-sig", newline="") as f:
@@ -258,6 +361,22 @@ def main():
             w.writeheader()
             w.writerows(problems)
         print("\n  CSV: {}".format(pp))
+
+        # Kitoltendo megfeleltetesi sablon — a "tipus: 0 (nincs)" eseteknel
+        # ez az egyetlen tisztesseges megoldas: nem talalgatunk, hanem
+        # egyszer kezzel rogzitjuk, es utana orokre ervenyes.
+        tmpl = OUT_DIR / "verification" / "type_name_map.csv"
+        if not tmpl.exists():
+            tmpl.parent.mkdir(parents=True, exist_ok=True)
+            with io.open(str(tmpl), "w", encoding="utf-8-sig", newline="") as f:
+                w = csv.writer(f, delimiter=";")
+                w.writerow(["csv_tipusnev", "type_id", "javasolt_nevek"])
+                for p in problems:
+                    w.writerow([p["tipus"], "",
+                                p.get("javasolt_katalogus_nevek", "")])
+            print("  Megfeleltetesi sablon: {}".format(tmpl))
+            print("  Toltsd ki a type_id oszlopot, es futtasd ujra — a "
+                  "szkript automatikusan hasznalja.")
 
     splits = [p for p in plans if p["verdict"] == "needs_split"]
     if splits:
