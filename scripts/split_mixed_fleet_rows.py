@@ -47,9 +47,13 @@ SPLITS = [
         "reason": "Az MQ-9A Reaper 2025-ben kivonasra kerult; a Protector "
                   "RG Mk1 (MQ-9B) onallo, uj program — kepessegtores van a "
                   "ketto kozott.",
-        # A megmarado (regi) sor sorsa
-        "old_action": {"fleet_status": "retired", "quantity": None,
-                       "note": "MQ-9A Reaper kivonva 2025-ben"},
+        # A megmarado (regi) sor sorsa. A DARABSZAM MEGMARAD: egy kivont
+        # tipusnal az, hogy HANY gepe volt az orszagnak, tortenelmi adat, es
+        # a kepesseg-idosorhoz kell. Nullazni annyi lenne, mintha sosem lett
+        # volna Reaperjuk.
+        "old_action": {"fleet_status": "retired", "keep_quantity": True,
+                       "note": "MQ-9A Reaper kivonva 2025-ben; a Protector "
+                               "RG Mk1 kulon rekordba kerult"},
         # Uj tipus, ha meg nem letezik
         "new_type": {
             "type_id": "mq-9b-protector",
@@ -66,10 +70,15 @@ SPLITS = [
         },
         # Uj flotta-sorok
         "new_fleets": [
-            {"fleet_status": "on_order", "quantity": 16,
-             "source_note": "Kulso ellenorzes 2026-08: legfeljebb 16; "
-                            "pontos atvett mennyiseg kulon ellenorzendo",
+            # SZAM NELKUL. Az ellenorzes "legfeljebb 16"-ot mondott, ami
+            # felso korlat, nem darabszam. A sajat szabalyunk szerint ilyenkor
+            # nem irunk szamot — kulonben ugyanazt a hamis pontossagot
+            # gyartanank, ami miatt az egesz ellenorzes indult.
+            {"fleet_status": "on_order", "quantity": None,
+             "source_note": "Kulso ellenorzes 2026-08: felso korlat 16; "
+                            "az atvett mennyiseg kulon ellenorzendo",
              "verification_verdict": "unverifiable",
+             "verification_confidence": "low",
              "quantity_range_note": "legfeljebb 16 — az atvett mennyiseg "
                                     "nyilt forrasbol nem egyertelmu"},
         ],
@@ -156,30 +165,70 @@ def main():
                 nt["type_id"], nt["name"]))
             actions.append(("create_type", nt))
 
-        # Regi sor kezelese
+        # Regi sor kezelese.
+        #
+        # KULCSFONTOSSAGU KORLAT: az ac_fleets tablan unique(country_id,
+        # type_id, fleet_status) all. Ha ket meglevo sort UGYANARRA a
+        # statuszra allitanank (pl. mindkettot 'retired'-re), a masodik
+        # beszurasa utkozne, es a szkript felig vegzett allapotban allna meg.
+        # Ezert statuszonkent legfeljebb EGY sort mozgatunk, es az ures
+        # (0 vagy null mennyisegu) sorokat egyaltalan nem bantjuk — azokban
+        # nincs informacio, amit at kellene menteni.
         if sp["old_action"]:
-            for f in old_rows:
-                if f.get("fleet_status") in ("active", "on_order"):
-                    print("  Regi sor {}: {} -> {} ({})".format(
-                        f["fleet_id"], f.get("fleet_status"),
-                        sp["old_action"]["fleet_status"],
-                        sp["old_action"]["note"]))
-                    actions.append(("update_fleet", f["fleet_id"], {
-                        "fleet_status": sp["old_action"]["fleet_status"],
-                        "quantity": sp["old_action"]["quantity"],
-                        "verification_note": sp["old_action"]["note"],
-                        "verification_verdict": "corrected",
-                        "verified_at": now,
-                    }))
+            target = sp["old_action"]["fleet_status"]
+            taken = {f.get("fleet_status") for f in old_rows} - {target}
+            already = [f for f in old_rows if f.get("fleet_status") == target]
+            moved = False
+            for f in sorted(old_rows,
+                            key=lambda r: -(r.get("quantity") or 0)):
+                if f.get("fleet_status") == target:
+                    continue
+                if not (f.get("quantity") or 0):
+                    print("  Regi sor {} ({}, mennyiseg {}): ERINTETLEN — "
+                          "ures sor, nincs mit atmenteni".format(
+                              f["fleet_id"], f.get("fleet_status"),
+                              f.get("quantity")))
+                    continue
+                if moved or already:
+                    print("  Regi sor {} ({}): KIHAGYVA — mar van '{}' sor "
+                          "erre a par-ra, az unique megszorítas miatt kezi "
+                          "dontes kell".format(
+                              f["fleet_id"], f.get("fleet_status"), target))
+                    continue
+                print("  Regi sor {}: {} -> {} (mennyiseg {} MEGMARAD)".format(
+                    f["fleet_id"], f.get("fleet_status"), target,
+                    f.get("quantity")))
+                patch = {
+                    "fleet_status": target,
+                    "verification_note": sp["old_action"]["note"],
+                    "verification_verdict": "corrected",
+                    "verified_at": now,
+                }
+                if not sp["old_action"].get("keep_quantity"):
+                    patch["quantity"] = None
+                actions.append(("update_fleet", f["fleet_id"], patch))
+                moved = True
+            _ = taken
         else:
             print("  Regi sor: VALTOZATLAN (a meglevo allomany helyes)")
 
+        # Utkozes-ellenorzes az UJ sorokra is: ha mar letezik ilyen
+        # (orszag, tipus, statusz) harmas, ne probaljunk masodikat beszurni.
+        existing_new = {(f["country_id"], f["type_id"], f.get("fleet_status"))
+                        for f in fleets}
+
         # Uj flotta-sorok
         for nf in sp["new_fleets"]:
+            key = (cid, nt["type_id"], nf["fleet_status"])
+            if key in existing_new:
+                print("  Uj flotta-sor {} / {}: MAR LETEZIK — kihagyva".format(
+                    nt["type_id"], nf["fleet_status"]))
+                continue
             print("  Uj flotta-sor: {} / {} / {} = {}".format(
                 sp["country"], nt["type_id"], nf["fleet_status"],
-                nf.get("quantity")))
-            row = dict(nf)
+                nf.get("quantity") if nf.get("quantity") is not None
+                else nf.get("quantity_range_note", "(szam nelkul)")))
+            row = {k: v for k, v in nf.items() if v is not None}
             row.update({"country_id": cid, "type_id": nt["type_id"],
                         "as_of": now[:10], "verified_at": now})
             actions.append(("create_fleet", row))
