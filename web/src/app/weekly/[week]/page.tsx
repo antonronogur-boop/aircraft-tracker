@@ -28,6 +28,10 @@ export default async function ArchivedReportPage({ params }: { params: { week: s
         />
         <div className="flex items-center gap-2 print:hidden">
           <Link href="/weekly" className="text-xs text-slate-400 hover:text-slate-200">← Latest</Link>
+          <Link href={`/weekly/${report.week_label}/brief`}
+                className="rounded border border-cyan-700/60 bg-cyan-500/10 px-3 py-1.5 text-xs text-cyan-200 hover:border-cyan-500">
+            4-slide briefing →
+          </Link>
           <PrintButton />
         </div>
       </div>

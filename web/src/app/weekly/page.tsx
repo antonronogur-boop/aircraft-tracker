@@ -29,7 +29,16 @@ export default async function WeeklyPage() {
             ? `Latest analyst report — generated ${latest.generated_at?.slice(0, 16).replace("T", " ")} UTC. Archived weekly.`
             : "No archived report yet."}
         />
-        {latest && <PrintButton />}
+        {latest && (
+          <div className="flex items-center gap-2 print:hidden">
+            {/* A 4 slide-os briefing nezet — ebbol lehet eloadni. */}
+            <Link href={`/weekly/${latest.week_label}/brief`}
+                  className="rounded border border-cyan-700/60 bg-cyan-500/10 px-3 py-1.5 text-xs text-cyan-200 hover:border-cyan-500">
+              4-slide briefing →
+            </Link>
+            <PrintButton />
+          </div>
+        )}
       </div>
 
       {!latest ? (

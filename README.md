@@ -66,9 +66,78 @@ SUPABASE_SERVICE_ROLE_KEY for the review API route).
 Vercel deploy: import the GitHub repo, set **Root Directory = `web`**, add
 the same three env vars, deploy. Every push auto-deploys.
 
+## v3 — programme layer (event ≠ programme ≠ evidence)
+
+A W33/W34 jelentések összevetése három olyan hibát mutatott, amelyek mind
+ugyanabból az egy okból származtak: a rendszer nem választotta el a **heti
+eseményt**, a **tartós programállapotot** és a **forrás állítását**.
+
+```
+EVIDENCE  ->  EVENT  ->  PROGRAMME STATE CHANGE      (v3, helyes)
+ARTICLE   ->  quantity  ->  ORBAT += quantity        (v2, hibás)
+```
+
+Ezért egy újabb cikk ugyanarról a programról **nem ad hozzá darabszámot** —
+frissíti vagy megerősíti ugyanazt a programot.
+
+### Üzembe helyezés (v3)
+
+```cmd
+:: 1. Séma
+::    Supabase SQL Editor -> supabase/add_programme_layer.sql
+
+:: 2. A meglévő adat átkötése — ELŐSZÖR DRY RUN
+python scripts\reconcile_programmes.py
+::    -> data\reconcile_report.json  (típus-újraillesztés, programme-állapot,
+::       baseline-delták, duplikátum-gyanúk)
+
+:: 3. Átnézés után írás
+python scripts\reconcile_programmes.py --write
+::    a type_id javításokhoz külön kapcsoló, mert meglévő adatot módosít:
+python scripts\reconcile_programmes.py --write --fix-types
+
+:: 4. Jelentés — előbb dry run
+python scripts\generate_weekly_report.py --dry-run
+python scripts\generate_weekly_report.py
+```
+
+### Tesztek
+
+```cmd
+python scripts\test_ac_match.py            :: entitás-illesztés regressziók
+python scripts\test_ac_programmes.py       :: programme-réteg
+python scripts\test_report_integration.py  :: végponti, a W33/W34 esetekkel
+```
+
+### Mit javít a v3, és melyik konkrét hibára
+
+| Modul | Javítás |
+| --- | --- |
+| `scripts/ac_match.py` | Határ-tudatos designation-illesztés. A régi kód `"a-10" in "a-100ll"` alapján a Beriev **A-100LL** veszteségét *A-10 Thunderbolt II — Loss ×1*-ként vitte be. Variáns (`HH-60W`) és `match_kind` rögzítése; fuzzy illesztés **csak** ingestionkor, a riportban soha. |
+| `scripts/ac_programmes.py` | Programme-identitás, kanonikus darabszám felülírásos logikával (nem összegzéssel), `on_order_delta` **alapértelmezésben 0**, szerződés-evidencia kapu, duplikátum-jelzés. Ez szünteti meg a lengyel Apache 190 → 284 → 286 halmozódást és az üzbég „negotiation + Contract signed ×24" kettős állapotot. |
+| `ac_intel.orbat_delta` | Baseline kulcsa `(ország, típus, variáns, haderőnem)`. Variáns-szintű eseményhez **nem** rendel család-szintű számot (HH-60W ↔ UH-60 *Active 2000*, UK AH-64E 50 ↔ *Active 100*) — a számot visszatartja, és kiírja, miért. |
+| `ac_intel.count_lineages` | A független forrásláncok száma **determinisztikus**, a cikk/primer forrás alapján. A W33 „2 lineage" állítása két olyan eventre épült, amelyek ugyanabból a cikkből származtak; a confidence ehhez van kötve. |
+| `ac_intel.capability_timeline` | **Egy sor = egy programme + egy milestone.** Késés (`schedule_slip`) nem képesség-érkezés; MRO/infrastruktúra-program nem veszi át a beszerzés gépátadási évét — dátum nélkül `TBD`. |
+| `ac_intel._enforce_effect_timing` | **Kettős horizont**: legkorábbi műveleti hatás (IOC) és értelmes méretű képesség (FOC/scale) külön, hónapban számolva. A VC-25B (IOC 2028) így `1-3 years`, nem `>3 years`. |
+| `ac_intel.run_self_checks` | Új ellenőrzések: veszteség ≠ mechanizmus ≠ szándék (W33 Iran/MQ-9), exploitation-lehetőség vs megtörtént tény, egy esetből többes számú trend („Baltic allies"), kvantifikálhatatlan „quantifiable gap", retorikus leértékelés („token addition"). |
+| `ac_intel.propagate_stage_corrections` | Az elemzői stadium-downgrade **visszaíródik az eseményekre** az ORBAT felépítése előtt, így egy állítás nem lehet két állapotban. |
+| `ac_intel.since_last_week` | „SINCE LAST WEEK" — 4-6 soros programme-szintű diff + az előző heti watchok állapota (resolved / unchanged / escalated / dropped). |
+| `ac_intel.build_briefing` | 4 slide-os briefing view: `/weekly/<week>/brief` (vagy `/weekly/latest/brief`). Csak QA-n átment tartalomból épül. |
+| `ac_report_metrics` | A **publikált** heti metrikák rögzítése. A WoW ebből számol, nem az újraszámolt előző hétből — ez a W33 „18" / W34 „22 (+0 WoW)" hiba javítása; az újraszámolási drift látható marad. |
+
+Amit szándékosan **nem** változtattunk: a `Fact → Capability delta → So what →
+Timing basis → Indicators → Sourcing` felépítés, a *Capability domain ×
+programme maturity* tábla, a külön *Capability transition / withdrawal* réteg
+és a *Priority Intelligence Watch*.
+
 ## Roadmap
 
 - **Sprint 2**: Next.js frontend — What's-new feed, országoldalak
   (flotta-tábla + esemény-idővonal), géptípus-oldalak, mini admin review.
 - **Sprint 3**: flotta-baseline feltöltés (CSV import + kézi szerkesztés),
   heti digest, e-mail/Telegram riasztás új eseményekre.
+- **Sprint 4 (v3)**: programme-réteg, evidencia-láncok, longitudinális diff,
+  briefing view. → lásd fentebb.
+- **Következő**: a `ac_fleets` baseline variáns/haderőnem szintre bontása
+  (a séma már támogatja: `variant`, `service`, `baseline_scope`), hogy az ORBAT
+  a visszatartott számok helyett valódi variáns-adatot mutasson.
