@@ -135,10 +135,12 @@ def resolve_programmes(events, programmes):
         by_id[key] = proposed[key]
 
     # A baseline-delta minden esemenyre kiszamol — ALAPERTELMEZESBEN 0.
+    # A programot MINDIG atadjuk: program nelkul az on_order_delta 0-t ad,
+    # mert egy nem kotott esemenyrol nem tudjuk, ujramondas-e.
     deltas = []
     for e in events:
         prog = by_id.get(e.get("programme_id") or "")
-        delta, why = acprog.on_order_delta(e, prog)
+        delta, why = acprog.on_order_delta(e, prog, e.get("summary"))
         e["on_order_delta"] = delta
         e["on_order_delta_reason"] = why
         if e.get("quantity_claimed") in (None, "") and e.get("quantity"):

@@ -156,6 +156,29 @@ Rules:
 - summary must state WHO does WHAT with WHICH aircraft (and how many)."""
 
 
+
+# ---------------------------------------------------------------------------
+# PROMPT CACHING
+#
+# A rendszerprompt MINDEN hivasnal ugyanaz, es minden hivasnal ujra elkuldodik.
+# Ez a szkript naponta tobb tucatszor fut le, tehat ugyanaz a nehany ezer token
+# megy at ujra es ujra — teljes aron.
+#
+# A cache_control ezen az EGY dolgon valtoztat: az ismetlodo elotag
+# cache-talalatkent szamlazodik. A modell, a prompt es a kimenet valtozatlan —
+# nincs minosegi kompromisszum, mert a modell pontosan ugyanazt latja.
+#
+# Csak akkor kapcsol be, ha az elotag eleg hosszu (Sonnetnel ~1024 token).
+# A rovid promptoknal (pl. a duplikatum-egyeztetes) ezert NEM allitottuk be —
+# ott a cache nem lepne eletbe, csak zaj lenne a kodban.
+# ---------------------------------------------------------------------------
+def _cached(prompt_text):
+    """A rendszerprompt cache-elheto blokkent. Tartalmilag azonos a sima
+    string-atadassal."""
+    return [{"type": "text", "text": prompt_text,
+             "cache_control": {"type": "ephemeral"}}]
+
+
 def fetch_fulltext(url):
     # type: (str) -> Optional[str]
     if not url:
@@ -231,7 +254,7 @@ def call_claude(client, article):
     for attempt in range(3):
         try:
             msg = client.messages.create(
-                model=MODEL, max_tokens=3000, system=PROMPT,
+                model=MODEL, max_tokens=3000, system=_cached(PROMPT),
                 messages=[{"role": "user", "content": content}])
             break
         except Exception as e:  # noqa: BLE001

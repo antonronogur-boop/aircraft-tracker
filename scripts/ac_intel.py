@@ -1300,6 +1300,32 @@ REDUNDANT_DURATION_RX = re.compile(
 # RETORIKUS LEERTEKELES — a katonai elemzoi nyelv neutralis
 # --------------------------------------------------------------------------
 # "remains a token addition" -> "remains a limited-scale contribution".
+# --------------------------------------------------------------------------
+# "X ORSZAG NEM RENDELKEZIK Y-NAL" — a hianyzo adat nem nulla
+# --------------------------------------------------------------------------
+#
+# A W34-es kiadasban ez a mondat allt a lengyel Apache-kartyan:
+#
+#     "Poland fields no attack helicopters currently."
+#
+# Ez TENYSZERUEN HIBAS: Lengyelorszag Mi-24D/W harci helikoptereket uzemeltet.
+# Az allitas abbol keletkezett, hogy a katalogus-baseline-ban nincs sor a
+# lengyel Mi-24-ekre — a modell a HIANYZO ADATOT nullanak olvasta.
+#
+# Az ORBAT-tabla ezt mar helyesen kezeli ("n/d — soha ne olvasd nulla gepnek"),
+# de a NARRATIVA megkerulte a vedelmet. Egy ilyen allitas csak akkor
+# megengedett, ha van EXPLICIT, hatokorben egyezo baseline, amely nullat mutat.
+ABSENT_INVENTORY_RX = re.compile(
+    r"\b(?:fields?|operates?|possesses?|maintains?|has|have)\s+"
+    r"(?:currently\s+)?no\s+(?:[\w-]+\s+){0,3}"
+    r"(?:aircraft|airframes?|helicopters?|fighters?|jets?|tankers?|bombers?|"
+    r"uavs?|drones?|capability|fleet|platforms?)\b"
+    r"|\bno\s+(?:[\w-]+\s+){0,3}(?:aircraft|helicopters?|fighters?|jets?)\s+"
+    r"(?:are |is )?(?:currently )?in service\b"
+    r"|\b(?:lacks?|without)\s+(?:any\s+)?(?:[\w-]+\s+){0,2}"
+    r"(?:capability|aircraft|helicopters?|fighters?)\s+(?:entirely|altogether|"
+    r"at present|currently)\b", re.I)
+
 DISMISSIVE_RX = re.compile(
     r"\b(?:a |an |mere(?:ly)? |purely |little more than a )?"
     r"token (?:addition|contribution|gesture|force|capability|buy|order)\b"
@@ -2400,6 +2426,24 @@ def run_self_checks(developments, judgements, window_start, window_end,
                 issues.append((
                     "dismissive rhetoric where neutral analytical language is "
                     "required (prefer 'limited-scale contribution')", label))
+            # "X orszag nem rendelkezik Y-nal" — csak explicit, hatokorben
+            # egyezo, NULLAT mutato baseline-ra allithato.
+            if _flag(ABSENT_INVENTORY_RX, body):
+                backed = False
+                for row in (orbat or []):
+                    for ent in (row.get("entries") or []):
+                        if ent.get("baseline_scope_match") == "exact" \
+                                and (ent.get("active") or 0) == 0 \
+                                and not ent.get("baseline_missing"):
+                            backed = True
+                            break
+                    if backed:
+                        break
+                if not backed:
+                    issues.append((
+                        "absolute inventory claim ('fields no ...') with no "
+                        "scope-matched baseline showing zero — missing "
+                        "catalogue data is not evidence of absence", label))
 
     gaps = " ".join((judgements or {}).get("intelligence_gaps") or []).lower()
     for j in kjs:
@@ -2677,6 +2721,7 @@ REWRITABLE = (
     "gap or duration described as quantifiable",
     "redundant duration phrasing",
     "dismissive rhetoric where neutral analytical language",
+    "absolute inventory claim",
 )
 
 KJ_BLOCKING = (
@@ -2753,6 +2798,12 @@ Downgrade rules:
 - dismissive rhetoric -> neutral analytical register: "remains a limited-scale
   contribution", not "remains a token addition". Do not replace one loaded
   word with another.
+- absolute inventory claim without a baseline -> do NOT assert absence from
+  missing data. "Poland fields no attack helicopters currently" becomes "no
+  AH-64E airframes are in Polish service ahead of the 2028 delivery start; the
+  collection does not establish Poland's current attack-helicopter inventory".
+  State what the programme evidences, and put the existing inventory in the
+  intelligence gaps.
 Rewrite every listed item. No commentary."""
 
 

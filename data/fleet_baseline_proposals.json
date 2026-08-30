@@ -1,0 +1,81 @@
+{
+  "generated_utc": "2026-08-17T20:49:09.245778",
+  "overshoot": [
+    {
+      "fleet_id": 3724,
+      "label": "Colombia Embraer C-390 Millennium",
+      "country_id": "col",
+      "type_id": "c-390",
+      "current": 4,
+      "proposed": 2,
+      "reason": "on-order 4 exceeds the 2 contracted across all active programmes for this type"
+    },
+    {
+      "fleet_id": 3713,
+      "label": "Indonesia Leonardo M-346",
+      "country_id": "idn",
+      "type_id": "m-346",
+      "current": 24,
+      "proposed": 12,
+      "reason": "on-order 24 exceeds the 12 contracted across all active programmes for this type"
+    },
+    {
+      "fleet_id": 3377,
+      "label": "Poland AH-64 Apache",
+      "country_id": "pol",
+      "type_id": "ah-64",
+      "current": 286,
+      "proposed": 96,
+      "reason": "on-order 286 exceeds the 96 contracted across all active programmes for this type"
+    },
+    {
+      "fleet_id": 3374,
+      "label": "Poland F-35 Lightning II",
+      "country_id": "pol",
+      "type_id": "f-35",
+      "current": 48,
+      "proposed": 32,
+      "reason": "on-order 48 exceeds the 32 contracted across all active programmes for this type"
+    },
+    {
+      "fleet_id": 3298,
+      "label": "Turkey Eurofighter Typhoon",
+      "country_id": "tur",
+      "type_id": "eurofighter",
+      "current": 40,
+      "proposed": 20,
+      "reason": "on-order 40 exceeds the 20 contracted across all active programmes for this type"
+    },
+    {
+      "fleet_id": 3300,
+      "label": "Turkey TAI KAAN",
+      "country_id": "tur",
+      "type_id": "kaan",
+      "current": 188,
+      "proposed": 20,
+      "reason": "on-order 188 exceeds the 20 contracted across all active programmes for this type"
+    },
+    {
+      "fleet_id": 3396,
+      "label": "Ukraine Saab JAS 39 Gripen",
+      "country_id": "ukr",
+      "type_id": "gripen",
+      "current": 116,
+      "proposed": 16,
+      "reason": "on-order 116 exceeds the 16 contracted across all active programmes for this type"
+    }
+  ],
+  "wrong_column": [
+    {
+      "fleet_id": 3371,
+      "label": "Spain NH90",
+      "country_id": "esp",
+      "type_id": "nh90",
+      "current_active": 30,
+      "proposed_active": 0,
+      "proposed_on_order": 31,
+      "reason": "30 shown as active, but no programme for this type has reached delivery, IOC or FOC — this is an order, not an in-service fleet"
+    }
+  ],
+  "missing": []
+}

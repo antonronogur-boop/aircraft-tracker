@@ -11,7 +11,10 @@ name: aircraft-tracker-sync
 
 on:
   schedule:
-    - cron: "30 4,16 * * *"   # 04:30 & 16:30 UTC (offset from the drone sync)
+    # Napi ketszerrol napi egyszerre (2026-08-06). Egy beszerzesi bejelentes
+    # nem romlik el estig, a heti jelentes pedig hetfon keszul — a masodik
+    # futas ugyanazokat a cikkeket latta volna, csak dragabban.
+    - cron: "30 4 * * *"   # 04:30 UTC (offset from the drone sync)
   workflow_dispatch: {}
 
 permissions:

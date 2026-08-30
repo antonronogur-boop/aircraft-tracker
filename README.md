@@ -105,9 +105,34 @@ python scripts\generate_weekly_report.py
 
 ```cmd
 python scripts\test_ac_match.py            :: entitás-illesztés regressziók
-python scripts\test_ac_programmes.py       :: programme-réteg
+python scripts\test_ac_programmes.py       :: programme-réteg (15 alszakasz)
 python scripts\test_report_integration.py  :: végponti, a W33/W34 esetekkel
 ```
+
+### Offline hangolás — ne az éles adatbázison iterálj
+
+A programme-réteg finomhangolása a **valódi cikkszövegeken** dől el: a
+szintetikus teszt nem tudja, hogy a „Tranche 5" típusjelölés, a „90 targeting
+pods" nem repülőgép, vagy hogy a „£4.6 billion ($6.1 billion) contract"
+zárójele széttöri a mintaillesztést. Ezért van két eszköz:
+
+```cmd
+:: 1. Egyszeri, csak-olvasó adatkimentés
+python scripts\export_for_review.py
+::    -> data\events_export.json
+
+:: 2. A teljes programme-logika újrajátszása adatbázis nélkül, korlátlanul
+python scripts\replay_audit.py             :: összefoglaló + gyanús esetek
+python scripts\replay_audit.py --suspect   :: a gyanús programok részletei
+python scripts\replay_audit.py --full      :: minden program
+python scripts\replay_audit.py pol-ah64-2024   :: egy program döntésenként
+```
+
+A `replay_audit.py` minden döntést kiír indoklással (hatókör, alap,
+baseline-delta), így egy logikaváltozás hatása másodpercek alatt látszik az
+összes eseményen — éles futtatás nélkül. A `--suspect` lista azt mutatja, amit
+**embernek** kell eldöntenie; ha az üres vagy csak valódi forrás-ellentmondásokat
+tartalmaz, a `reconcile_programmes.py --write` biztonságosan futtatható.
 
 ### Mit javít a v3, és melyik konkrét hibára
 

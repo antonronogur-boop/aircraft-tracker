@@ -71,14 +71,34 @@ create table if not exists ac_programmes (
   -- delivery)" sora ezert volt hibas: a 2028-as elso atadas a 2024-es
   -- BESZERZESI programhoz tartozik, nem az MRO-megallapodashoz.
 
-  -- --- kanonikus darabszam (NEM osszegzett) ---
+  -- --- darabszam: KET KULON MERTEK, sosem osszegezve ---
+  --
+  -- A torok KAAN program 20 gepre kotott szerzodest, es 148 gepes sorozat-
+  -- gyartast TERVEZ. Az ukran Gripen 16 gepre kotott szerzodest egy "up to
+  -- 150" szandeknyilatkozat alatt. Ezek NEM ellentmondasok — ket kulonbozo
+  -- allitas ugyanarrol a programrol. Egyetlen szamban tarolva vagy az egyik
+  -- elveszik, vagy a ketto ellentmondasnak latszik.
+  contracted_quantity int,                -- ami FIRM szerzodes alatt van
+  contracted_basis  text,
+  contracted_as_of  date,
+  planned_quantity  int,                  -- a bejelentett/tervezett total
+  planned_basis     text,
+  planned_as_of     date,
+  -- Szarmaztatott fejszam: contracted, ha van; kulonben planned.
   canonical_quantity int,
+  canonical_source  text,                 -- contracted | planned
   quantity_basis    text,                 -- contract | announced | reported
                                           -- | estimate | unknown
   quantity_as_of    date,
   superseded_quantities jsonb default '[]'::jsonb,
-  -- [{"quantity":190,"as_of":"2024-08-13","basis":"contract",
+  -- [{"quantity":190,"field":"planned","basis":"reported",
   --   "superseded_at":"2026-08-11","source":"<article_id>"}]
+  -- Ket forras ELLENTMONDO programmeretet allit ugyanazon az evidencia-
+  -- szinten. A rendszer NEM dont: megtartja a rogzitett erteket es jelez.
+  quantity_conflicts jsonb default '[]'::jsonb,
+  -- Nem programmeretu darabszamok (reszszallitas, prototipus, celzokonteneres
+  -- vagy hajtomuves tetel), megfigyelesként megorizve.
+  observed_quantities jsonb default '[]'::jsonb,
 
   -- --- allapot ---
   lifecycle_stage   text,                 -- a program ELERT legmagasabb
@@ -129,6 +149,32 @@ comment on column ac_programmes.programme_kind is
 comment on column ac_programmes.variant is
   'A varians a program resze. HH-60W (USAF CSAR) es UH-60M (US Army) nem '
   'ugyanaz a program, meg ha a katalogus-csalad azonos is.';
+
+-- Ha a tabla egy KORABBI futasbol mar letezik, a fenti create nem adja hozza
+-- az uj oszlopokat. Ezert kulon is kikenyszeritjuk oket — igy a szkript
+-- tovabbra is ujra futtathato, es a mar telepitett sema is frissul.
+alter table ac_programmes
+  add column if not exists contracted_quantity int,
+  add column if not exists contracted_basis    text,
+  add column if not exists contracted_as_of    date,
+  add column if not exists planned_quantity    int,
+  add column if not exists planned_basis       text,
+  add column if not exists planned_as_of       date,
+  add column if not exists canonical_source    text,
+  add column if not exists quantity_conflicts  jsonb default '[]'::jsonb,
+  add column if not exists observed_quantities jsonb default '[]'::jsonb;
+
+comment on column ac_programmes.contracted_quantity is
+  'Ami FIRM szerzodes alatt van. Az ORBAT on_order KIZAROLAG ebbol szarmazhat.';
+comment on column ac_programmes.planned_quantity is
+  'A bejelentett/tervezett teljes program. A torok KAAN eseteben 148, mikozben '
+  'a szerzodott allomany 20 — a ketto nem ellentmondas es nem osszegezhetó.';
+comment on column ac_programmes.quantity_conflicts is
+  'Ket forras ellentmondo programmeretet allit ugyanazon evidencia-szinten. '
+  'A rendszer megtartja a rogzitett erteket es elemzoi dontesre jelez.';
+comment on column ac_programmes.observed_quantities is
+  'Nem programmeretu darabszamok: reszszallitas, prototipus, illetve nem-gep '
+  'tetel (celzokonteneres, hajtomuves). Megfigyelesként megorizve.';
 
 create index if not exists ac_programmes_country_idx on ac_programmes(country_id);
 create index if not exists ac_programmes_type_idx    on ac_programmes(type_id);

@@ -208,29 +208,35 @@ def test_variant_isolation():
 def test_supersession():
     section("4. A revised quantity supersedes rather than accumulates")
 
-    p = {"programme_id": "x", "canonical_quantity": 190,
-         "quantity_basis": "reported", "quantity_as_of": "2025-01-01"}
+    # A programnak MAR van egy bejelentett (tervezett) 190-es szama.
+    p = {"programme_id": "x", "planned_quantity": 190,
+         "planned_basis": "reported", "planned_as_of": "2025-01-01"}
     ev = {"lifecycle_stage": "contract_signed", "quantity_claimed": 96,
           "summary": "The ministry confirmed the contract signed in 2024 "
                      "covers 96 aircraft."}
     patch, changes = prog.apply_event(p, ev, article_id="rss-x")
-    check("canonical quantity replaced", patch.get("canonical_quantity"), 96)
+    # A szerzodott allomany KULON mezobe kerul; a tervezett 190 megmarad.
+    check("contracted quantity recorded", patch.get("contracted_quantity"), 96)
+    check("planned total left intact", patch.get("planned_quantity"), None)
+    check("headline figure prefers the contract",
+          patch.get("canonical_quantity"), 96)
     check("basis upgraded to contract", patch.get("quantity_basis"), "contract")
-    check("previous value retained in history",
-          len(patch.get("superseded_quantities") or []), 1)
     print("    history: {}".format(patch.get("superseded_quantities")))
     for c in changes:
         print("    change: {}".format(c))
 
     # Egy gyengebb alapu, ellentmondo allitas NEM irja felul a szerzodest.
-    p2 = {"programme_id": "x", "canonical_quantity": 96,
+    p2 = {"programme_id": "x", "contracted_quantity": 96,
+          "contracted_basis": "contract", "canonical_quantity": 96,
           "quantity_basis": "contract"}
     weak = {"lifecycle_stage": "requirement", "quantity_claimed": 150,
             "summary": "Local media speculate Poland may eventually field "
                        "150 attack helicopters."}
     patch2, changes2 = prog.apply_event(p2, weak, article_id="rss-y")
-    check("a press estimate overwrites a contracted quantity",
-          patch2.get("canonical_quantity"), None)
+    check("a press estimate touches the CONTRACTED quantity",
+          patch2.get("contracted_quantity"), None)
+    check("the headline figure stays on the contract",
+          patch2.get("canonical_quantity"), 96)
     for c in changes2:
         print("    change: {}".format(c))
 
@@ -265,12 +271,342 @@ def test_merge_candidates():
           all("mro" not in (c["a"] + c["b"]) for c in cands), True)
 
 
+# ==========================================================================
+# 6. DARABSZAM-HATOKOR — a VALODI adatbol vett esetek
+#
+# Az elso eles dry run (274 esemeny) ezeket termelte a javitas elott. Minden
+# eset a tenyleges cikkszovegbol szarmazik.
+# ==========================================================================
+def test_quantity_scope_real_cases():
+    section("6. Quantity scope — cases taken from the live dry run")
+
+    # --- 6a. KAAN: 148 -> 1, mert egy prototipus gurulasi probaja 1 gep ---
+    print("\n  6a. Turkey KAAN: a prototype taxi trial must not reset 148 to 1")
+    p = {"programme_id": "tur-kaan-2026", "programme_kind": "acquisition",
+         "canonical_quantity": None}
+    ev_total = {"event_type": "order", "lifecycle_stage": None, "quantity": 148,
+                "summary": "Turkey has a total planned serial production order "
+                           "of 148 KAAN fifth-generation stealth fighters."}
+    patch, ch = prog.apply_event(p, ev_total, article_id="a1")
+    p.update(patch)
+    check("programme total set from 'total planned production order'",
+          p.get("canonical_quantity"), 148)
+
+    ev_proto = {"event_type": "other", "lifecycle_stage": "production",
+                "quantity": 1,
+                "summary": "Turkey's TAI Kaan second prototype (P1), a "
+                           "production-representative airframe, began taxi "
+                           "trials on 31 July."}
+    sc, why = prog.quantity_scope(ev_proto)
+    check("prototype taxi trial scope", sc, "tranche")
+    patch2, ch2 = prog.apply_event(p, ev_proto, article_id="a2")
+    p.update(patch2)
+    check("KAAN programme total after the prototype event",
+          p.get("canonical_quantity"), 148)
+    for c in ch2:
+        if "NOT applied" in c:
+            print("      {}".format(c[:118]))
+
+    # --- 6b. KC-135: ot vesztesegbol nem lesz 1 gepes "program" ---
+    print("\n  6b. USAF KC-135: five loss events must not create a "
+          "1-aircraft programme")
+    ev_loss = {"event_type": "incident", "lifecycle_stage": None, "quantity": 1,
+               "summary": "A USAF KC-135R Stratotanker (63-8002) was lost with "
+                          "six fatalities after a mid-air collision."}
+    check("loss event programme kind", prog.kind_from_event(ev_loss),
+          "attrition")
+    sc2, _ = prog.quantity_scope(ev_loss)
+    check("loss event quantity scope", sc2, "attrition")
+    pa = {"programme_id": "usa-kc135-attr", "programme_kind": "attrition",
+          "canonical_quantity": None}
+    patch3, ch3 = prog.apply_event(pa, ev_loss, article_id="a3")
+    check("attrition programme carries no canonical size",
+          patch3.get("canonical_quantity"), None)
+    check("the count is retained as an observation",
+          len(patch3.get("observed_quantities") or []), 1)
+    d, dwhy = prog.on_order_delta(ev_loss, pa)
+    check("a loss moves on-order", d, 0)
+
+    # --- 6c. F-35: egy baleset ne allitsa egy beszerzes eletciklusat ---
+    print("\n  6c. F-35: a crash must not set an acquisition's lifecycle to "
+          "'loss'")
+    ev_crash = {"event_type": "incident", "lifecycle_stage": "loss",
+                "quantity": 1,
+                "summary": "A U.S. Marine Corps F-35B assigned to VMFAT-502 "
+                           "crashed and burned during a training flight."}
+    acq = [{"programme_id": "usa-f35-2026", "country_id": "usa",
+            "type_id": "f-35", "programme_kind": "acquisition",
+            "canonical_quantity": 152, "review_status": "active"}]
+    found, why = prog.find_programme(dict(ev_crash, country_id="usa",
+                                         type_id="f-35"), acq)
+    check("crash attaches to the acquisition programme",
+          found.get("programme_id") if found else None, None)
+    print("      reason: {}".format(why[:110]))
+
+    # --- 6d. F-35C: "Programme of Record" NYELV felulirja a stadiumot ---
+    print("\n  6d. F-35C: explicit 'Programme of Record' language is "
+          "programme scope even at production stage")
+    ev_por = {"event_type": "order", "lifecycle_stage": "production",
+              "quantity": 152,
+              "summary": "As of December 2025, the USMC had 152 F-35Cs on "
+                         "order as part of a Programme of Record for 140 "
+                         "F-35Cs across the force."}
+    sc3, why3 = prog.quantity_scope(ev_por)
+    check("scope from explicit programme-of-record language", sc3, "programme")
+    ev_tranche = {"event_type": "delivery", "lifecycle_stage": "delivery",
+                  "quantity": 4,
+                  "summary": "Misawa Air Base received its first four "
+                             "permanent F-35s in March 2026."}
+    sc4, _ = prog.quantity_scope(ev_tranche)
+    check("'first four' is a tranche", sc4, "tranche")
+
+    # --- 6e. Gripen: kisebb szam azonos alapon NE csokkentsen csendben ---
+    print("\n  6e. Ukraine Gripen: a smaller figure at equal basis is flagged, "
+          "not silently applied")
+    pg = {"programme_id": "ukr-gripen-2025", "programme_kind": "acquisition",
+          "planned_quantity": 150, "planned_basis": "announced"}
+    ev_16 = {"event_type": "order", "lifecycle_stage": None, "quantity": 16,
+             "summary": "Ukraine signed a $2.5 billion contract with Saab for "
+                        "the acquisition of 16 Gripen E fighters."}
+    ok16, _ = prog.contract_evidenced(ev_16)
+    check("a signed contract is recognised", ok16, True)
+    patch5, ch5 = prog.apply_event(pg, ev_16, article_id="a5")
+    # A 16 a SZERZODOTT allomany; a 150-es plafon NEM tunik el es nem
+    # ellentmondas — ket kulonbozo mertek ugyanarrol a programrol.
+    check("firm contract recorded as the contracted quantity",
+          patch5.get("contracted_quantity"), 16)
+    check("the 150 ceiling is not overwritten",
+          patch5.get("planned_quantity"), None)
+    check("headline figure prefers the contract",
+          patch5.get("canonical_quantity"), 16)
+    pg.update(patch5)
+    print("      reading: {}".format(prog._quantity_reading(pg)))
+
+    # ...de egy PUSZTA sajtoszam nem.
+    pg2 = {"programme_id": "ukr-gripen-2025", "programme_kind": "acquisition",
+           "planned_quantity": 150, "planned_basis": "announced"}
+    ev_weak = {"event_type": "negotiation", "lifecycle_stage": None,
+               "quantity": 20,
+               "summary": "Ukraine agreed in May 2026 to buy 20 new Gripen "
+                          "fighter jets from Sweden."}
+    patch6, ch6 = prog.apply_event(pg2, ev_weak, article_id="a6")
+    check("a weaker-basis smaller figure does not reduce the planned total",
+          patch6.get("planned_quantity"), None)
+    # A 20 a "up to 150" plafon ALATT van — ez reszhalmaz, nem ellentmondas.
+    # Csak egy NAGYOBB szam gyengebb evidencian minosul konfliktusnak.
+    check("a sub-ceiling figure is an observation, not a conflict",
+          len(patch6.get("quantity_conflicts") or []), 0)
+    check("it is retained as an observation",
+          len(patch6.get("observed_quantities") or []), 1)
+    for c in ch6:
+        if "sits within" in c:
+            print("      {}".format(c[:118]))
+
+
+    # --- 6g. A szerzodes-evidencia felismerese es a TAGADAS ---
+    print("\n  6g. Contract evidence must survive an intervening value and "
+          "still respect negation")
+    for text, expect in (
+            ("Ukraine signed a $2.5 billion contract with Saab for 16 Gripen E.",
+             True),
+            ("Poland inked an agreement covering 32 additional AH-64E.", True),
+            ("The Air Force awarded a $90 million IDIQ contract for interceptors.",
+             True),
+            ("Boeing was awarded a firm-fixed-price contract.", True),
+            ("No contract has been signed for the 24 fighters.", False),
+            ("The deal is yet to be signed, officials said.", False),
+            ("Uzbekistan is expected to sign a contract later this year.",
+             False),
+            ("Talks continue; no official confirmation of a contract.", False)):
+        ok, why = prog.contract_evidenced(
+            {"event_type": "order", "lifecycle_stage": None, "summary": text})
+        mark = "ok" if ok == expect else "FAIL"
+        if ok != expect:
+            FAILS.append((text[:50], ok, expect))
+        print("      {:<5} {:<66} {}".format(str(ok), text[:65], mark))
+
+
+    # --- 6h. SZERZODOTT vs TERVEZETT: mindketto igaz, nem ellentmondas ---
+    print("\n  6h. Contracted and planned quantities are separate measures")
+    pk = {"programme_id": "tur-kaan-2026", "programme_kind": "acquisition"}
+    ev_c = {"event_type": "order", "lifecycle_stage": None, "quantity": 20,
+            "summary": "The Turkish Air Force formally signed a contract in "
+                       "May 2026 to procure 20 KAAN fifth-generation fighters."}
+    patch, _ = prog.apply_event(pk, ev_c, article_id="k1"); pk.update(patch)
+    check("contracted quantity", pk.get("contracted_quantity"), 20)
+    ev_p = {"event_type": "order", "lifecycle_stage": None, "quantity": 148,
+            "summary": "Turkey has a total planned serial production order of "
+                       "148 KAAN fifth-generation stealth fighters."}
+    patch, ch = prog.apply_event(pk, ev_p, article_id="k2"); pk.update(patch)
+    check("planned quantity recorded alongside it",
+          pk.get("planned_quantity"), 148)
+    check("contracted quantity untouched", pk.get("contracted_quantity"), 20)
+    check("no conflict raised", len(pk.get("quantity_conflicts") or []), 0)
+    check("headline figure prefers the contract",
+          pk.get("canonical_quantity"), 20)
+    print("      reading: {}".format(prog._quantity_reading(pk)))
+    d, dwhy = prog.on_order_delta(ev_p, pk)
+    check("a planned total does not enter on-order", d, 0)
+
+    # --- 6i. NEM-GEP mertekegyseg: celzokonteneres es hajtomuves tetel ---
+    print("\n  6i. Non-airframe counts must never become a programme size")
+    for text, qty in (
+            ("Germany's Bundestag authorized the purchase of 90 LITENING 5 "
+             "targeting pods from Rafael for the Eurofighter fleet.", 90),
+            ("The US Congress cleared the export license for 80 GE F110 "
+             "engines destined for serial production.", 80),
+            ("The contract is valued at 250 million dollars.", 250)):
+        sc, why = prog.quantity_scope(
+            {"event_type": "order", "lifecycle_stage": None, "quantity": qty,
+             "summary": text}, quantity=qty)
+        mark = "ok" if sc == "non_airframe" else "FAIL"
+        if sc != "non_airframe":
+            FAILS.append((text[:45], sc, "non_airframe"))
+        print("      {:<13} {:<62} {}".format(sc, text[:61], mark))
+
+    pe = {"programme_id": "deu-ef-2025", "programme_kind": "acquisition",
+          "contracted_quantity": 20, "contracted_basis": "contract"}
+    patch, ch = prog.apply_event(
+        pe, {"event_type": "order", "lifecycle_stage": None, "quantity": 90,
+             "summary": "Germany's Bundestag authorized the purchase of 90 "
+                        "LITENING 5 targeting pods from Rafael."},
+        article_id="e1")
+    check("pod count does not touch the programme size",
+          patch.get("planned_quantity"), None)
+    check("it is retained as an observation",
+          len(patch.get("observed_quantities") or []), 1)
+
+    # --- 6j. Szam-kozeli kontextus dont, nem az egesz mondat ---
+    print("\n  6j. The figure's immediate context decides, not the sentence")
+    sc, why = prog.quantity_scope(
+        {"event_type": "delivery", "lifecycle_stage": "delivery",
+         "quantity": 12,
+         "summary": "USMC VMFA-115 conducted its first F-35C flight on July "
+                    "31, 2026, with 12 aircraft to follow as the squadron "
+                    "transitions."}, quantity=12)
+    check("mixed sentence reads conservatively as a tranche", sc, "tranche")
+
+
+    # --- 6k. "Tranche 5" / "Lot 18" / "Block 70" = TIPUSJELOLES ---
+    print("\n  6k. 'Tranche N' is a designation, not a delivery tranche")
+    ev_ef = {"event_type": "order", "lifecycle_stage": None, "quantity": 20,
+             "summary": "Germany signed a contract in October 2025 for 20 "
+                        "Eurofighter Typhoon Tranche 5 aircraft."}
+    sc, why = prog.quantity_scope(ev_ef, quantity=20)
+    check("Eurofighter Tranche 5 contract scope", sc, "programme")
+    pef = {"programme_id": "deu-ef-2025", "programme_kind": "acquisition"}
+    patch, ch = prog.apply_event(pef, ev_ef, article_id="ef1")
+    check("the firm 20-aircraft contract is recorded",
+          patch.get("contracted_quantity"), 20)
+    for text, qty, expect in (
+            ("The Air Force ordered 18 aircraft in Lot 18 of the programme.",
+             18, "programme"),
+            ("Poland received the first batch of six F-16 Block 70 jets.",
+             6, "tranche"),
+            ("Saab will deliver a tranche of 12 Gripen E aircraft.",
+             12, "tranche")):
+        sc2, w2 = prog.quantity_scope(
+            {"event_type": "order", "lifecycle_stage": None,
+             "quantity": qty, "summary": text}, quantity=qty)
+        mark = "ok" if sc2 == expect else "FAIL"
+        if sc2 != expect:
+            FAILS.append((text[:46], sc2, expect))
+        print("      {:<10} {:<58} {}".format(sc2, text[:57], mark))
+
+    # --- 6l. Plafon alatti kisebb szam NEM ellentmondas ---
+    print("\n  6l. A figure below a stated ceiling is not a contradiction")
+    pc = {"programme_id": "ukr-gripen-2025", "programme_kind": "acquisition",
+          "planned_quantity": 150, "planned_basis": "announced"}
+    ev_b = {"event_type": "delivery", "lifecycle_stage": None, "quantity": 16,
+            "summary": "The UK announced a EUR300m investment to support the "
+                       "delivery of 16 Saab Gripen E aircraft to Ukraine."}
+    patch, ch = prog.apply_event(pc, ev_b, article_id="g1")
+    check("no conflict raised for a sub-ceiling figure",
+          len(patch.get("quantity_conflicts") or []), 0)
+    check("recorded as an observation instead",
+          len(patch.get("observed_quantities") or []), 1)
+    check("the 150 ceiling is untouched", patch.get("planned_quantity"), None)
+    for c in ch:
+        if "sits within" in c:
+            print("      {}".format(c[:112]))
+    # ...de egy NAGYOBB szam gyengebb evidencian igen.
+    ev_big = {"event_type": "negotiation", "lifecycle_stage": None,
+              "quantity": 250,
+              "summary": "Local reports suggest Ukraine may acquire as many as "
+                         "250 Gripen aircraft in total."}
+    patch2, _ = prog.apply_event(
+        {"programme_id": "x", "programme_kind": "acquisition",
+         "planned_quantity": 150, "planned_basis": "announced"},
+        ev_big, article_id="g2")
+    check("a larger figure on weaker evidence IS flagged",
+          len(patch2.get("quantity_conflicts") or []), 1)
+
+    # --- 6m. "ordered N" mint szerzodes-evidencia ---
+    print("\n  6m. 'ordered N' counts as a procurement action")
+    ok, why = prog.contract_evidenced(
+        {"event_type": "order", "lifecycle_stage": None,
+         "summary": "Ukraine ordered 16 Gripen E fighter jets from Saab in a "
+                    "deal valued at roughly $2.5 billion."})
+    check("'ordered' recognised", ok, True)
+    ok2, _ = prog.contract_evidenced(
+        {"event_type": "other", "lifecycle_stage": "delivery",
+         "summary": "The service has 152 F-35Cs on order as of December 2025."})
+    check("bare 'on order' is a state, not an action", ok2, False)
+
+
+    # --- 6n. ZAROJELES kettos valutaertek es TOBBES SZAM ---
+    # A vedelmi sajtoban altalanos "£4.6 billion ($6.1 billion)" forma
+    # szettorte a szerzodes-felismerest, es egy 4,6 milliard fontos odaiteles
+    # "nincs alairasi nyelvezet"-kent latszott.
+    print("\n  6n. Parenthetical dual-currency figures and plural "
+          "'contracts' must not break contract detection")
+    for text, expect in (
+            ("Japan, Italy, and the UK jointly awarded a GBP4.6 billion "
+             "($6.1 billion) 18-month development contract to Edgewing.", True),
+            ("The office signed a GBP686 million ($908 million) stopgap "
+             "development contract with Edgewing.", True),
+            ("The USAF awarded Anduril and General Atomics production "
+             "contracts worth up to $150 million each.", True),
+            ("The three nations are set to award a new development contract.",
+             False)):
+        ok, _ = prog.contract_evidenced(
+            {"event_type": "order", "lifecycle_stage": None, "summary": text})
+        mark = "ok" if ok == expect else "FAIL"
+        if ok != expect:
+            FAILS.append((text[:46], ok, expect))
+        print("      {:<5} {:<64} {}".format(str(ok), text[:63], mark))
+
+    # --- 6o. A fejlesztesi szerzodes nem gepbeszerzes ---
+    print("\n  6o. A development contract is not an aircraft acquisition")
+    check("GCAP development contract kind",
+          prog.kind_from_event(
+              {"event_type": "order", "lifecycle_stage": None,
+               "summary": "Japan, Italy, and the UK jointly awarded a 4.6 "
+                          "billion development contract to the Edgewing "
+                          "industrial consortium for GCAP."}),
+          "development")
+
+    # --- 6f. Legacy esemenyek: URES lifecycle_stage feloldasa ---
+    print("\n  6f. Legacy events with a NULL lifecycle_stage must still "
+          "resolve a stage")
+    check("event_type 'order' resolves",
+          prog.resolved_stage({"event_type": "order",
+                               "lifecycle_stage": None}), "contract_signed")
+    check("event_type 'incident' resolves",
+          prog.resolved_stage({"event_type": "incident",
+                               "lifecycle_stage": None}), "loss")
+    check("an explicit stage still wins",
+          prog.resolved_stage({"event_type": "order",
+                               "lifecycle_stage": "selection"}), "selection")
+
+
 def main():
     test_poland_apache()
     test_uzbekistan()
     test_variant_isolation()
     test_supersession()
     test_merge_candidates()
+    test_quantity_scope_real_cases()
     print("\n" + "=" * 78)
     if FAILS:
         print("FAILURES: {}".format(len(FAILS)))
