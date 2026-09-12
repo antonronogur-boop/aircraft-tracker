@@ -8,6 +8,8 @@ Env vars:
     SUPABASE_SERVICE_ROLE_KEY   Supabase Dashboard -> Settings -> API -> service_role
 """
 import json
+import random
+import time
 import os
 import urllib.parse
 import urllib.error
@@ -67,7 +69,36 @@ _PAGE_SIZE = 1000
 _MAX_PAGES = 50
 
 
-def _request(method, path, params=None, body=None, prefer=None):
+# ---------------------------------------------------------------------------
+# UJRAPROBALKOZAS MULO HIBARA
+#
+# A 2026-09-12-i balkan-monitor-sync futas egyetlen "HTTP Error 504: Gateway
+# Timeout" miatt allt le — az RSS-gyujtes kozben, tehat a teljes napi lanc
+# elveszett egy masodpercekig tarto atjaro-hiba miatt.
+#
+# Az 5xx es a 429 NEM vegleges hiba: azt jelenti, hogy "most nem, probald
+# ujra". Veglegeskent kezelni oket ugyanaz a tevedes, mint az Oryx-scrapernel
+# volt. A 4xx (400, 401, 404, 409) viszont VALODI hiba — azt azonnal
+# eldobjuk, mert varakozastol nem javul.
+#
+# IDEMPOTENCIA. Ujraprobalni csak akkor szabad, ha a megismetelt keres nem
+# hoz letre masodpeldanyt:
+#   GET            — mindig biztonsagos
+#   PATCH szurovel — ugyanazt az erteket irja ujra
+#   POST on_conflict-tal — a duplikatumot a DB szuri ki
+#   POST anelkul   — NEM biztonsagos: ha az elso keres valojaban atment, csak
+#                    a valasz veszett el, egy ujabb sor keletkezne. Ezert az
+#                    egysoros insert() nem probalkozik ujra.
+_RETRY_STATUS = (429, 500, 502, 503, 504)
+_RETRY_ATTEMPTS = 4
+
+
+def _sleep_backoff(attempt):
+    time.sleep(min(2 ** attempt * 2, 20) + random.uniform(0, 1.5))
+
+
+def _request(method, path, params=None, body=None, prefer=None,
+             retry=True):
     url = "{}/rest/v1/{}".format(SUPABASE_URL, path)
     if params:
         url += "?" + urllib.parse.urlencode(params)
@@ -80,22 +111,35 @@ def _request(method, path, params=None, body=None, prefer=None):
         headers["Prefer"] = prefer
     data = json.dumps(body).encode("utf-8") if body is not None else None
     req = urllib.request.Request(url, data=data, headers=headers, method=method)
-    try:
-        with urllib.request.urlopen(req, timeout=60) as resp:
-            raw = resp.read().decode("utf-8")
-            return json.loads(raw) if raw else None
-    except urllib.error.HTTPError as e:
-        # A POSTGREST MEGMONDJA, MI A BAJ — csak eddig nem olvastuk el.
-        # A valasz torzse tartalmazza a hibakodot, az erintett oszlopot vagy
-        # megszoritast, gyakran javaslattal egyutt. A kivetel szovege viszont
-        # csak annyi: "HTTP Error 400: Bad Request" — a drone-projektben ezert
-        # tartott harom napig, mire kiderult, mi bukott el.
+    last = None
+    for attempt in range(_RETRY_ATTEMPTS):
         try:
-            detail = e.read().decode("utf-8", "replace")[:600]
-        except Exception:  # noqa: BLE001
-            detail = "(a valasz torzse nem olvashato)"
-        raise RuntimeError("Supabase {} {} -> HTTP {}: {}".format(
-            method, path, e.code, detail)) from None
+            with urllib.request.urlopen(req, timeout=60) as resp:
+                raw = resp.read().decode("utf-8")
+                return json.loads(raw) if raw else None
+        except urllib.error.HTTPError as e:
+            # A POSTGREST MEGMONDJA, MI A BAJ — csak eddig nem olvastuk el.
+            # A valasz torzse tartalmazza a hibakodot, az erintett oszlopot
+            # vagy megszoritast, gyakran javaslattal egyutt; a kivetel szovege
+            # viszont csak annyi: "HTTP Error 400: Bad Request".
+            try:
+                detail = e.read().decode("utf-8", "replace")[:600]
+            except Exception:  # noqa: BLE001
+                detail = "(a valasz torzse nem olvashato)"
+            last = "HTTP {}: {}".format(e.code, detail)
+            if e.code not in _RETRY_STATUS or not retry:
+                raise RuntimeError("Supabase {} {} -> {}".format(
+                    method, path, last)) from None
+        except Exception as e:  # noqa: BLE001 — halozati/idotullepes hiba
+            last = "{}: {}".format(type(e).__name__, str(e)[:200])
+            if not retry:
+                raise
+        if attempt < _RETRY_ATTEMPTS - 1:
+            print("  [retry] Supabase {} {} — {} (ujraprobalkozas {}/{})".format(
+                method, path, last, attempt + 1, _RETRY_ATTEMPTS - 1))
+            _sleep_backoff(attempt)
+    raise RuntimeError("Supabase {} {} — {} kiserlet utan sem sikerult: {}".format(
+        method, path, _RETRY_ATTEMPTS, last))
 
 
 def select(table, params=None):
