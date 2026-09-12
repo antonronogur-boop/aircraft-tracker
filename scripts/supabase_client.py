@@ -10,6 +10,7 @@ Env vars:
 import json
 import os
 import urllib.parse
+import urllib.error
 import urllib.request
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
@@ -79,9 +80,22 @@ def _request(method, path, params=None, body=None, prefer=None):
         headers["Prefer"] = prefer
     data = json.dumps(body).encode("utf-8") if body is not None else None
     req = urllib.request.Request(url, data=data, headers=headers, method=method)
-    with urllib.request.urlopen(req, timeout=60) as resp:
-        raw = resp.read().decode("utf-8")
-        return json.loads(raw) if raw else None
+    try:
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            raw = resp.read().decode("utf-8")
+            return json.loads(raw) if raw else None
+    except urllib.error.HTTPError as e:
+        # A POSTGREST MEGMONDJA, MI A BAJ — csak eddig nem olvastuk el.
+        # A valasz torzse tartalmazza a hibakodot, az erintett oszlopot vagy
+        # megszoritast, gyakran javaslattal egyutt. A kivetel szovege viszont
+        # csak annyi: "HTTP Error 400: Bad Request" — a drone-projektben ezert
+        # tartott harom napig, mire kiderult, mi bukott el.
+        try:
+            detail = e.read().decode("utf-8", "replace")[:600]
+        except Exception:  # noqa: BLE001
+            detail = "(a valasz torzse nem olvashato)"
+        raise RuntimeError("Supabase {} {} -> HTTP {}: {}".format(
+            method, path, e.code, detail)) from None
 
 
 def select(table, params=None):
@@ -110,11 +124,32 @@ def select(table, params=None):
     return rows
 
 
+def _normalise_keys(rows):
+    # type: (List[Dict[str, Any]]) -> List[Dict[str, Any]]
+    """Azonos kulcskeszlet minden sorban egy kotegelt beszurasnal.
+
+    A PostgREST elutasitja (400) az olyan tomeges beszurast, ahol az objektumok
+    kulcsai elternek — ez okozta a drone-uav-monitor napi futasanak elszallasat
+    2026-09-10-tol. A combat_experience sorok tobbsegeben nincs
+    "adversary_response", egyben viszont van; a vegyes kulcskeszlet miatt az
+    EGESZ koteg elszallt, es vele a futas.
+
+    A hianyzo kulcsok None-t kapnak. Ez tartalmilag azonos a kulcs
+    elhagyasaval (a DB ugyanugy NULL-t tarol), viszont a koteg ervenyes lesz.
+    """
+    if len(rows) < 2:
+        return rows
+    keys = set()
+    for r in rows:
+        keys.update(r.keys())
+    return [{k: r.get(k) for k in keys} for r in rows]
+
+
 def insert_ignore_duplicates(table, rows, conflict_column):
     if not rows:
         return
     _request("POST", table, params={"on_conflict": conflict_column},
-             body=rows, prefer="resolution=ignore-duplicates,return=minimal")
+             body=_normalise_keys(rows), prefer="resolution=ignore-duplicates,return=minimal")
 
 
 def insert(table, row):
@@ -127,7 +162,7 @@ def upsert(table, rows, conflict_column):
     if not rows:
         return
     _request("POST", table, params={"on_conflict": conflict_column},
-             body=rows, prefer="resolution=merge-duplicates,return=minimal")
+             body=_normalise_keys(rows), prefer="resolution=merge-duplicates,return=minimal")
 
 
 def update(table, filters, patch):
