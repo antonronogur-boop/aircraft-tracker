@@ -1,0 +1,34 @@
+# source_waste.yml — forrasonkenti pazarlas-riport, kezzel inditva.
+#
+# A projekt sajat Supabase-adatai CSAK az Actions secretjeiben vannak, a
+# repoban nincsenek (es nem is valok oda). Ezert a riport ITT fut, nem a
+# fejlesztoi gepen: igy nem kell kulcsot masolgatni, es kizart, hogy
+# veletlenul masik projekt adatbazisat merjuk.
+#
+# Semmit nem ir. Csak lekerdez es kiir.
+
+name: Source waste report
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Forrasonkenti pazarlas
+        working-directory: scripts
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: python source_waste_report.py
