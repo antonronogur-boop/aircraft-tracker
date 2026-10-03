@@ -394,21 +394,26 @@ def load_recent_soft_keys():
 # ---------------------------------------------------------------------------
 GATE_MODEL = "claude-haiku-4-5-20251001"
 
-GATE_PROMPT = """Filter for a military-aircraft FLEET tracker.
-Input: a news headline and short summary.
+GATE_PROMPT = """Filter for a military-aircraft FLEET tracker. Input: headline + short summary.
 
-YES if it may report a change to a country's MILITARY aircraft fleet: order,
-contract, purchase, delivery, acceptance, upgrade or modernisation programme,
-export sale or export approval (e.g. DSCA), type selection, negotiation or
-request, budget approval for aircraft, production milestone, retirement or
-withdrawal, aircraft loss (crash, shoot-down). Includes fighters, helicopters,
-transports, tankers, trainers, maritime patrol, AEW, large military UAVs and CCAs.
+ALWAYS YES — these are fleet changes even when they read like incident news:
+- any military aircraft crash, loss, shoot-down, destruction, write-off;
+- any aircraft hit, struck, damaged or destroyed on the ground or in the air,
+  including strikes on airbases (e.g. "Tu-95 destroyed at Engels",
+  "aircraft hit at airbase", "F-16 goes down", "landing gear collapses");
+- battle-damage repair, depot or maintenance programmes, readiness or
+  availability problems, flight-hour or service-life milestones of a type.
 
-NO if it is clearly only: deployment, exercise, training, air show, flypast,
-operational strike or combat mission, routine test flight, weapons test with no
-procurement decision, personnel or commander news, airline or civil aviation,
-naval ships, ground vehicles, missiles or space with no aircraft fleet change,
-opinion or analysis.
+ALSO YES: order, contract, purchase, delivery, acceptance, upgrade or
+modernisation, export sale or approval (DSCA), type selection or programme
+decision (e.g. GCAP, CCA, F-35 choices), negotiation or request, budget
+approval, production milestone, retirement or withdrawal, a service buying any
+aircraft or UAV. Fighters, bombers, helicopters, transports, tankers, trainers,
+maritime patrol, AEW, military UAVs and CCAs all count.
+
+NO only if it is clearly nothing but: a deployment or exercise with no loss
+or damage, an air show or flypast, airline or civil aviation, naval ships,
+ground vehicles, ground-based air defence systems, missiles or space.
 
 Answer with one word: YES or NO. If unsure, YES."""
 
