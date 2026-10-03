@@ -25,6 +25,7 @@ import anthropic
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import supabase_client as db  # noqa: E402
+import usage_tracker as usage  # noqa: E402
 import ac_match  # noqa: E402
 import ac_programmes as acprog  # noqa: E402
 
@@ -384,7 +385,7 @@ def main():
     run = db.start_run("ac_process_articles")
     processed = 0
     try:
-        client = anthropic.Anthropic()
+        client = usage.wrap(anthropic.Anthropic())
         type_idx, country_idx, family_idx = build_indexes()
         soft_keys = load_recent_soft_keys()
         # A meglevo programok betoltese, hogy az uj esemeny a MEGLEVO
@@ -553,9 +554,13 @@ def main():
             print("  -> {} event(s)".format(len(result["events"])))
 
         print("Done. Processed: {}/{}".format(processed, len(articles)))
-        db.finish_run(run, "success", items_processed=processed)
+        usage.report()
+        db.finish_run(run, "success", items_processed=processed,
+                      details={"usage": usage.summary()})
     except Exception as e:  # noqa: BLE001
-        db.finish_run(run, "error", error_message=str(e))
+        usage.report()
+        db.finish_run(run, "error", error_message=str(e),
+                      details={"usage": usage.summary()})
         raise
 
 
