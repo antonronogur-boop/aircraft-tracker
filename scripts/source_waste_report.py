@@ -31,6 +31,19 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import supabase_client as db  # noqa: E402
 
+# ── TABLA-NEVEK ─────────────────────────────────────────────────────────
+# A harom projekt EGY Supabase-peldanyon osztozik, de KULON tabla-nevterben:
+#     Drone_UAV Monitor : articles    / sources
+#     Balkan_Monitor    : bm_articles / bm_sources
+#     Aircraft_Tracker  : ac_articles / ac_sources
+#
+# 2026-10-03: ez a ket nev eloszor bele volt drotozva a prefix nelkuli
+# valtozatra, ezert a script a masik ket repoban a DRONOS tablakat merte, es
+# ugyanazt a riportot adta mindharom helyen. A nevek azota itt allnak, a fajl
+# tetejen, projektenkent kulon ertekkel.
+ARTICLES_TABLE = "ac_articles"
+SOURCES_TABLE = "ac_sources"
+
 IRRELEVANT = "irrelevant"
 # A 'raw' nem szamit: azt a modell meg nem latta, tehat nem tudjuk rola,
 # mi lett volna. Beleszamitva alulbecsulnenk minden forras aranyat.
@@ -48,11 +61,11 @@ def arg_value(flag, default=None):
 def main():
     min_articles = int(arg_value("--min-articles", 10))
 
-    print("source_waste_report.py — forrasonkenti pazarlas")
+    print("source_waste_report.py — forrasonkenti pazarlas  [{}]".format(ARTICLES_TABLE))
     print("=" * 74)
 
-    articles = db.select("articles", {"select": "source_id,status"})
-    sources = db.select("sources", {"select": "source_id,source_name,status"})
+    articles = db.select(ARTICLES_TABLE, {"select": "source_id,status"})
+    sources = db.select(SOURCES_TABLE, {"select": "source_id,source_name,status"})
     names = {s["source_id"]: (s.get("source_name") or s["source_id"]) for s in sources}
     src_status = {s["source_id"]: (s.get("status") or "active") for s in sources}
 
