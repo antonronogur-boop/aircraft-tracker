@@ -26,6 +26,7 @@ import anthropic
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import supabase_client as db  # noqa: E402
 import usage_tracker as usage  # noqa: E402
+import source_policy  # noqa: E402
 import ac_match  # noqa: E402
 import ac_programmes as acprog  # noqa: E402
 
@@ -381,6 +382,56 @@ def load_recent_soft_keys():
     return {(r.get("country_id"), r.get("type_id"), r["event_type"]) for r in rows}
 
 
+# ---------------------------------------------------------------------------
+# OLCSO RELEVANCIA-KAPU (2026-10-03)
+#
+# A config/source_policy.json 'haiku_gate' forrasainal a cim+osszefoglalo
+# alapjan egy olcso modell dont a draga kinyeres ELOTT. A kapu promptja a fenti
+# PROMPT hatokor-definiciojabol szarmazik — ugyanazt a hatart kell huznia.
+#
+# A HIBAS NEM DRAGABB A HIBAS IGENNEL: egy tevesen kizart cikk vegleg kimarad.
+# Ezert minden bizonytalan eset (API-hiba, ertelmezhetetlen valasz) ATMEGY.
+# ---------------------------------------------------------------------------
+GATE_MODEL = "claude-haiku-4-5-20251001"
+
+GATE_PROMPT = """Filter for a military-aircraft FLEET tracker.
+Input: a news headline and short summary.
+
+YES if it may report a change to a country's MILITARY aircraft fleet: order,
+contract, purchase, delivery, acceptance, upgrade or modernisation programme,
+export sale or export approval (e.g. DSCA), type selection, negotiation or
+request, budget approval for aircraft, production milestone, retirement or
+withdrawal, aircraft loss (crash, shoot-down). Includes fighters, helicopters,
+transports, tankers, trainers, maritime patrol, AEW, large military UAVs and CCAs.
+
+NO if it is clearly only: deployment, exercise, training, air show, flypast,
+operational strike or combat mission, routine test flight, weapons test with no
+procurement decision, personnel or commander news, airline or civil aviation,
+naval ships, ground vehicles, missiles or space with no aircraft fleet change,
+opinion or analysis.
+
+Answer with one word: YES or NO. If unsure, YES."""
+
+
+def cheap_relevance_gate(client, article):
+    """True / False / None. A None (= nem sikerult donteni) ATMEGY."""
+    text = "HEADLINE: {}\nSUMMARY: {}".format(
+        article.get("title") or "", (article.get("short_summary") or "")[:600])
+    try:
+        msg = client.messages.create(
+            model=GATE_MODEL, max_tokens=5, system=GATE_PROMPT,
+            messages=[{"role": "user", "content": text}])
+        raw = "".join(b.text for b in msg.content if b.type == "text").strip().upper()
+    except Exception as e:  # noqa: BLE001
+        print("  [WARN] relevance gate error ({}), article passes".format(type(e).__name__))
+        return None
+    if raw.startswith("NO"):
+        return False
+    if raw.startswith("YES"):
+        return True
+    return None
+
+
 def main():
     run = db.start_run("ac_process_articles")
     processed = 0
@@ -401,13 +452,31 @@ def main():
                   "inserted without programme linkage; run "
                   "supabase/add_programme_layer.sql".format(str(exc)[:100]))
         articles = db.select("ac_articles", {
-            "select": "article_id,title,url,short_summary",
+            "select": "article_id,source_id,title,url,short_summary",
             "status": "eq.raw", "order": "collected_date.asc",
             "limit": str(BATCH_LIMIT)})
         print("Raw articles to process: {}".format(len(articles)))
+        print(source_policy.describe())
+        gate_stats = {"dropped": 0, "gated_out": 0, "gated_in": 0}
 
         for art in articles:
             print("- {}".format((art.get("title") or "?")[:80]))
+            # ── FORRAS-SZINTU KAPU (config/source_policy.json) ─────────────
+            pol = source_policy.policy_for(art.get("source_id"))
+            if pol == source_policy.DROP:
+                db.update("ac_articles", {"article_id": "eq." + art["article_id"]},
+                          {"status": "irrelevant"})
+                gate_stats["dropped"] += 1
+                processed += 1
+                continue
+            if pol == source_policy.HAIKU_GATE:
+                if cheap_relevance_gate(client, art) is False:
+                    db.update("ac_articles", {"article_id": "eq." + art["article_id"]},
+                              {"status": "irrelevant"})
+                    gate_stats["gated_out"] += 1
+                    processed += 1
+                    continue
+                gate_stats["gated_in"] += 1
             result, failure = call_claude(client, art)
             if failure:
                 db.update("ac_articles", {"article_id": "eq." + art["article_id"]},
@@ -554,9 +623,10 @@ def main():
             print("  -> {} event(s)".format(len(result["events"])))
 
         print("Done. Processed: {}/{}".format(processed, len(articles)))
+        print("KAPU: {}".format(gate_stats))
         usage.report()
         db.finish_run(run, "success", items_processed=processed,
-                      details={"usage": usage.summary()})
+                      details={"usage": usage.summary(), "gate": gate_stats})
     except Exception as e:  # noqa: BLE001
         usage.report()
         db.finish_run(run, "error", error_message=str(e),

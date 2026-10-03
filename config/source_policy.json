@@ -1,0 +1,23 @@
+{
+  "_README": [
+    "Forras-szintu kapu a scripts/process_articles.py ele (Aircraft Tracker).",
+    "  pass       — alapertelmezes, a szokasos (draga) kinyeres",
+    "  haiku_gate — elobb egy olcso modell dont a cim+osszefoglalo alapjan",
+    "  drop       — nincs modellhivas; a forras gyujtese is leall (enabled=false)",
+    "A projekt CSAK flotta-valtozast kovet (rendeles, szallitas, modernizacio,",
+    "export, kivalasztas, kivonas, veszteseg). A bevetes, gyakorlat, legibemutato",
+    "szandekosan kiesik — ezert magas az irrelevans arany a legieros lapoknal is.",
+    "A beosztas a 2026-10-03-i meresbol szarmazik. Ismeretlen forras: pass."
+  ],
+  "default": "pass",
+  "policies": {
+    "ACS-0006": {"policy": "drop", "name": "Naval News", "measured": "134 cikk, 116 irrelevans (87%)"},
+
+    "ACS-0007": {"policy": "haiku_gate", "name": "Defence Blog", "measured": "351 cikk, 242 irrelevans (69%)"},
+    "ACS-0002": {"policy": "haiku_gate", "name": "Breaking Defense", "measured": "184 cikk, 137 irrelevans (74%)"},
+    "ACS-0005": {"policy": "haiku_gate", "name": "Air & Space Forces Magazine", "measured": "183 cikk, 119 irrelevans (65%)"},
+    "ACS-0004": {"policy": "haiku_gate", "name": "Airforce Technology", "measured": "77 cikk, 40 irrelevans (52%)"},
+    "ACS-0008": {"policy": "haiku_gate", "name": "Overt Defense", "measured": "56 cikk, 29 irrelevans (52%)"},
+    "ACS-0003": {"policy": "haiku_gate", "name": "The Aviationist", "measured": "173 cikk, 68 irrelevans (39%)"}
+  }
+}

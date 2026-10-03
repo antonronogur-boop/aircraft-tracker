@@ -1,0 +1,35 @@
+# source_policy.yml — a forras-policy alkalmazasa es a kapu merese, kezzel inditva.
+# 1) a 'drop' forrasok kikapcsolasa (enabled=false) + raw cikkeik irrelevant-ra
+# 2) az olcso kapu merese a mar felcimkezett cikkeken
+name: Source policy
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install anthropic
+      - name: Drop-forrasok kikapcsolasa
+        working-directory: scripts
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: python apply_source_policy.py --apply
+      - name: Kapu merese
+        working-directory: scripts
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python validate_relevance_gate.py --limit 200
