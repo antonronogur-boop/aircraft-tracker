@@ -65,9 +65,13 @@ def main():
     print("=" * 74)
 
     articles = db.select(ARTICLES_TABLE, {"select": "source_id,status"})
-    sources = db.select(SOURCES_TABLE, {"select": "source_id,source_name,status"})
+    # Ebben a projektben a forras allapota `enabled boolean`, nem `status text`
+    # (lasd supabase/schema.sql). 2026-10-03: a dronos sema alapjan feltetelezett
+    # `status` oszlop HTTP 400-zal allt le — innen a kulon kezeles.
+    sources = db.select(SOURCES_TABLE, {"select": "source_id,source_name,enabled"})
     names = {s["source_id"]: (s.get("source_name") or s["source_id"]) for s in sources}
-    src_status = {s["source_id"]: (s.get("status") or "active") for s in sources}
+    src_status = {s["source_id"]: ("active" if s.get("enabled", True) else "archived")
+                  for s in sources}
 
     print("  cikk: {}   forras: {}".format(len(articles), len(sources)))
 
@@ -131,7 +135,7 @@ def main():
         for r in heavy:
             print("    - {:<40} {:>5} irrelevans / {:<5} ({:.0f}%)".format(
                 r["name"][:40], r["irr"], r["seen"], 100 * r["share"]))
-        print("\n  Ezek archivalhatok (sources.status='archived'), amivel a")
+        print("\n  Ezek kikapcsolhatok ({}.enabled=false), amivel a".format(SOURCES_TABLE))
         print("  gyujtes is leall. A mar begyujtott cikkek maradnak.")
     else:
         print("\n  Nincs olyan AKTIV forras, amelynek a fele irrelevans lenne.")
