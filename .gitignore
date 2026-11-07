@@ -13,3 +13,4 @@ scripts/fixtures/report_fixture.json
 web/e2e-out/
 data/command_brief_*.json
 _update_bundles/
+Claude outputs/

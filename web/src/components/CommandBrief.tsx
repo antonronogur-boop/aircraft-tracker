@@ -265,7 +265,10 @@ function GlobalMap({ map }: { map: CommandBriefPayload["map_global"] }) {
 // ------------------------------------------------------------------ pages --
 function Page1({ b, base }: { b: CommandBriefPayload; base: string }) {
   const kjs = b.page1.key_judgements;
+  // Surusegi fokozatok: 5 KJ-nal a legszorosabb, hogy a page 1 mindig
+  // beferjen; kevesebb itelet tobb sort kap.
   const roomy = kjs.length <= 3;
+  const tight = kjs.length >= 5;
   const bl = b.page1.bottom_line;
   return (
     <PageFrame n={1} brief={b} title="Hungary Air Intelligence Bottom Line"
@@ -342,12 +345,12 @@ function Page1({ b, base }: { b: CommandBriefPayload; base: string }) {
               <div className="mt-0.5 grid grid-cols-2 gap-x-2.5 text-[9.5px] leading-[1.3] text-slate-800">
                 <div>
                   <p style={clampStyle(roomy ? 3 : 2)}><b>What changed:</b> {k.what_changed}</p>
-                  <p style={clampStyle(roomy ? 4 : 3)}><b>Assessment:</b> {k.assessment}</p>
+                  <p style={clampStyle(roomy ? 4 : tight ? 2 : 3)}><b>Assessment:</b> {k.assessment}</p>
                 </div>
                 <div>
                   <p style={clampStyle(roomy ? 3 : 2)}><b>Why Hungary should care:</b> {k.why_hungary}</p>
                   <p style={clampStyle(1)}><b>Next observable:</b> {k.next_observable || "—"}</p>
-                  <p className="text-slate-600" style={clampStyle(2)}>
+                  <p className="text-slate-600" style={clampStyle(tight ? 1 : 2)}>
                     <b>What would make this wrong:</b> {k.alternative_explanation || "—"}
                   </p>
                 </div>

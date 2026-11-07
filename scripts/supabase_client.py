@@ -22,7 +22,9 @@ def _load_dotenv():
     kornyezetben. Igy nem kell minden uj cmd-ablakban ujra beallitani oket
     (a .env a .gitignore-ban van, tehat nem kerul a repoba)."""
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    for name in (".env", "scripts/.env"):
+    # 2026-11-07: a web/.env.local is (ugyanaz a Supabase projekt), hogy egy
+    # uj ablakban se kelljen kulon .env-et letrehozni a scriptekhez.
+    for name in (".env", "scripts/.env", "web/.env.local"):
         path = os.path.join(root, name)
         if not os.path.exists(path):
             continue
@@ -37,6 +39,9 @@ def _load_dotenv():
                                           v.strip().strip('"').strip("'"))
         except OSError:
             pass
+    if not os.environ.get("SUPABASE_URL") and \
+            os.environ.get("NEXT_PUBLIC_SUPABASE_URL"):
+        os.environ["SUPABASE_URL"] = os.environ["NEXT_PUBLIC_SUPABASE_URL"]
 
 
 _load_dotenv()

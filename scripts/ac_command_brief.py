@@ -42,7 +42,7 @@ CAPS = {
     "statement": 230, "what_changed": 260, "assessment": 320,
     "why_hu": 230, "next_observable": 150, "alternative": 190,
     "row_what": 200, "row_effect": 190, "row_next": 120,
-    "item_assessment": 230, "bottom_line_sentence": 260,
+    "item_assessment": 230, "bottom_line_sentence": 300,
     "watch": 150, "gap": 210,
 }
 MAX_KJ = 5
@@ -285,6 +285,7 @@ def page1_judgements(payload, devs, countries_by_id, cfg):
                 CAPS["alternative"], 2),
             "alternative_origin": "report" if alt else "system_evidence_state",
             "refs": [k.get("id")] + [d["ref"] for d in sup],
+            "headline": (best or {}).get("title"),
             "detail_ref": detail_ref([k.get("id")] + [d["ref"] for d in sup]),
             "countries": sorted({c for d in sup for c in d.get("countries")
                                  or []}),
@@ -352,7 +353,11 @@ def cee_hotspots(devs, coverage, cfg, countries_by_id):
         targets = [c for c in d.get("country_ids") or [] if c in cee]
         # A szereplon kivul az erintett CEE-orszag is hotspot lehet
         # (pl. amerikai telepites Romaniaba): a HU-tenyezo nevezi meg.
-        if not targets:
+        fids = {f["id"] for f in h.get("factors") or []}
+        if not targets and fids & {"eastern_flank_posture",
+                                   "airspace_incident", "air_policing"}:
+            # Csak szovetseges legterpozicio / incidens eseten: egy ethiop
+            # Su-35 vasarlas nem teszi Oroszorszagot hotspotta.
             named = named_country_ids(
                 " ".join([d.get("title") or "", d.get("fact") or ""]),
                 countries_by_id)
@@ -583,13 +588,17 @@ def page3(devs, countries_by_id, coverage, cfg, used):
 
 def change_table(payload, devs, countries_by_id, cfg):
     diff = payload.get("since_last_week") or {}
-    by_prog = {}
+    by_prog, by_label = {}, {}
     for d in devs:
         if d.get("programme_id"):
             by_prog[d["programme_id"]] = d
+        # since_last_week a programme_id hianyaban a display_label/title
+        # alapjan kulcsol — ugyanezzel a cimkevel talaljuk meg a fejlemenyt.
+        by_label[d.get("display_label") or d.get("title")] = d
     rows = []
     for r in diff.get("programmes") or []:
-        d = by_prog.get(r.get("programme_id") or "")
+        d = by_prog.get(r.get("programme_id") or "") or by_label.get(
+            r.get("programme"))
         if d:
             h = d.get("hu_relevance") or {}
             country = ", ".join(d.get("countries") or []) or "—"
@@ -771,7 +780,23 @@ def deterministic_bottom_line(kjs, p2, payload, devs, coverage):
             d.get("hu_relevance"), _sig(d), d.get("confidence"),
             d.get("effect_timing")))[0]
         top_refs = {r for k in kjs[:3] for r in (k.get("refs") or [])}
-        if lead["ref"] in top_refs:
+        if not high and lead["ref"] in top_refs:
+            lvl = (lead.get("hu_relevance") or {}).get("level") or "LOW"
+            sents.append({"text": "None of the {} material air-power "
+                                  "developments this period is of HIGH "
+                                  "relevance to Hungary; the most relevant "
+                                  "are rated {}.".format(len(material), lvl),
+                          "refs": []})
+        elif not high:
+            lvl = (lead.get("hu_relevance") or {}).get("level") or "LOW"
+            sents.append({"text": "None of the {} material air-power "
+                                  "developments this period is of HIGH "
+                                  "relevance to Hungary; the most relevant "
+                                  "({}) is: {}.".format(
+                                      len(material), lvl,
+                                      clip(lead.get("title"), 140).rstrip(".")),
+                          "refs": [lead["ref"]]})
+        elif lead["ref"] in top_refs:
             # A vezeto tetel ugyis kovetkezik a KJ-mondatokban — nem ismeteljuk.
             sents.append({"text": "{} of {} material air-power developments "
                                   "this period are of HIGH relevance to "
@@ -787,13 +812,23 @@ def deterministic_bottom_line(kjs, p2, payload, devs, coverage):
     for k in kjs[:3]:
         if not k.get("statement"):
             continue
+        if k["origin"] != "executive_synthesis" and k.get("headline"):
+            # A tenyszeru cim + az itelet jellemzoi; maga az itelet (hedge-
+            # ekkel egyutt) a mellette levo KJ-kartyan teljes terjedelmeben.
+            text = "{} ({} judgement, {} confidence, {}).".format(
+                clip(k["headline"], 170).rstrip(". "), k["id"],
+                k.get("confidence") or "unstated",
+                k.get("horizon") or "horizon unknown")
+            sents.append({"text": text, "refs": [k["id"]]})
+            continue
         if k["origin"] == "executive_synthesis":
             wc = k.get("what_changed") or ""
             wc = wc[:1].lower() + wc[1:] if wc[:2] != wc[:2].upper() else wc
             text = "{} — {}".format(k["statement"].rstrip(". "), wc)
         else:
             text = k["statement"]
-        text = clip(text, CAPS["bottom_line_sentence"]).rstrip()
+        # Az elso teljes mondat — inkabb rovidebb, mint felbe vagott.
+        text = clip(text, CAPS["bottom_line_sentence"], 1).rstrip()
         if not text.endswith((".", "…")):
             text += "."
         sents.append({"text": text, "refs": [k["id"]]})
