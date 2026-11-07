@@ -262,6 +262,13 @@ def call_claude(client, article):
         except Exception as e:  # noqa: BLE001
             last_err = e
             err_name = type(e).__name__
+            # 2026-10-03: ELFOGYOTT KREDIT -> a futas AZONNAL megall. Enelkul a
+            # ciklus minden tovabbi cikket 'failed'-re tett volna (api_error), es azok
+            # kiestek volna a feldolgozasbol. Igy a cikkek 'raw'-ban maradnak, es a
+            # kovetkezo futas — a feltoltes utan — ott folytatja.
+            if "credit balance is too low" in str(e).lower():
+                raise RuntimeError("ANTHROPIC KREDIT ELFOGYOTT — a futas leall, a cikkek 'raw' allapotban maradnak. "
+                                 "Toltsd fel: Console -> Plans & Billing.")
             print("  [WARN] Anthropic API error ({}/3): {}: {}".format(
                 attempt + 1, err_name, str(e)[:300]))
             transient = err_name in ("RateLimitError", "InternalServerError",
@@ -437,6 +444,28 @@ def cheap_relevance_gate(client, article):
     return None
 
 
+def _safe_date(value):
+    """Datum az adatbazis `date` oszlopahoz — vagy None.
+
+    2026-10-03: a modell egy esemenyre "2026-07"-et adott (csak ev-honap). A
+    `date` oszlop ezt HTTP 400-zal utasitja el, es egyetlen ilyen esemeny az
+    EGESZ futast leallitotta. A pontatlan datumot nem dobjuk el: a honap /
+    ev ELSO napjara kerekitjuk (ugyanaz a konvencio, mint a prompt mas
+    helyein). Ami nem ertelmezheto datum, az None — inkabb nincs datum, mint
+    hogy a futas elszalljon.
+    """
+    s = str(value or "").strip()[:10]
+    m = re.match(r"^(\d{4})(?:-(\d{1,2}))?(?:-(\d{1,2}))?$", s)
+    if not m:
+        return None
+    y, mo, d = int(m.group(1)), int(m.group(2) or 1), int(m.group(3) or 1)
+    try:
+        import datetime as _dt
+        return _dt.date(y, mo, d).isoformat()
+    except ValueError:
+        return None
+
+
 def main():
     run = db.start_run("ac_process_articles")
     processed = 0
@@ -527,7 +556,7 @@ def main():
                     "counterparty_country_id": counterparty_id,
                     "quantity": ev.get("quantity"),
                     "value_usd_m": ev.get("value_usd_m"),
-                    "event_date": ev.get("event_date"),
+                    "event_date": _safe_date(ev.get("event_date")),
                     "summary": (ev.get("summary") or "")[:1000],
                     "confidence": ev.get("confidence"),
                     "review_status": "pending",

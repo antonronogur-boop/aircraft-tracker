@@ -26,12 +26,27 @@ Ami v3-ban UJ — mindegyik egy konkret, a ket jelentesben azonositott hibara:
   6. BRIEFING VIEW — 4 slide-os szobeli briefinghez, a 13 oldalas jelentes
      mellett (az marad a reference product).
 
+v3.1 (2026-11) — COMMAND AIR INTELLIGENCE BRIEF:
+  7. HETI ABLAK: Europe/Budapest SZERDA 00:00:00 -> KEDD 23:59:59 (ac_window).
+     A gyujtes napi marad; a jelentes szerda reggel fut. Atallaskor egy nap
+     sem esik ki (az ablak eleje az elozo publikalt periodushoz igazodik).
+  8. KESOI ADAT: ami a publikalas UTAN erkezik egy mar lezart ablakrol, az a
+     kovetkezo heten "late-arriving confirmation"-kent jelenik meg. Egy mar
+     publikalt het CSENDES felulirasa tilos: ujrafuttatas csak
+     --restate "<ok>" kapcsoloval, es a jelentesben lathatoan.
+  9. COVERAGE AUDIT orszagonkent (ADEQUATE / PARTIAL / GAP).
+ 10. COMMAND BRIEF (ac_command_brief) — 4 oldal ugyanabbol a payloadbol,
+     HU-relevanciaval (ac_hungary). Nincs masodik pipeline.
+
 Env: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, ANTHROPIC_API_KEY
-Usage: python scripts\\generate_weekly_report.py [--dry-run]
+     AC_BRIEF_SYNTHESIS=0   -> a brief executive synthesis modellhivas nelkul
+     AC_REPORT_NOW=...      -> teszthez: a "most" (UTC ISO)
+Usage: python scripts\\generate_weekly_report.py [--dry-run] [--restate "reason"]
 """
 import json
+import os
 import sys
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 from pathlib import Path
 
 import anthropic
@@ -40,9 +55,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import supabase_client as db  # noqa: E402
 import ac_intel  # noqa: E402
 import ac_programmes as acprog  # noqa: E402
+import ac_window  # noqa: E402
+import ac_hungary  # noqa: E402
+import ac_command_brief  # noqa: E402
+import coverage_audit  # noqa: E402
 
 DAY = timedelta(days=1)
-METHODOLOGY_VERSION = "v3.0"
+METHODOLOGY_VERSION = "v3.1"
 
 
 def load_events(since_iso):
@@ -61,14 +80,15 @@ def load_prior_report(current_week):
     """
     try:
         rows = db.select("ac_reports", {
-            "select": "week_label,period_start,period_end,payload",
+            "select": "week_label,period_start,period_end,generated_at,"
+                      "payload",
             "week_label": "neq." + current_week,
             "order": "period_end.desc", "limit": "1"})
     except Exception as exc:  # noqa: BLE001
         print("  [warn] prior report unavailable: {}".format(str(exc)[:120]))
-        return None, None
+        return None, None, None
     if not rows:
-        return None, None
+        return None, None, None
     prior = rows[0]
     payload = prior.get("payload")
     if isinstance(payload, str):
@@ -85,7 +105,22 @@ def load_prior_report(current_week):
         metrics = None
     if payload is not None:
         payload.setdefault("week_label", prior.get("week_label"))
-    return payload, metrics
+    meta = {"week_label": prior.get("week_label"),
+            "period_start": prior.get("period_start"),
+            "period_end": prior.get("period_end"),
+            "generated_at": prior.get("generated_at")}
+    return payload, metrics, meta
+
+
+def existing_report(week_label):
+    """Van-e mar publikalt jelentes erre a hetre? (csendes feluliras ellen)"""
+    try:
+        rows = db.select("ac_reports", {
+            "select": "week_label,generated_at,payload",
+            "week_label": "eq." + week_label, "limit": "1"})
+    except Exception:  # noqa: BLE001
+        return None
+    return rows[0] if rows else None
 
 
 def resolve_programmes(events, programmes):
@@ -150,21 +185,44 @@ def resolve_programmes(events, programmes):
     return by_id, proposed, unlinked, deltas
 
 
-def main(dry_run=False):
+def main(dry_run=False, restate_reason=None):
     run = None if dry_run else db.start_run("ac_weekly_report")
     try:
-        now = datetime.now(timezone.utc)
+        now = ac_window.now_utc()
         naive_now = now.replace(tzinfo=None)
-        wk_start = naive_now - 7 * DAY
-        trend_start = naive_now - 35 * DAY
-        week_label = "{}-W{:02d}".format(*now.isocalendar()[:2])
+        # ---- HETI ABLAK: Budapest, szerda 00:00:00 -> kedd 23:59:59 ----
+        win = ac_window.reporting_window(now)
+        week_label = win["week_label"]
+
+        # Csendes feluliras tilos: ha erre a hetre mar van publikalt
+        # jelentes, csak --restate "<ok>" mellett irjuk ujra, lathatoan.
+        prior_same = None if dry_run else existing_report(week_label)
+        if prior_same and not restate_reason:
+            print("Report {} was already published at {}. Not overwritten: "
+                  "late information is carried into next week's report as a "
+                  "late-arriving confirmation. To restate deliberately, run "
+                  "with --restate \"<reason>\".".format(
+                      week_label, prior_same.get("generated_at")))
+            db.finish_run(run, "success", items_processed=0)
+            return
+
+        prior_payload, prior_metrics, prior_meta = load_prior_report(
+            week_label)
+        win = ac_window.reporting_window(
+            now, prior_period_end=(prior_meta or {}).get("period_end"))
+        if win["transition"]:
+            print("  Window transition: {}".format(win["transition"]["note"]))
+        start_d, end_d = win["start_date"], win["end_date"]
+        wk_start = win["start_local"]          # a QA-hoz (napi pontossag)
+        wk_end = win["end_local"]
+        print("  Reporting window {} -> {}".format(week_label, win["label"]))
 
         # A gyujtesi ablak szelesebb (60 nap), mert egy most beerkezett cikk
         # regebbi esemenyrol is szolhat — azt viszont NEM e hetinek soroljuk be.
         raw = load_events((now - 60 * DAY).isoformat())
 
         countries = {c["country_id"]: c for c in db.select(
-            "ac_countries", {"select": "country_id,name,region"})}
+            "ac_countries", {"select": "country_id,name,region,aliases"})}
         types = {t["type_id"]: t for t in db.select(
             "ac_aircraft_types", {"select": "type_id,name,category"})}
         articles = {a["article_id"]: a for a in db.select(
@@ -190,13 +248,15 @@ def main(dry_run=False):
             if d is None:
                 undated.append(e)
                 continue
-            if d > naive_now:
+            dd = d.date()
+            if dd > end_d:
+                # az ablak UTANI datum: a kovetkezo heti jelentesbe tartozik
                 future_dated.append(e)
-            elif d >= wk_start:
+            elif dd >= start_d:
                 this_week.append(e)
-            elif d >= trend_start:
+            elif dd >= start_d - 28 * DAY:
                 prev_4wk.append(e)
-                if d >= naive_now - 14 * DAY:
+                if dd >= start_d - 7 * DAY:
                     prev_week.append(e)
 
         if future_dated:
@@ -209,16 +269,29 @@ def main(dry_run=False):
         # A W34-ben a 2025-ben elvesztett A-100LL a het "capability
         # development"-jekent jelent meg. Ez nem feltetlenul hiba — 2026-W34-ben
         # jott az uj, vizualis megerosites —, de MEG KELL KULONBOZTETNI.
-        confirmations = []
+        # KESOI ADAT: a frissesseg kuszobe az ELOZO JELENTES PUBLIKALASA (ha
+        # az kesobbi az ablak kezdetenel). Ami a szerda hajnali gyujtesben
+        # meg bekerult az elozo jelentesbe, azt nem szamoljuk ujra.
+        fresh_after = win["start_utc"]
+        prior_gen = ac_window.parse_utc((prior_meta or {}).get("generated_at"))
+        if prior_gen and prior_gen > fresh_after:
+            fresh_after = prior_gen
+        prior_start = ac_intel.parse_day((prior_meta or {}).get("period_start"))
+        confirmations, late_arriving = [], 0
         for e in raw:
             occurred = ac_intel.parse_day(e.get("event_date"))
-            fresh = (ac_intel.parse_day(e.get("new_evidence_at"))
-                     or ac_intel.parse_day(e.get("created_at")))
+            fresh = (ac_window.parse_utc(e.get("new_evidence_at"))
+                     or ac_window.parse_utc(e.get("created_at")))
             if not occurred or not fresh:
                 continue
-            if occurred < wk_start and fresh >= wk_start:
+            if occurred.date() < start_d and fresh > fresh_after:
                 e["evidence_kind"] = e.get("evidence_kind") or "new_confirmation"
                 e["_occurred_year"] = occurred.year
+                # Az elozo, mar publikalt ablakra eso, de csak utana
+                # beerkezett esemeny: LATE-ARRIVING, nem csendes modositas.
+                if prior_start and occurred >= prior_start:
+                    e["_late_arriving"] = True
+                    late_arriving += 1
                 if e not in this_week:
                     confirmations.append(e)
         if confirmations:
@@ -230,8 +303,8 @@ def main(dry_run=False):
         # Datum nelkuli esemeny: a gyujtes napja szerint kerulhet be, de
         # jeloljuk — a temporal integritas resze, hogy ez latszik.
         for e in undated:
-            d = ac_intel.parse_day(e.get("created_at"))
-            if d and d >= wk_start:
+            d = ac_window.local_day_of_timestamp(e.get("created_at"))
+            if d and start_d <= d <= end_d:
                 e["_undated"] = True
                 this_week.append(e)
         if undated:
@@ -265,7 +338,6 @@ def main(dry_run=False):
         # ------------------------------------------------------------------
         # WoW A PUBLIKALT ELOZO ERTEKBOL  (a 18 -> 22 = +0 hiba javitasa)
         # ------------------------------------------------------------------
-        prior_payload, prior_metrics = load_prior_report(week_label)
         recomputed_prev = len(prev_week)
         published_prev, wow, wow_basis, wow_drift = None, None, None, None
         if prior_metrics and prior_metrics.get("events_published") is not None:
@@ -368,6 +440,7 @@ def main(dry_run=False):
                     1 for e in this_week if e.get("_undated")),
                 "future_dated_excluded": len(future_dated),
                 "new_confirmations_of_older_events": len(confirmations),
+                "late_arriving_from_previous_period": late_arriving,
                 "pending_review": sum(
                     1 for e in this_week
                     if e.get("review_status") == "pending"),
@@ -407,7 +480,7 @@ def main(dry_run=False):
                 or this_week, fleets, types, countries,
                 programmes_by_id=programmes_by_id)
             self_checks = ac_intel.run_self_checks(
-                developments, judgements, wk_start, naive_now, stats,
+                developments, judgements, wk_start, wk_end, stats,
                 events=this_week, countries_by_id=countries, orbat=orbat)
             if self_checks:
                 applied = ac_intel.qa_language_gate(
@@ -416,7 +489,7 @@ def main(dry_run=False):
                     print("  QA gate: {} field(s) rewritten, re-checking".format(
                         applied))
                     rechecked = ac_intel.run_self_checks(
-                        developments, judgements, wk_start, naive_now, stats,
+                        developments, judgements, wk_start, wk_end, stats,
                         events=this_week, countries_by_id=countries,
                         orbat=orbat)
                     self_checks = ac_intel.mark_unresolved(
@@ -481,6 +554,7 @@ def main(dry_run=False):
                 "value_type": e.get("value_type"),
                 "event_date": e.get("event_date"),
                 "evidence_kind": e.get("evidence_kind") or "new_event",
+                "late_arriving": bool(e.get("_late_arriving")),
                 "occurred_year": e.get("_occurred_year"),
                 "expected_ioc_year": e.get("expected_ioc_year"),
                 "summary": e["summary"],
@@ -495,8 +569,11 @@ def main(dry_run=False):
             "week_label": week_label,
             "report_meta": {
                 "week_label": week_label,
-                "period_start": wk_start.strftime("%Y-%m-%d"),
-                "period_end": naive_now.strftime("%Y-%m-%d"),
+                "period_start": start_d.isoformat(),
+                "period_end": end_d.isoformat(),
+                "timezone": win["timezone"],
+                "window_label": win["label"],
+                "window_transition": win["transition"],
                 "collection_cutoff_utc": now.strftime("%Y-%m-%d %H:%M UTC"),
                 "generated_utc": now.strftime("%Y-%m-%d %H:%M UTC"),
                 "status": ("analyst review required" if self_checks
@@ -541,6 +618,51 @@ def main(dry_run=False):
                 this_week,
                 key=lambda x: -(float(x.get("value_usd_m") or 0)))[:60]],
         }
+        if prior_same and restate_reason:
+            payload["report_meta"]["restatement"] = {
+                "reason": restate_reason,
+                "previous_generated_utc": prior_same.get("generated_at"),
+                "restated_utc": now.strftime("%Y-%m-%d %H:%M UTC"),
+                "number": int((((prior_same.get("payload") or {}).get(
+                    "report_meta") or {}).get("restatement") or {}).get(
+                        "number") or 0) + 1,
+            }
+
+        # ---------------- COVERAGE + COMMAND BRIEF ----------------
+        # Ugyanabbol a payloadbol; a brief a developments-et annotalja
+        # (ref, orszag, HU-relevancia), es azokra HIVATKOZIK.
+        hu_cfg = ac_hungary.load_config()
+        coverage = None
+        try:
+            coverage = coverage_audit.audit(
+                raw, articles, countries, hu_cfg, window=win, now=naive_now)
+            payload["coverage"] = coverage
+        except Exception as exc:  # noqa: BLE001
+            print("  [warn] coverage audit failed: {}".format(str(exc)[:160]))
+        try:
+            synth_client = None if os.environ.get(
+                "AC_BRIEF_SYNTHESIS", "1") == "0" else client
+            payload["command_brief"] = ac_command_brief.build_command_brief(
+                payload, countries, coverage=coverage, cfg=hu_cfg,
+                client=synth_client,
+                events_by_id={e.get("event_id"): e for e in raw},
+                window=win)
+            cb = payload["command_brief"]
+            print("  Command brief: {} KJ ({} executive synthesis), {} "
+                  "regional row(s), bottom line: {}".format(
+                      len(cb["page1"]["key_judgements"]),
+                      len(cb["traceability"]["executive_synthesis_items"]),
+                      len(cb["page2"]["rows"]),
+                      cb["page1"]["bottom_line"]["origin"]))
+            if cb["traceability"]["unresolved_refs"]:
+                self_checks.append({
+                    "check": "command brief cites a reference missing from "
+                             "the detailed report",
+                    "item": ", ".join(cb["traceability"]["unresolved_refs"])})
+        except Exception as exc:  # noqa: BLE001
+            print("  [warn] command brief unavailable ({}: {})".format(
+                type(exc).__name__, str(exc)[:200]))
+
         ac_intel.scrub_report_payload(payload)
 
         if dry_run:
@@ -558,8 +680,8 @@ def main(dry_run=False):
 
         db.upsert("ac_reports", [{
             "week_label": week_label,
-            "period_start": wk_start.strftime("%Y-%m-%d"),
-            "period_end": naive_now.strftime("%Y-%m-%d"),
+            "period_start": start_d.isoformat(),
+            "period_end": end_d.isoformat(),
             "generated_at": now.isoformat(),
             "payload": payload,
         }], "week_label")
@@ -568,8 +690,8 @@ def main(dry_run=False):
         try:
             db.upsert("ac_report_metrics", [{
                 "week_label": week_label,
-                "period_start": wk_start.strftime("%Y-%m-%d"),
-                "period_end": naive_now.strftime("%Y-%m-%d"),
+                "period_start": start_d.isoformat(),
+                "period_end": end_d.isoformat(),
                 "events_published": len(this_week),
                 "developments_published": len(developments),
                 "firm_actions_published": len(firm),
@@ -595,4 +717,12 @@ def main(dry_run=False):
 
 
 if __name__ == "__main__":
-    main(dry_run="--dry-run" in sys.argv)
+    _reason = None
+    if "--restate" in sys.argv:
+        i = sys.argv.index("--restate")
+        _reason = (sys.argv[i + 1] if i + 1 < len(sys.argv)
+                   else "").strip() or None
+        if not _reason:
+            sys.exit("--restate needs a reason, e.g. --restate \"late MoD "
+                     "confirmation of Serbian Rafale deliveries\"")
+    main(dry_run="--dry-run" in sys.argv, restate_reason=_reason)

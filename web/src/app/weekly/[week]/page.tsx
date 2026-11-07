@@ -1,4 +1,5 @@
-import { fetchTable } from "@/lib/db";
+import { loadReport } from "@/lib/reports";
+import { BriefEmbed } from "@/components/BriefEmbed";
 import { PageHeader } from "@/components/ui";
 import { WeeklyReportView } from "@/components/WeeklyReportView";
 import { PrintButton } from "@/components/PrintButton";
@@ -8,9 +9,7 @@ import type { ReportRow } from "../page";
 export const dynamic = "force-dynamic";
 
 export default async function ArchivedReportPage({ params }: { params: { week: string } }) {
-  const rows = await fetchTable<ReportRow>(
-    "ac_reports", `select=*&week_label=eq.${encodeURIComponent(params.week)}&limit=1`);
-  const report = rows[0];
+  const report: ReportRow | undefined = await loadReport(params.week);
   if (!report) {
     return (
       <div>
@@ -21,13 +20,20 @@ export default async function ArchivedReportPage({ params }: { params: { week: s
   }
   return (
     <div>
-      <div className="flex flex-wrap items-start justify-between gap-3">
+      {/* Nyomtataskor a jelentes ELSO 4 oldala a Command Brief. */}
+      <div className={`flex flex-wrap items-start justify-between gap-3 ${report.payload?.command_brief ? "cb-print-hide" : ""}`}>
         <PageHeader
           title={`Weekly report — ${report.week_label}`}
           description={`Archived report · generated ${report.generated_at?.slice(0, 16).replace("T", " ")} UTC`}
         />
         <div className="flex items-center gap-2 print:hidden">
           <Link href="/weekly" className="text-xs text-slate-400 hover:text-slate-200">← Latest</Link>
+          {report.payload?.command_brief && (
+            <Link href={`/weekly/${report.week_label}/command`}
+                  className="rounded border border-amber-600/60 bg-amber-500/10 px-3 py-1.5 text-xs text-amber-200 hover:border-amber-400">
+              Command brief (4 pages) →
+            </Link>
+          )}
           <Link href={`/weekly/${report.week_label}/brief`}
                 className="rounded border border-cyan-700/60 bg-cyan-500/10 px-3 py-1.5 text-xs text-cyan-200 hover:border-cyan-500">
             4-slide briefing →
@@ -35,6 +41,7 @@ export default async function ArchivedReportPage({ params }: { params: { week: s
           <PrintButton />
         </div>
       </div>
+      <BriefEmbed payload={report.payload} />
       <WeeklyReportView
         payload={report.payload}
         weekLabel={report.week_label}

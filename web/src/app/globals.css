@@ -4,7 +4,7 @@
 
 /* Print / PDF export: clean light rendering of the weekly report */
 @media print {
-  @page { margin: 14mm; }
+  @page { size: A4 portrait; margin: 14mm; }
   body { background: #fff !important; color: #111 !important; }
   nav, footer, .print\:hidden { display: none !important; }
   main { max-width: 100% !important; padding: 0 !important; }
@@ -17,4 +17,44 @@
   section { break-inside: auto; margin-bottom: 1rem !important; }
   h2, h3 { break-after: avoid; }
   .print-card { break-inside: avoid; }
+}
+
+/* ------------------------------------------------------------------------
+ * COMMAND AIR INTELLIGENCE BRIEF — fix 4 oldal, A4 fekvo.
+ * Kepernyon is papir: ami latszik, az kerul a PDF-be (WYSIWYG).
+ * Nevesitett @page: a brief fekvo, margo nelkul; az utana kovetkezo
+ * reszletes jelentes a szokasos allo oldalon folyik tovabb.
+ * ---------------------------------------------------------------------- */
+.cb { overflow-x: auto; padding-bottom: 4px; }
+.cb .cb-page {
+  width: 297mm; height: 210mm; box-sizing: border-box;
+  padding: 7.5mm 9mm 6mm; margin: 0 auto 18px;
+  background: #ffffff; color: #0f172a;
+  display: flex; flex-direction: column; overflow: hidden;
+  border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,.4), 0 0 0 1px #334155;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
+.cb .cb-head {
+  display: flex; justify-content: space-between; align-items: flex-end; gap: 12px;
+  border-bottom: 2px solid #0f172a; padding-bottom: 3px; margin-bottom: 6px;
+}
+.cb .cb-body { flex: 1 1 auto; min-height: 0; overflow: hidden; }
+.cb .cb-foot {
+  display: flex; justify-content: space-between; gap: 8px;
+  border-top: 1px solid #cbd5e1; margin-top: 4px; padding-top: 2px;
+  font-size: 7.5px; color: #64748b;
+}
+@media print {
+  @page cmdbrief { size: A4 landscape; margin: 0; }
+  .cb { overflow: visible; padding: 0; }
+  .cb .cb-page {
+    page: cmdbrief; margin: 0 !important; border-radius: 0; box-shadow: none;
+    break-after: page; break-inside: avoid;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  }
+  /* Az utolso brief-oldal utan nincs ures oldal; a reszletes jelentes a
+     nevesitett oldal valtasa miatt amugy is uj (allo) oldalon kezdodik. */
+  .cb .cb-page:last-child { break-after: auto; }
+  .cb-print-hide { display: none !important; }
+  .cb a.cb-ref { color: #075985 !important; }
 }

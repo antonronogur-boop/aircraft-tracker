@@ -81,6 +81,11 @@ class Tracker(object):
                 self.failed_calls += 1
                 return
             key = model or getattr(msg, "model", None) or "(unknown)"
+            # A Batch API-bol visszajatszott valasz (backfill_batch.py) fel aron
+            # ment — kulon kulcson tartjuk, kulonben a riport ketszeres koltseget
+            # mutatna.
+            if getattr(msg, "batch_priced", False):
+                key = key + BATCH_SUFFIX
             row = self.by_model[key]
             row["calls"] += 1
             row["input"] += int(getattr(u, "input_tokens", 0) or 0)
@@ -106,7 +111,8 @@ class Tracker(object):
         """Becsult koltseg modellenkent, USD. None, ha nincs ar a modellhez."""
         result = {}
         for model, row in self.by_model.items():
-            p = prices.get(model)
+            is_batch = model.endswith(BATCH_SUFFIX)
+            p = prices.get(model[: -len(BATCH_SUFFIX)] if is_batch else model)
             # A kitoltetlen sablon (null ertekek) ugyanannyit er, mint a
             # hianyzo ar: inkabb "nincs ar", mint egy magabiztos nulla.
             if not isinstance(p, dict) or p.get("input") is None:
@@ -122,6 +128,8 @@ class Tracker(object):
             # 6 tizedes, nem 4: egy futas koltsege lehet nehany ezred dollar,
             # es negy tizedesre kerekitve az osszegzeskor latszodo hiba lenne.
             # A megjelenites kulon formaz (lasd report()).
+            if is_batch:
+                usd = usd / 2.0   # Batch API: a szokasos ar fele
             result[model] = round(usd, 6)
         return result
 
@@ -181,6 +189,8 @@ class Tracker(object):
 
 
 # ── modul-szintu alapertelmezett tracker ────────────────────────────────
+BATCH_SUFFIX = " (batch)"
+
 _default = Tracker()
 
 

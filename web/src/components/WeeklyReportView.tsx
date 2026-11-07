@@ -14,7 +14,14 @@ export interface ReportPayload {
   report_meta?: {
     period_start?: string; period_end?: string; collection_cutoff_utc?: string;
     generated_utc?: string; status?: string; version?: string;
+    // v3.1: heti ablak (Budapest, szerda -> kedd) es kontrollalt ujrakiadas
+    timezone?: string; window_label?: string;
+    window_transition?: { note: string } | null;
+    restatement?: { reason: string; previous_generated_utc?: string;
+                    restated_utc?: string; number?: number } | null;
   };
+  // v3.1: a 4 oldalas Command Air Intelligence Brief UGYANABBOL a payloadbol
+  command_brief?: import("./CommandBrief").CommandBriefPayload;
   stats: {
     events_this_week: number; events_prev_week?: number;
     events_prev_4wk_weekly_avg?: number; events_prev_4wk_avg?: number;
@@ -316,6 +323,20 @@ export function WeeklyReportView({
             {payload.report_meta.status ? ` · ${payload.report_meta.status}` : ""}
           </p>
         )}
+        {payload.report_meta?.window_label && (
+          <p className="mt-0.5 text-[10px] text-slate-600">
+            Reporting window {payload.report_meta.window_label}
+            {payload.report_meta.window_transition ? ` · ${payload.report_meta.window_transition.note}` : ""}
+          </p>
+        )}
+        {/* Kontrollalt ujrakiadas: a mar publikalt het CSAK igy valtozhat. */}
+        {payload.report_meta?.restatement && (
+          <p className="mt-2 rounded border border-amber-500/40 bg-amber-500/10 px-2 py-1 text-[11px] text-amber-200">
+            RESTATEMENT #{payload.report_meta.restatement.number ?? 1} — {payload.report_meta.restatement.reason}
+            {" "}(restated {payload.report_meta.restatement.restated_utc}; originally published{" "}
+            {payload.report_meta.restatement.previous_generated_utc?.slice(0, 16).replace("T", " ")} UTC)
+          </p>
+        )}
         <p className="mt-2 text-sm leading-relaxed text-slate-300">
           {payload.bottom_line || payload.overview}
         </p>
@@ -468,7 +489,7 @@ export function WeeklyReportView({
           <h2 className="text-sm font-semibold text-blue-300">Key judgements</h2>
           <div className="mt-3 space-y-4">
             {payload.key_judgements!.map((j, i) => (
-              <div key={j.id ?? i} className="border-l-2 border-blue-500/50 pl-3">
+              <div key={j.id ?? i} id={j.id ?? undefined} className="scroll-mt-20 border-l-2 border-blue-500/50 pl-3">
                 <p className="text-sm font-medium text-slate-100">
                   <span className="text-blue-300">{j.id ?? "KJ"}</span>
                   {j.domain ? <span className="text-slate-500"> · {DOMAIN_LABELS[j.domain] ?? j.domain}</span> : null}
@@ -636,9 +657,23 @@ export function WeeklyReportView({
             not combat capability.
           </p>
           <div className="space-y-3">
-            {payload.developments!.map((d, i) => (
-              <div key={i} className="print-card rounded-lg border border-slate-800 bg-slate-900/40 p-3 print:border-slate-300">
-                <p className="text-sm font-medium text-slate-200">{d.title}</p>
+            {payload.developments!.map((d, i) => {
+              /* Hivatkozasi kulcs: a Command Brief erre mutat (#D-03). A
+                 generator irja; regebbi payloadnal ugyanaz a sorrend-alapu
+                 kulcs (a brief is igy szamolja). */
+              const ref = (d as { ref?: string }).ref ?? `D-${String(i + 1).padStart(2, "0")}`;
+              const hu = (d as { hu_relevance?: { level?: string; rationale?: string } }).hu_relevance;
+              return (
+              <div key={i} id={ref} className="print-card scroll-mt-20 rounded-lg border border-slate-800 bg-slate-900/40 p-3 print:border-slate-300">
+                <p className="text-sm font-medium text-slate-200">
+                  <span className="mr-2 font-mono text-[11px] text-slate-500">{ref}</span>{d.title}
+                </p>
+                {hu?.level && (
+                  <p className="mt-0.5 text-[11px] text-slate-400" title={hu.rationale}>
+                    Hungary relevance: <span className="font-semibold text-slate-200">{hu.level}</span>
+                    {hu.rationale ? <> — {hu.rationale}</> : null}
+                  </p>
+                )}
 
                 {/* EVIDENCIA-JELLEG: egy 2025-os veszteseg 2026-os vizualis
                     igazolasa NEM e heti esemeny. A W34-ben az A-100LL igy
@@ -729,7 +764,8 @@ export function WeeklyReportView({
                 )}
                 {d.auto_adjustment && <p className="mt-1 text-[11px] text-amber-300/80">system adjustment: {d.auto_adjustment}</p>}
               </div>
-            ))}
+              );
+            })}
           </div>
         </section>
       )}

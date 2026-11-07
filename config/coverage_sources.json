@@ -1,0 +1,47 @@
+{
+  "_doc": "Source tiers and CANDIDATE sources for coverage gaps. Nothing here is collected automatically: the coverage audit (scripts/coverage_audit.py) decides where a gap exists FIRST, and only then is a candidate verified and added to ac_sources. Priority order: official air force > ministry of defence > procurement agency > NATO > OEM > specialist defence media > other (with caveat). Keep original-language evidence: the extraction model reads non-English titles; do not machine-translate the stored article text.",
+  "tier_order": ["official_af", "mod", "procurement_agency", "nato", "oem", "specialist_defence", "general_media"],
+  "tier_labels": {
+    "official_af": "Official air force",
+    "mod": "Ministry of defence",
+    "procurement_agency": "Procurement agency",
+    "nato": "NATO",
+    "oem": "Manufacturer (OEM)",
+    "specialist_defence": "Specialist defence media",
+    "general_media": "Other media (caveat)"
+  },
+  "existing_source_tiers": {
+    "ACS-0001": "specialist_defence",
+    "ACS-0002": "specialist_defence",
+    "ACS-0003": "specialist_defence",
+    "ACS-0004": "specialist_defence",
+    "ACS-0005": "specialist_defence",
+    "ACS-0006": "specialist_defence",
+    "ACS-0007": "specialist_defence",
+    "ACS-0008": "specialist_defence",
+    "ACS-0009": "specialist_defence",
+    "ACS-0010": "specialist_defence"
+  },
+  "default_tier": "specialist_defence",
+  "candidates": [
+    {"country_id": "hun", "name": "honvedelem.hu (MH official news portal)", "homepage": "https://honvedelem.hu", "tier": "mod", "language": "hu"},
+    {"country_id": "pol", "name": "Polish Ministry of National Defence", "homepage": "https://www.gov.pl/web/obrona-narodowa", "tier": "mod", "language": "pl"},
+    {"country_id": "pol", "name": "Polish Armament Agency", "homepage": "https://www.gov.pl/web/agencja-uzbrojenia", "tier": "procurement_agency", "language": "pl"},
+    {"country_id": "pol", "name": "Defence24 (English)", "homepage": "https://defence24.com", "tier": "specialist_defence", "language": "en"},
+    {"country_id": "rou", "name": "Romanian Ministry of National Defence", "homepage": "https://www.mapn.ro", "tier": "mod", "language": "ro"},
+    {"country_id": "rou", "name": "Romanian Air Force", "homepage": "https://www.roaf.ro", "tier": "official_af", "language": "ro"},
+    {"country_id": "svk", "name": "Slovak Ministry of Defence", "homepage": "https://www.mosr.sk", "tier": "mod", "language": "sk"},
+    {"country_id": "cze", "name": "Czech Ministry of Defence", "homepage": "https://mocr.army.cz", "tier": "mod", "language": "cs"},
+    {"country_id": "srb", "name": "Serbian Ministry of Defence", "homepage": "https://www.mod.gov.rs", "tier": "mod", "language": "sr"},
+    {"country_id": "hrv", "name": "Croatian Ministry of Defence", "homepage": "https://www.morh.hr", "tier": "mod", "language": "hr"},
+    {"country_id": "svn", "name": "Slovenian Ministry of Defence", "homepage": "https://www.gov.si", "tier": "mod", "language": "sl"},
+    {"country_id": "aut", "name": "Austrian Armed Forces (Bundesheer)", "homepage": "https://www.bundesheer.at", "tier": "mod", "language": "de"},
+    {"country_id": "ukr", "name": "Ukrainian Ministry of Defence", "homepage": "https://www.mil.gov.ua", "tier": "mod", "language": "uk"},
+    {"country_id": "bgr", "name": "Bulgarian Ministry of Defence", "homepage": "https://www.mod.bg", "tier": "mod", "language": "bg"},
+    {"country_id": "blr", "name": "Belarus Ministry of Defence", "homepage": "https://www.mil.by", "tier": "mod", "language": "ru", "caveat": "state source of a Russian-aligned government — treat claims as attributed statements"},
+    {"country_id": "rus", "name": "Russian Ministry of Defence", "homepage": "https://mil.ru", "tier": "mod", "language": "ru", "caveat": "often unreachable from EU networks; state claims are attributed statements, not confirmation"},
+    {"country_id": "bih", "name": "Bosnia and Herzegovina Ministry of Defence", "homepage": "https://www.mod.gov.ba", "tier": "mod", "language": "bs"},
+    {"country_id": null, "name": "NATO Allied Air Command (AIRCOM)", "homepage": "https://ac.nato.int", "tier": "nato", "language": "en"},
+    {"country_id": null, "name": "NATO newsroom", "homepage": "https://www.nato.int", "tier": "nato", "language": "en"}
+  ]
+}

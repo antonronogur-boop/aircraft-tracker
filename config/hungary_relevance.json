@@ -1,0 +1,397 @@
+{
+  "version": "hu-1.0",
+  "_doc": "Hungary-relevance model for the Command Air Intelligence Brief. Deterministic and editable. HU relevance is a SEPARATE dimension from air-power significance (1-5, from the analytical layer): a distant item can be HIGH here, a significant item can be LOW. Points add up from geography plus factor matches; the level follows the thresholds. Every applied factor is written into the report with its points and reason, so a score can always be traced. Edit mh_platforms when the MH inventory or plans change.",
+  "levels": [
+    {
+      "level": "HIGH",
+      "min": 55
+    },
+    {
+      "level": "MEDIUM",
+      "min": 35
+    },
+    {
+      "level": "LOW",
+      "min": 15
+    },
+    {
+      "level": "MINIMAL",
+      "min": 0
+    }
+  ],
+  "geography": {
+    "hun": {
+      "tier": "home",
+      "points": 45,
+      "why": "directly concerns Hungary / the Hungarian Defence Forces"
+    },
+    "aut": {
+      "tier": "neighbour",
+      "points": 28,
+      "why": "neighbouring state (non-NATO, EU) — shares Hungary's western airspace boundary"
+    },
+    "svk": {
+      "tier": "neighbour",
+      "points": 30,
+      "why": "neighbouring NATO state — Hungarian Gripens have covered Slovak airspace during its fighter transition; shared regional air policing space"
+    },
+    "ukr": {
+      "tier": "neighbour_non_nato",
+      "points": 36,
+      "why": "neighbouring state at war — air activity and losses close to Hungary's north-eastern border"
+    },
+    "rou": {
+      "tier": "neighbour",
+      "points": 30,
+      "why": "neighbouring NATO state on the Black Sea flank — its air posture shapes the south-eastern air picture around Hungary"
+    },
+    "srb": {
+      "tier": "neighbour_non_nato",
+      "points": 34,
+      "why": "neighbouring non-NATO state — changes to its combat air fleet alter the regional air balance on Hungary's southern border"
+    },
+    "hrv": {
+      "tier": "neighbour",
+      "points": 26,
+      "why": "neighbouring NATO state — part of the same regional air policing and training space"
+    },
+    "svn": {
+      "tier": "neighbour",
+      "points": 26,
+      "why": "neighbouring NATO state without its own fighter force — its air policing is provided by allies, Hungary among them"
+    },
+    "rus": {
+      "tier": "non_nato_priority",
+      "points": 34,
+      "why": "principal military threat to NATO's eastern flank — changes to Russian air power drive NATO posture"
+    },
+    "blr": {
+      "tier": "non_nato_priority",
+      "points": 28,
+      "why": "Russian-aligned state bordering NATO's eastern flank and Ukraine"
+    },
+    "bih": {
+      "tier": "non_nato_priority",
+      "points": 22,
+      "why": "non-NATO Western Balkan state in Hungary's near region (EUFOR mission area)"
+    },
+    "mda": {
+      "tier": "near_region",
+      "points": 18,
+      "why": "non-NATO state between Ukraine and Romania — repeated drone and missile overflight"
+    },
+    "pol": {
+      "tier": "extended_nato",
+      "points": 22,
+      "why": "NATO's largest eastern-flank air force build-up — sets the pace for regional allied capability"
+    },
+    "cze": {
+      "tier": "extended_nato",
+      "points": 22,
+      "why": "Visegrád partner and fellow Gripen operator"
+    },
+    "bgr": {
+      "tier": "extended_nato",
+      "points": 20,
+      "why": "eastern-flank NATO state on the Black Sea — same regional posture as Romania"
+    },
+    "est": {
+      "tier": "extended_nato",
+      "points": 16,
+      "why": "Baltic NATO state — part of the air policing mission set Allied air forces rotate through"
+    },
+    "lva": {
+      "tier": "extended_nato",
+      "points": 16,
+      "why": "Baltic NATO state — part of the air policing mission set Allied air forces rotate through"
+    },
+    "ltu": {
+      "tier": "extended_nato",
+      "points": 16,
+      "why": "Baltic NATO state — part of the air policing mission set Allied air forces rotate through"
+    },
+    "mne": {
+      "tier": "western_balkans_nato",
+      "points": 12,
+      "why": "Western Balkan NATO state in Hungary's wider region"
+    },
+    "mkd": {
+      "tier": "western_balkans_nato",
+      "points": 12,
+      "why": "Western Balkan NATO state in Hungary's wider region"
+    },
+    "alb": {
+      "tier": "western_balkans_nato",
+      "points": 12,
+      "why": "Western Balkan NATO state in Hungary's wider region"
+    },
+    "deu": {
+      "tier": "wider_nato",
+      "points": 12,
+      "why": "major European ally and framework nation for eastern-flank air contributions"
+    },
+    "grc": {
+      "tier": "wider_nato",
+      "points": 10,
+      "why": "south-eastern NATO ally"
+    },
+    "tur": {
+      "tier": "wider_nato",
+      "points": 10,
+      "why": "NATO ally controlling the Black Sea straits"
+    }
+  },
+  "default_points": {
+    "nato_member": 8,
+    "europe": 5,
+    "other": 0
+  },
+  "nato_members": [
+    "usa",
+    "can",
+    "gbr",
+    "fra",
+    "deu",
+    "ita",
+    "esp",
+    "prt",
+    "nld",
+    "bel",
+    "lux",
+    "nor",
+    "dnk",
+    "isl",
+    "pol",
+    "cze",
+    "svk",
+    "hun",
+    "rou",
+    "bgr",
+    "est",
+    "lva",
+    "ltu",
+    "hrv",
+    "svn",
+    "alb",
+    "mne",
+    "mkd",
+    "grc",
+    "tur",
+    "fin",
+    "swe"
+  ],
+  "europe_regions": [
+    "Western Europe",
+    "Northern Europe",
+    "Eastern Europe",
+    "Baltics",
+    "Balkans",
+    "Eurasia"
+  ],
+  "hungary_markers_rx": "\\b(Hungar(?:y|ian)|Magyar|Honv[eé]d|MH\\s|Hungarian Defence Forces|P[aá]pa|Kecskem[eé]t|Szolnok|HungAF)\\b",
+  "mh_platforms": [
+    {
+      "rx": "\\bGripen\\b|\\bJAS[- ]?39\\b",
+      "label": "JAS 39 Gripen — MH fighter fleet"
+    },
+    {
+      "rx": "\\bK?C-390\\b|\\bMillennium\\b",
+      "label": "KC-390 — on order for MH airlift"
+    },
+    {
+      "rx": "\\bH145M\\b",
+      "label": "H145M — MH light helicopter fleet"
+    },
+    {
+      "rx": "\\bH225M\\b|\\bCaracal\\b",
+      "label": "H225M — MH transport helicopter fleet"
+    },
+    {
+      "rx": "\\bL-39\\s?NG\\b|\\bL-39 Skyfox\\b",
+      "label": "L-39NG — on order for MH jet training"
+    },
+    {
+      "rx": "\\bFalcon 7X\\b",
+      "label": "Falcon 7X — MH VIP/utility fleet"
+    },
+    {
+      "rx": "\\bC-17\\b.*\\b(SAC|P[aá]pa|Heavy Airlift Wing)\\b|\\b(Heavy Airlift Wing|Strategic Airlift Capability)\\b",
+      "label": "NATO SAC C-17 fleet based at Pápa, Hungary"
+    },
+    {
+      "rx": "\\bNASAMS\\b",
+      "label": "NASAMS — MH ground-based air defence"
+    },
+    {
+      "rx": "\\bE-3A?\\b.*\\bNATO\\b|\\bNAEW&?C\\b|\\bAWACS\\b",
+      "label": "NATO AEW&C fleet — Hungary is a participating nation"
+    }
+  ],
+  "factors": [
+    {
+      "id": "air_policing",
+      "label": "NATO air policing / QRA",
+      "points": 12,
+      "text_rx": "\\b(air policing|QRA|quick reaction alert|scrambl\\w+|intercept(?:ed|ion|s)?)\\b",
+      "why": "bears on NATO air policing and quick reaction alert, a standing MH mission"
+    },
+    {
+      "id": "eastern_flank_posture",
+      "label": "Allied eastern-flank posture",
+      "points": 15,
+      "text_rx": "\\b(eastern flank|Eastern Sentry|forward[- ]deploy\\w*|rotational deploy\\w*|deploy(?:s|ed|ment)? (?:to|in) (?:Poland|Romania|Slovakia|Bulgaria|Lithuania|Latvia|Estonia|Hungary)|enhanced (?:Air|Vigilance) |Baltic Air Policing)\\b",
+      "why": "changes Allied air posture on NATO's eastern flank, which frames Hungary's own contribution and reinforcement planning"
+    },
+    {
+      "id": "airspace_incident",
+      "label": "Airspace violation / incident in the region",
+      "points": 15,
+      "text_rx": "\\b(airspace (?:violation|incursion|breach)|violat\\w+ (?:\\w+ )?airspace|drone (?:incursion|crash\\w*|debris)|shot down over (?:Poland|Romania|Moldova|Slovakia|Hungary))\\b",
+      "why": "an airspace incident in the region tests detection, identification and rules of engagement that also apply to Hungarian airspace"
+    },
+    {
+      "id": "air_defence",
+      "label": "Air defence / counter-air",
+      "points": 10,
+      "domains": [
+        "counter_uas"
+      ],
+      "text_rx": "\\b(air defen[cs]e|IAMD|SAM|Patriot|NASAMS|IRIS-T|SAMP/T|S-[34]00|counter[- ]UA[SV]|C-UAS|interceptor)\\b",
+      "why": "affects the regional air and missile defence picture that MH air defence is integrated into"
+    },
+    {
+      "id": "regional_balance",
+      "label": "Regional air balance",
+      "points": 10,
+      "domains": [
+        "fighter_strike",
+        "attack_helicopter"
+      ],
+      "tiers": [
+        "neighbour",
+        "neighbour_non_nato",
+        "non_nato_priority"
+      ],
+      "why": "alters the combat air balance in Hungary's immediate region"
+    },
+    {
+      "id": "neighbour_major_change",
+      "label": "Major change next door",
+      "points": 10,
+      "tiers": [
+        "neighbour",
+        "neighbour_non_nato",
+        "non_nato_priority"
+      ],
+      "min_significance": 4,
+      "why": "a major air-power change (significance 4-5) in a state on or next to Hungary's border"
+    },
+    {
+      "id": "nato_enabler",
+      "label": "NATO enablers MH depends on",
+      "points": 8,
+      "domains": [
+        "isr_aew_sigint",
+        "tanker",
+        "air_mobility_fixed"
+      ],
+      "nato_actor": true,
+      "why": "changes the pool of Allied ISR, tanker and airlift enablers that a small air force like MH relies on in coalition operations",
+      "exclude_tiers": [
+        "home"
+      ]
+    },
+    {
+      "id": "attrition_adjacent",
+      "label": "Combat attrition adjacent to Hungary",
+      "points": 8,
+      "stages": [
+        "loss"
+      ],
+      "tiers": [
+        "neighbour_non_nato",
+        "non_nato_priority",
+        "near_region"
+      ],
+      "why": "combat losses next to Hungary are a direct indicator of the intensity of the air war on its border"
+    },
+    {
+      "id": "cee_named",
+      "label": "Names a Central/Eastern European state",
+      "points": 12,
+      "names_cee_country": true,
+      "why": "the reporting names a Central/Eastern European state other than the actor — a supplier, partner or affected party in Hungary's region"
+    },
+    {
+      "id": "regional_logistics",
+      "label": "Regional sustainment / training",
+      "points": 5,
+      "text_rx": "\\b(MRO|maintenance (?:hub|centre|center)|depot|training (?:centre|center|hub)|pilot training)\\b",
+      "regional_actor": true,
+      "why": "creates sustainment or training capacity in the region that MH could use or compete with"
+    },
+    {
+      "id": "exercise",
+      "label": "Regional exercise",
+      "points": 5,
+      "text_rx": "\\b(exercise|drill)\\b",
+      "regional_actor": true,
+      "why": "a regional exercise shows Allied or adversary air activity patterns near Hungary"
+    }
+  ],
+  "horizon_modifier": {
+    "immediate": 5,
+    "<12 months": 5,
+    "1-3 years": 0,
+    ">3 years": -5,
+    "unknown": 0
+  },
+  "brief_groups": {
+    "non_nato_priority": [
+      "rus",
+      "ukr",
+      "srb",
+      "blr",
+      "bih"
+    ],
+    "neighbours": [
+      "aut",
+      "svk",
+      "ukr",
+      "rou",
+      "srb",
+      "hrv",
+      "svn"
+    ],
+    "extended_nato": [
+      "pol",
+      "cze",
+      "bgr",
+      "est",
+      "lva",
+      "ltu"
+    ],
+    "middle_east_regions": [
+      "Middle East"
+    ],
+    "africa_regions": [
+      "North Africa",
+      "Sub-Saharan Africa"
+    ],
+    "global_strategic": [
+      "chn",
+      "twn",
+      "jpn",
+      "kor",
+      "prk",
+      "ind",
+      "aus"
+    ],
+    "global_regions": [
+      "East Asia",
+      "South Asia",
+      "Southeast Asia",
+      "Oceania"
+    ]
+  }
+}

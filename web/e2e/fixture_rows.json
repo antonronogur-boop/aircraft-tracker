@@ -1,0 +1,3218 @@
+[
+ {
+  "report_id": 2,
+  "week_label": "2026-W46",
+  "period_start": "2026-11-04",
+  "period_end": "2026-11-10",
+  "generated_at": "2026-11-11T05:20:00+00:00",
+  "payload": {
+   "schema": "air_power_v3",
+   "week_label": "2026-W46",
+   "_fixture": "SYNTHETIC TEST DATA — not real reporting",
+   "report_meta": {
+    "week_label": "2026-W46",
+    "period_start": "2026-11-04",
+    "period_end": "2026-11-10",
+    "timezone": "Europe/Budapest",
+    "window_label": "2026-11-04 00:00:00 -> 2026-11-10 23:59:59 (Europe/Budapest)",
+    "generated_utc": "2026-11-11 05:20 UTC",
+    "status": "auto-generated, QA clean",
+    "version": "v3.1",
+    "methodology_version": "v3.1"
+   },
+   "stats": {
+    "events_this_week": 24,
+    "wow": null,
+    "wow_basis": "not comparable — collection methodology changed (v3.0 -> v3.1)",
+    "baseline_movement": {
+     "events_moving_baseline": 0,
+     "total_on_order_delta": 0
+    },
+    "collection_health": {
+     "wow_comparable": false
+    }
+   },
+   "bottom_line": "Fixture bottom line.",
+   "key_judgements": [
+    {
+     "id": "KJ-01",
+     "domain": "fighter_strike",
+     "judgement": "Israel's additional F-15IA order indicates sustained investment in long-range strike, with no operational effect before 2031.",
+     "confidence": "high",
+     "basis": "Ministry statement; two lineages.",
+     "assessment": "Expands Israeli heavy strike capacity in the 2030s; near-term operational effect is zero.",
+     "effect_timing": ">3 years",
+     "alternative_explanation": "The order may replace attrition rather than grow the fleet.",
+     "indicators": [
+      "US production slot allocation for the additional F-15IA."
+     ],
+     "supporting_event_ids": [
+      105
+     ]
+    },
+    {
+     "id": "KJ-02",
+     "domain": "fighter_strike",
+     "judgement": "Serbia's first Rafale deliveries indicate the start of a Western fighter capability on Hungary's southern border, with meaningful scale 1-3 years away.",
+     "confidence": "moderate",
+     "basis": "MoD statement; deliveries observed.",
+     "assessment": "Two aircraft do not yet change Serbia's operational capability; crews, weapons and sustainment determine the pace.",
+     "effect_timing": "<12 months",
+     "alternative_explanation": null,
+     "indicators": [
+      "Delivery of the next two aircraft before year end."
+     ],
+     "supporting_event_ids": [
+      101
+     ]
+    },
+    {
+     "id": "KJ-03",
+     "domain": "fighter_strike",
+     "judgement": "The J-35A in PLAAF markings suggests a second Chinese fifth-generation type is entering service.",
+     "confidence": "moderate",
+     "basis": "State media imagery; single display.",
+     "assessment": "Service entry broadens PLAAF modernisation; scale and unit are unknown.",
+     "effect_timing": "<12 months",
+     "alternative_explanation": "The display may show test-unit aircraft in service paint for publicity.",
+     "indicators": [
+      "Imagery at an operational base."
+     ],
+     "supporting_event_ids": [
+      108
+     ]
+    },
+    {
+     "id": "KJ-04",
+     "domain": "fighter_strike",
+     "judgement": "Germany's additional F-35A order grows the European F-35 user base, with first deliveries in 2029.",
+     "confidence": "high",
+     "basis": "Ministry and parliament statements.",
+     "assessment": "No near-term effect; supports Alliance strike and nuclear-sharing planning in the 2030s.",
+     "effect_timing": ">3 years",
+     "alternative_explanation": null,
+     "indicators": [
+      "Delivery schedule confirmation."
+     ],
+     "supporting_event_ids": [
+      109
+     ]
+    }
+   ],
+   "judgements_requiring_review": [
+    {
+     "id": "KJ-05",
+     "domain": "fighter_strike",
+     "judgement": "Russia demonstrated effective counter-air capability against Ukrainian F-16 operations.",
+     "confidence": "low",
+     "supporting_event_ids": [
+      103,
+      113
+     ],
+     "withheld_reason": "mechanism claim without evidence"
+    }
+   ],
+   "developments": [
+    {
+     "event_ids": [
+      101
+     ],
+     "title": "Serbia receives first two Rafale fighters",
+     "display_label": "RS Rafale delivery",
+     "capability_domain": "fighter_strike",
+     "lifecycle_stage": "delivery",
+     "fact": "The Serbian Ministry of Defence stated that the first two Rafale aircraft landed at Batajnica. Two further aircraft are expected before year end, according to the ministry.",
+     "capability_delta": "Introduces a Western 4.5-generation fighter into the Serbian Air Force alongside its MiG-29 fleet; meaningful scale depends on crew and weapons delivery.",
+     "so_what": "Changes the combat air balance on Hungary's southern border over the next 1-3 years.",
+     "significance": 4,
+     "confidence": "moderate",
+     "effect_timing": "<12 months",
+     "novelty": "new",
+     "independent_lineages": 2,
+     "reports_count": 3,
+     "indicators_to_watch": [
+      "Delivery of the next two aircraft before year end."
+     ],
+     "programme_id": "srb-rafale-2024",
+     "country_ids": [
+      "srb"
+     ],
+     "ref": "D-01",
+     "countries": [
+      "Serbia"
+     ],
+     "hu_relevance": {
+      "score": 59,
+      "level": "HIGH",
+      "tier": "neighbour_non_nato",
+      "primary_country": "srb",
+      "factors": [
+       {
+        "id": "geography",
+        "label": "Geography / actor",
+        "points": 34,
+        "why": "Serbia: neighbouring non-NATO state — changes to its combat air fleet alter the regional air balance on Hungary's southern border"
+       },
+       {
+        "id": "regional_balance",
+        "label": "Regional air balance",
+        "points": 10,
+        "why": "alters the combat air balance in Hungary's immediate region"
+       },
+       {
+        "id": "neighbour_major_change",
+        "label": "Major change next door",
+        "points": 10,
+        "why": "a major air-power change (significance 4-5) in a state on or next to Hungary's border"
+       },
+       {
+        "id": "horizon",
+        "label": "Horizon",
+        "points": 5,
+        "why": "effect <12 months"
+       }
+      ],
+      "rationale": "Serbia: neighbouring non-NATO state — changes to its combat air fleet alter the regional air balance on Hungary's southern border; alters the combat air balance in Hungary's immediate region.",
+      "version": "hu-1.0"
+     }
+    },
+    {
+     "event_ids": [
+      102
+     ],
+     "title": "Romania signs Letter of Offer and Acceptance for 32 F-35A",
+     "display_label": "RO F-35A LOA",
+     "capability_domain": "fighter_strike",
+     "lifecycle_stage": "contract_signed",
+     "fact": "The Romanian Ministry of National Defence stated it signed the LOA for 32 F-35A. First deliveries are planned for 2032, per the ministry.",
+     "capability_delta": "Commits Romania to a fifth-generation fighter fleet; no operational effect before the 2030s.",
+     "so_what": "Establishes a second F-35 operator on NATO's south-eastern flank next to Hungary.",
+     "significance": 4,
+     "confidence": "high",
+     "effect_timing": ">3 years",
+     "novelty": "new",
+     "independent_lineages": 2,
+     "reports_count": 3,
+     "indicators_to_watch": [
+      "Romanian pilot training start in the US."
+     ],
+     "programme_id": "rou-f35-2024",
+     "country_ids": [
+      "rou"
+     ],
+     "ref": "D-02",
+     "countries": [
+      "Romania"
+     ],
+     "hu_relevance": {
+      "score": 45,
+      "level": "MEDIUM",
+      "tier": "neighbour",
+      "primary_country": "rou",
+      "factors": [
+       {
+        "id": "geography",
+        "label": "Geography / actor",
+        "points": 30,
+        "why": "Romania: neighbouring NATO state on the Black Sea flank — its air posture shapes the south-eastern air picture around Hungary"
+       },
+       {
+        "id": "regional_balance",
+        "label": "Regional air balance",
+        "points": 10,
+        "why": "alters the combat air balance in Hungary's immediate region"
+       },
+       {
+        "id": "neighbour_major_change",
+        "label": "Major change next door",
+        "points": 10,
+        "why": "a major air-power change (significance 4-5) in a state on or next to Hungary's border"
+       },
+       {
+        "id": "horizon",
+        "label": "Horizon",
+        "points": -5,
+        "why": "effect >3 years"
+       }
+      ],
+      "rationale": "Romania: neighbouring NATO state on the Black Sea flank — its air posture shapes the south-eastern air picture around Hungary; alters the combat air balance in Hungary's immediate region.",
+      "version": "hu-1.0"
+     }
+    },
+    {
+     "event_ids": [
+      103,
+      113
+     ],
+     "title": "Ukraine loses one F-16AM in combat",
+     "display_label": "UA F-16 loss",
+     "capability_domain": "fighter_strike",
+     "lifecycle_stage": "loss",
+     "fact": "The Ukrainian Air Force stated that one F-16AM was lost during a combat mission; the pilot was killed. The cause was not stated.",
+     "capability_delta": "Reduces Ukraine's small F-16 fleet by one airframe; mechanism unknown.",
+     "so_what": "Attrition of a scarce Western fighter fleet next to Hungary's north-eastern border.",
+     "significance": 3,
+     "confidence": "moderate",
+     "effect_timing": "immediate",
+     "novelty": "new",
+     "independent_lineages": 2,
+     "reports_count": 3,
+     "indicators_to_watch": [
+      "Ukrainian Air Force statement on the cause of the loss."
+     ],
+     "programme_id": "ukr-f16-2023",
+     "ref": "D-03",
+     "country_ids": [
+      "ukr"
+     ],
+     "countries": [
+      "Ukraine"
+     ],
+     "hu_relevance": {
+      "score": 59,
+      "level": "HIGH",
+      "tier": "neighbour_non_nato",
+      "primary_country": "ukr",
+      "factors": [
+       {
+        "id": "geography",
+        "label": "Geography / actor",
+        "points": 36,
+        "why": "Ukraine: neighbouring state at war — air activity and losses close to Hungary's north-eastern border"
+       },
+       {
+        "id": "regional_balance",
+        "label": "Regional air balance",
+        "points": 10,
+        "why": "alters the combat air balance in Hungary's immediate region"
+       },
+       {
+        "id": "attrition_adjacent",
+        "label": "Combat attrition adjacent to Hungary",
+        "points": 8,
+        "why": "combat losses next to Hungary are a direct indicator of the intensity of the air war on its border"
+       },
+       {
+        "id": "horizon",
+        "label": "Horizon",
+        "points": 5,
+        "why": "effect immediate"
+       }
+      ],
+      "rationale": "Ukraine: neighbouring state at war — air activity and losses close to Hungary's north-eastern border; alters the combat air balance in Hungary's immediate region.",
+      "version": "hu-1.0"
+     }
+    },
+    {
+     "event_ids": [
+      104
+     ],
+     "title": "USAF rotates F-35A squadron to Łask, Poland, for eastern flank air policing",
+     "display_label": "US F-35A Łask rotation",
+     "capability_domain": "fighter_strike",
+     "lifecycle_stage": "other",
+     "fact": "US Air Forces in Europe stated that a squadron of F-35A deployed to Łask Air Base, Poland, to support NATO air policing on the eastern flank.",
+     "capability_delta": "Temporarily adds fifth-generation fighters to Allied QRA capacity in Poland.",
+     "so_what": "Strengthens Allied air posture on the eastern flank during the rotation.",
+     "significance": 3,
+     "confidence": "high",
+     "effect_timing": "immediate",
+     "novelty": "new",
+     "independent_lineages": 2,
+     "reports_count": 3,
+     "indicators_to_watch": [
+      "Duration of the rotation and any follow-on deployment."
+     ],
+     "programme_id": null,
+     "country_ids": [
+      "usa"
+     ],
+     "ref": "D-04",
+     "countries": [
+      "United States"
+     ],
+     "hu_relevance": {
+      "score": 52,
+      "level": "MEDIUM",
+      "tier": "wider_nato",
+      "primary_country": "usa",
+      "factors": [
+       {
+        "id": "geography",
+        "label": "Geography / actor",
+        "points": 8,
+        "why": "United States: NATO ally — Alliance-wide capability change"
+       },
+       {
+        "id": "air_policing",
+        "label": "NATO air policing / QRA",
+        "points": 12,
+        "why": "bears on NATO air policing and quick reaction alert, a standing MH mission"
+       },
+       {
+        "id": "eastern_flank_posture",
+        "label": "Allied eastern-flank posture",
+        "points": 15,
+        "why": "changes Allied air posture on NATO's eastern flank, which frames Hungary's own contribution and reinforcement planning"
+       },
+       {
+        "id": "cee_named",
+        "label": "Names a Central/Eastern European state",
+        "points": 12,
+        "why": "the reporting names a Central/Eastern European state other than the actor — a supplier, partner or affected party in Hungary's region — Poland"
+       },
+       {
+        "id": "horizon",
+        "label": "Horizon",
+        "points": 5,
+        "why": "effect immediate"
+       }
+      ],
+      "rationale": "Changes Allied air posture on NATO's eastern flank, which frames Hungary's own contribution and reinforcement planning; bears on NATO air policing and quick reaction alert, a standing MH mission.",
+      "version": "hu-1.0"
+     }
+    },
+    {
+     "event_ids": [
+      105
+     ],
+     "title": "Israel orders 25 additional F-15IA",
+     "display_label": "IL F-15IA +25",
+     "capability_domain": "fighter_strike",
+     "lifecycle_stage": "contract_signed",
+     "fact": "The Israeli Ministry of Defense stated it signed for 25 additional F-15IA aircraft. Deliveries begin in 2031, according to the ministry.",
+     "capability_delta": "Expands Israel's heavy strike fleet in the 2030s.",
+     "so_what": "Sustains Israeli long-range strike capacity; limited direct effect on Europe.",
+     "significance": 4,
+     "confidence": "high",
+     "effect_timing": ">3 years",
+     "novelty": "new",
+     "independent_lineages": 2,
+     "reports_count": 3,
+     "indicators_to_watch": [
+      "Next official statement on the programme schedule."
+     ],
+     "programme_id": "isr-f15ia-2024",
+     "country_ids": [
+      "isr"
+     ],
+     "ref": "D-05",
+     "countries": [
+      "Israel"
+     ],
+     "hu_relevance": {
+      "score": 0,
+      "level": "MINIMAL",
+      "tier": "distant",
+      "primary_country": "isr",
+      "factors": [
+       {
+        "id": "geography",
+        "label": "Geography / actor",
+        "points": 0,
+        "why": "Israel: outside Hungary's region"
+       },
+       {
+        "id": "horizon",
+        "label": "Horizon",
+        "points": -5,
+        "why": "effect >3 years"
+       }
+      ],
+      "rationale": "No direct link to Hungary, MH or NATO's central-eastern air posture identified.",
+      "version": "hu-1.0"
+     }
+    },
+    {
+     "event_ids": [
+      106
+     ],
+     "title": "Algeria reported to receive first Su-57E",
+     "display_label": "DZ Su-57E",
+     "capability_domain": "fighter_strike",
+     "lifecycle_stage": "delivery",
+     "fact": "A specialist outlet reported, citing imagery, that Algeria received its first Su-57E. Neither government confirmed.",
+     "capability_delta": "Would make Algeria the first export operator of the Su-57, if confirmed.",
+     "so_what": "First export of Russia's fifth-generation fighter; indicator of Russian production capacity.",
+     "significance": 3,
+     "confidence": "low",
+     "effect_timing": "<12 months",
+     "novelty": "new",
+     "independent_lineages": 1,
+     "reports_count": 2,
+     "indicators_to_watch": [
+      "Official confirmation or imagery of Su-57E at an Algerian base."
+     ],
+     "programme_id": null,
+     "country_ids": [
+      "dza"
+     ],
+     "ref": "D-06",
+     "countries": [
+      "Algeria"
+     ],
+     "hu_relevance": {
+      "score": 5,
+      "level": "MINIMAL",
+      "tier": "distant",
+      "primary_country": "dza",
+      "factors": [
+       {
+        "id": "geography",
+        "label": "Geography / actor",
+        "points": 0,
+        "why": "Algeria: outside Hungary's region"
+       },
+       {
+        "id": "horizon",
+        "label": "Horizon",
+        "points": 5,
+        "why": "effect <12 months"
+       }
+      ],
+      "rationale": "No direct link to Hungary, MH or NATO's central-eastern air posture identified.",
+      "version": "hu-1.0"
+     }
+    },
+    {
+     "event_ids": [
+      107
+     ],
+     "title": "Japan declares IOC for first F-35B squadron at Nyutabaru",
+     "display_label": "JP F-35B IOC",
+     "capability_domain": "fighter_strike",
+     "lifecycle_stage": "ioc",
+     "fact": "The Japan Air Self-Defense Force stated that its first F-35B squadron reached initial operational capability at Nyutabaru.",
+     "capability_delta": "Adds short-take-off fifth-generation capability to Japan's south-western defence.",
+     "so_what": "Strengthens Allied air posture in the East China Sea.",
+     "significance": 3,
+     "confidence": "high",
+     "effect_timing": "immediate",
+     "novelty": "new",
+     "independent_lineages": 2,
+     "reports_count": 3,
+     "indicators_to_watch": [
+      "Next official statement on the programme schedule."
+     ],
+     "programme_id": "jpn-f35b-2019",
+     "country_ids": [
+      "jpn"
+     ],
+     "ref": "D-07",
+     "countries": [
+      "Japan"
+     ],
+     "hu_relevance": {
+      "score": 5,
+      "level": "MINIMAL",
+      "tier": "distant",
+      "primary_country": "jpn",
+      "factors": [
+       {
+        "id": "geography",
+        "label": "Geography / actor",
+        "points": 0,
+        "why": "Japan: outside Hungary's region"
+       },
+       {
+        "id": "horizon",
+        "label": "Horizon",
+        "points": 5,
+        "why": "effect immediate"
+       }
+      ],
+      "rationale": "No direct link to Hungary, MH or NATO's central-eastern air posture identified.",
+      "version": "hu-1.0"
+     }
+    },
+    {
+     "event_ids": [
+      108
+     ],
+     "title": "China displays J-35A in PLAAF service markings",
+     "display_label": "CN J-35A",
+     "capability_domain": "fighter_strike",
+     "lifecycle_stage": "production",
+     "fact": "State media showed J-35A aircraft in PLAAF markings at an air show. Unit and quantity were not stated.",
+     "capability_delta": "Indicates the J-35A is moving from test into service; scale unknown.",
+     "so_what": "A second Chinese fifth-generation type would broaden PLAAF modernisation.",
+     "significance": 4,
+     "confidence": "moderate",
+     "effect_timing": "<12 months",
+     "novelty": "new",
+     "independent_lineages": 2,
+     "reports_count": 3,
+     "indicators_to_watch": [
+      "Imagery of J-35A at an operational PLAAF base."
+     ],
+     "programme_id": null,
+     "country_ids": [
+      "chn"
+     ],
+     "ref": "D-08",
+     "countries": [
+      "China"
+     ],
+     "hu_relevance": {
+      "score": 5,
+      "level": "MINIMAL",
+      "tier": "distant",
+      "primary_country": "chn",
+      "factors": [
+       {
+        "id": "geography",
+        "label": "Geography / actor",
+        "points": 0,
+        "why": "China: outside Hungary's region"
+       },
+       {
+        "id": "horizon",
+        "label": "Horizon",
+        "points": 5,
+        "why": "effect <12 months"
+       }
+      ],
+      "rationale": "No direct link to Hungary, MH or NATO's central-eastern air posture identified.",
+      "version": "hu-1.0"
+     }
+    },
+    {
+     "event_ids": [
+      109
+     ],
+     "title": "Germany orders 15 additional F-35A",
+     "display_label": "DE F-35A +15",
+     "capability_domain": "fighter_strike",
+     "lifecycle_stage": "contract_signed",
+     "fact": "The German Ministry of Defence stated that parliament approved and it signed for 15 additional F-35A. Deliveries begin in 2029, per the ministry.",
+     "capability_delta": "Raises Germany's F-35A programme of record from 35 to 50.",
+     "so_what": "Grows the European F-35 user base the Alliance's nuclear sharing and strike planning depends on.",
+     "significance": 4,
+     "confidence": "high",
+     "effect_timing": ">3 years",
+     "novelty": "new",
+     "independent_lineages": 2,
+     "reports_count": 3,
+     "indicators_to_watch": [
+      "Next official statement on the programme schedule."
+     ],
+     "programme_id": "deu-f35-2022",
+     "country_ids": [
+      "deu"
+     ],
+     "ref": "D-09",
+     "countries": [
+      "Germany"
+     ],
+     "hu_relevance": {
+      "score": 7,
+      "level": "MINIMAL",
+      "tier": "wider_nato",
+      "primary_country": "deu",
+      "factors": [
+       {
+        "id": "geography",
+        "label": "Geography / actor",
+        "points": 12,
+        "why": "Germany: major European ally and framework nation for eastern-flank air contributions"
+       },
+       {
+        "id": "horizon",
+        "label": "Horizon",
+        "points": -5,
+        "why": "effect >3 years"
+       }
+      ],
+      "rationale": "No direct link to Hungary, MH or NATO's central-eastern air posture identified (Germany: major European ally and framework nation for eastern-flank air contributions).",
+      "version": "hu-1.0"
+     }
+    },
+    {
+     "event_ids": [
+      110
+     ],
+     "title": "Czech Republic opens Gripen lease extension talks",
+     "display_label": "CZ Gripen extension",
+     "capability_domain": "fighter_strike",
+     "lifecycle_stage": "requirement",
+     "fact": "The Czech Ministry of Defence said talks on extending the Gripen lease have begun.",
+     "capability_delta": "No capability change at this stage.",
+     "so_what": "Routine sustainment of an existing fleet.",
+     "significance": 2,
+     "confidence": "moderate",
+     "effect_timing": "unknown",
+     "novelty": "new",
+     "independent_lineages": 2,
+     "reports_count": 3,
+     "indicators_to_watch": [
+      "Next official statement on the programme schedule."
+     ],
+     "programme_id": null,
+     "country_ids": [
+      "cze"
+     ],
+     "ref": "D-10",
+     "countries": [
+      "Czechia"
+     ],
+     "hu_relevance": {
+      "score": 37,
+      "level": "MEDIUM",
+      "tier": "extended_nato",
+      "primary_country": "cze",
+      "factors": [
+       {
+        "id": "geography",
+        "label": "Geography / actor",
+        "points": 22,
+        "why": "Czechia: Visegrád partner and fellow Gripen operator"
+       },
+       {
+        "id": "mh_platform",
+        "label": "MH platform",
+        "points": 15,
+        "why": "JAS 39 Gripen — MH fighter fleet — lessons, sustainment, user-group and interoperability effects carry over to MH"
+       }
+      ],
+      "rationale": "Czechia: Visegrád partner and fellow Gripen operator; JAS 39 Gripen — MH fighter fleet — lessons, sustainment, user-group and interoperability effects carry over to MH.",
+      "version": "hu-1.0"
+     }
+    },
+    {
+     "event_ids": [
+      111
+     ],
+     "title": "Hungary accepts first KC-390 transport",
+     "display_label": "HU KC-390",
+     "capability_domain": "air_mobility_fixed",
+     "lifecycle_stage": "delivery",
+     "fact": "The Hungarian Defence Forces stated that the first KC-390 was accepted at Kecskemét.",
+     "capability_delta": "Begins replacing Hungary's tactical airlift capacity; IOC depends on crew training.",
+     "so_what": "Restores national tactical airlift and air-to-air refuelling options for MH.",
+     "significance": 3,
+     "confidence": "high",
+     "effect_timing": "<12 months",
+     "novelty": "new",
+     "independent_lineages": 2,
+     "reports_count": 3,
+     "indicators_to_watch": [
+      "Next official statement on the programme schedule."
+     ],
+     "programme_id": "hun-c390-2020",
+     "country_ids": [
+      "hun"
+     ],
+     "ref": "D-11",
+     "countries": [
+      "Hungary"
+     ],
+     "hu_relevance": {
+      "score": 65,
+      "level": "HIGH",
+      "tier": "home",
+      "primary_country": "hun",
+      "factors": [
+       {
+        "id": "geography",
+        "label": "Geography / actor",
+        "points": 45,
+        "why": "Hungary: directly concerns Hungary / the Hungarian Defence Forces"
+       },
+       {
+        "id": "mh_platform",
+        "label": "MH platform",
+        "points": 15,
+        "why": "KC-390 — on order for MH airlift — lessons, sustainment, user-group and interoperability effects carry over to MH"
+       },
+       {
+        "id": "horizon",
+        "label": "Horizon",
+        "points": 5,
+        "why": "effect <12 months"
+       }
+      ],
+      "rationale": "Hungary: directly concerns Hungary / the Hungarian Defence Forces; KC-390 — on order for MH airlift — lessons, sustainment, user-group and interoperability effects carry over to MH.",
+      "version": "hu-1.0"
+     }
+    }
+   ],
+   "background_items": [
+    {
+     "event_ids": [
+      112
+     ],
+     "title": "Slovakia completes F-16 simulator training block",
+     "display_label": "SK F-16 sim",
+     "capability_domain": "fighter_strike",
+     "lifecycle_stage": "other",
+     "fact": "The Slovak MoD reported completion of a simulator training block.",
+     "capability_delta": "No capability change at this stage.",
+     "so_what": "Routine.",
+     "significance": 2,
+     "confidence": "high",
+     "effect_timing": "unknown",
+     "novelty": "new",
+     "independent_lineages": 2,
+     "reports_count": 3,
+     "indicators_to_watch": [
+      "Next official statement on the programme schedule."
+     ],
+     "programme_id": null,
+     "country_ids": [
+      "svk"
+     ],
+     "ref": "B-01"
+    }
+   ],
+   "priority_watch": [
+    {
+     "issue": "Serbian Rafale deliveries 3-4",
+     "why_it_matters": "Pace of Serbia's fighter transition next to Hungary.",
+     "next_observable": "Arrival of aircraft 3 and 4 at Batajnica.",
+     "horizon": "weeks",
+     "impact_if_confirmed": "high"
+    },
+    {
+     "issue": "Cause of Ukrainian F-16 loss",
+     "why_it_matters": "Indicates the threat to Western fighters operating near the front.",
+     "next_observable": "Ukrainian Air Force statement on the cause.",
+     "horizon": "days",
+     "impact_if_confirmed": "medium"
+    },
+    {
+     "issue": "J-35A operational basing",
+     "why_it_matters": "Scale of the second PLAAF fifth-generation type.",
+     "next_observable": "Imagery of J-35A at an operational base.",
+     "horizon": "months",
+     "impact_if_confirmed": "medium"
+    }
+   ],
+   "intelligence_gaps": [
+    "Whether Serbia's Rafale contract includes Meteor missiles is not established in reporting.",
+    "The cause of the Ukrainian F-16 loss is not reported."
+   ],
+   "since_last_week": {
+    "previous_week": "2026-W45",
+    "programmes": [
+     {
+      "programme": "RS Rafale delivery",
+      "programme_id": "srb-rafale-2024",
+      "previous": "Production · moderate",
+      "current": "Delivery · moderate",
+      "change": "lifecycle Production -> Delivery",
+      "moved": true
+     },
+     {
+      "programme": "RO F-35A LOA",
+      "programme_id": "rou-f35-2024",
+      "previous": "Export approval · high",
+      "current": "Contract signed · high",
+      "change": "lifecycle Export approval -> Contract signed",
+      "moved": true
+     },
+     {
+      "programme": "DE F-35A +15",
+      "programme_id": "deu-f35-2022",
+      "previous": "not reported",
+      "current": "Contract signed · high",
+      "change": "new to the reporting this period",
+      "moved": true
+     },
+     {
+      "programme": "PL AH-64E",
+      "programme_id": "pol-ah64e-2024",
+      "previous": "Contract signed · high",
+      "current": "not reported",
+      "change": "no new evidence this period",
+      "moved": false
+     }
+    ],
+    "watch": [
+     {
+      "issue": "Serbian Rafale deliveries 3-4",
+      "state": "unchanged",
+      "state_label": "unchanged — no new evidence this period",
+      "next_observable": "Arrival of aircraft 3 and 4."
+     }
+    ],
+    "note": "Programme-level comparison against the previous published report."
+   },
+   "annex_events": [
+    {
+     "event_id": 103,
+     "country": "Ukraine"
+    },
+    {
+     "event_id": 113,
+     "country": "Ukraine"
+    }
+   ],
+   "orbat_delta": [],
+   "capability_timeline": [],
+   "self_checks": [],
+   "coverage": {
+    "days": 60,
+    "thresholds": {
+     "adequate_events": 4,
+     "adequate_sources": 2
+    },
+    "countries": {
+     "aut": {
+      "country_id": "aut",
+      "name": "Austria",
+      "region": "Western Europe",
+      "status": "PARTIAL",
+      "events_60d": 1,
+      "events_window": 1,
+      "distinct_sources": 1,
+      "source_tiers": [
+       "specialist_defence"
+      ],
+      "official_source": false,
+      "candidate_sources": [
+       {
+        "name": "Austrian Armed Forces (Bundesheer)",
+        "homepage": "https://www.bundesheer.at",
+        "tier": "mod",
+        "language": "de",
+        "caveat": null
+       }
+      ]
+     },
+     "bgr": {
+      "country_id": "bgr",
+      "name": "Bulgaria",
+      "region": "Eastern Europe",
+      "status": "GAP",
+      "events_60d": 0,
+      "events_window": 0,
+      "distinct_sources": 0,
+      "source_tiers": [],
+      "official_source": false,
+      "candidate_sources": [
+       {
+        "name": "Bulgarian Ministry of Defence",
+        "homepage": "https://www.mod.bg",
+        "tier": "mod",
+        "language": "bg",
+        "caveat": null
+       }
+      ]
+     },
+     "bih": {
+      "country_id": "bih",
+      "name": "Bosnia and Herzegovina",
+      "region": "Balkans",
+      "status": "GAP",
+      "events_60d": 0,
+      "events_window": 0,
+      "distinct_sources": 0,
+      "source_tiers": [],
+      "official_source": false,
+      "candidate_sources": [
+       {
+        "name": "Bosnia and Herzegovina Ministry of Defence",
+        "homepage": "https://www.mod.gov.ba",
+        "tier": "mod",
+        "language": "bs",
+        "caveat": null
+       }
+      ]
+     },
+     "blr": {
+      "country_id": "blr",
+      "name": "Belarus",
+      "region": "Eastern Europe",
+      "status": "GAP",
+      "events_60d": 0,
+      "events_window": 0,
+      "distinct_sources": 0,
+      "source_tiers": [],
+      "official_source": false,
+      "candidate_sources": [
+       {
+        "name": "Belarus Ministry of Defence",
+        "homepage": "https://www.mil.by",
+        "tier": "mod",
+        "language": "ru",
+        "caveat": "state source of a Russian-aligned government — treat claims as attributed statements"
+       }
+      ]
+     },
+     "cze": {
+      "country_id": "cze",
+      "name": "Czechia",
+      "region": "Eastern Europe",
+      "status": "PARTIAL",
+      "events_60d": 1,
+      "events_window": 1,
+      "distinct_sources": 1,
+      "source_tiers": [
+       "specialist_defence"
+      ],
+      "official_source": false,
+      "candidate_sources": [
+       {
+        "name": "Czech Ministry of Defence",
+        "homepage": "https://mocr.army.cz",
+        "tier": "mod",
+        "language": "cs",
+        "caveat": null
+       }
+      ]
+     },
+     "est": {
+      "country_id": "est",
+      "name": "Estonia",
+      "region": "Baltics",
+      "status": "GAP",
+      "events_60d": 0,
+      "events_window": 0,
+      "distinct_sources": 0,
+      "source_tiers": [],
+      "official_source": false,
+      "candidate_sources": []
+     },
+     "hrv": {
+      "country_id": "hrv",
+      "name": "Croatia",
+      "region": "Balkans",
+      "status": "GAP",
+      "events_60d": 0,
+      "events_window": 0,
+      "distinct_sources": 0,
+      "source_tiers": [],
+      "official_source": false,
+      "candidate_sources": [
+       {
+        "name": "Croatian Ministry of Defence",
+        "homepage": "https://www.morh.hr",
+        "tier": "mod",
+        "language": "hr",
+        "caveat": null
+       }
+      ]
+     },
+     "hun": {
+      "country_id": "hun",
+      "name": "Hungary",
+      "region": "Eastern Europe",
+      "status": "PARTIAL",
+      "events_60d": 1,
+      "events_window": 1,
+      "distinct_sources": 1,
+      "source_tiers": [
+       "specialist_defence"
+      ],
+      "official_source": false,
+      "candidate_sources": [
+       {
+        "name": "honvedelem.hu (MH official news portal)",
+        "homepage": "https://honvedelem.hu",
+        "tier": "mod",
+        "language": "hu",
+        "caveat": null
+       }
+      ]
+     },
+     "isr": {
+      "country_id": "isr",
+      "name": "Israel",
+      "region": "Middle East",
+      "status": "PARTIAL",
+      "events_60d": 3,
+      "events_window": 3,
+      "distinct_sources": 1,
+      "source_tiers": [
+       "specialist_defence"
+      ],
+      "official_source": false,
+      "candidate_sources": []
+     },
+     "ltu": {
+      "country_id": "ltu",
+      "name": "Lithuania",
+      "region": "Baltics",
+      "status": "GAP",
+      "events_60d": 0,
+      "events_window": 0,
+      "distinct_sources": 0,
+      "source_tiers": [],
+      "official_source": false,
+      "candidate_sources": []
+     },
+     "lva": {
+      "country_id": "lva",
+      "name": "Latvia",
+      "region": "Baltics",
+      "status": "GAP",
+      "events_60d": 0,
+      "events_window": 0,
+      "distinct_sources": 0,
+      "source_tiers": [],
+      "official_source": false,
+      "candidate_sources": []
+     },
+     "pol": {
+      "country_id": "pol",
+      "name": "Poland",
+      "region": "Eastern Europe",
+      "status": "ADEQUATE",
+      "events_60d": 6,
+      "events_window": 6,
+      "distinct_sources": 2,
+      "source_tiers": [
+       "specialist_defence"
+      ],
+      "official_source": false,
+      "candidate_sources": []
+     },
+     "rou": {
+      "country_id": "rou",
+      "name": "Romania",
+      "region": "Eastern Europe",
+      "status": "PARTIAL",
+      "events_60d": 3,
+      "events_window": 3,
+      "distinct_sources": 1,
+      "source_tiers": [
+       "specialist_defence"
+      ],
+      "official_source": false,
+      "candidate_sources": [
+       {
+        "name": "Romanian Ministry of National Defence",
+        "homepage": "https://www.mapn.ro",
+        "tier": "mod",
+        "language": "ro",
+        "caveat": null
+       },
+       {
+        "name": "Romanian Air Force",
+        "homepage": "https://www.roaf.ro",
+        "tier": "official_af",
+        "language": "ro",
+        "caveat": null
+       }
+      ]
+     },
+     "rus": {
+      "country_id": "rus",
+      "name": "Russia",
+      "region": "Eurasia",
+      "status": "ADEQUATE",
+      "events_60d": 4,
+      "events_window": 4,
+      "distinct_sources": 2,
+      "source_tiers": [
+       "specialist_defence"
+      ],
+      "official_source": false,
+      "candidate_sources": []
+     },
+     "srb": {
+      "country_id": "srb",
+      "name": "Serbia",
+      "region": "Balkans",
+      "status": "ADEQUATE",
+      "events_60d": 5,
+      "events_window": 5,
+      "distinct_sources": 2,
+      "source_tiers": [
+       "specialist_defence"
+      ],
+      "official_source": false,
+      "candidate_sources": []
+     },
+     "svk": {
+      "country_id": "svk",
+      "name": "Slovakia",
+      "region": "Eastern Europe",
+      "status": "PARTIAL",
+      "events_60d": 2,
+      "events_window": 2,
+      "distinct_sources": 1,
+      "source_tiers": [
+       "specialist_defence"
+      ],
+      "official_source": false,
+      "candidate_sources": [
+       {
+        "name": "Slovak Ministry of Defence",
+        "homepage": "https://www.mosr.sk",
+        "tier": "mod",
+        "language": "sk",
+        "caveat": null
+       }
+      ]
+     },
+     "svn": {
+      "country_id": "svn",
+      "name": "Slovenia",
+      "region": "Balkans",
+      "status": "GAP",
+      "events_60d": 0,
+      "events_window": 0,
+      "distinct_sources": 0,
+      "source_tiers": [],
+      "official_source": false,
+      "candidate_sources": [
+       {
+        "name": "Slovenian Ministry of Defence",
+        "homepage": "https://www.gov.si",
+        "tier": "mod",
+        "language": "sl",
+        "caveat": null
+       }
+      ]
+     },
+     "ukr": {
+      "country_id": "ukr",
+      "name": "Ukraine",
+      "region": "Eastern Europe",
+      "status": "ADEQUATE",
+      "events_60d": 9,
+      "events_window": 9,
+      "distinct_sources": 2,
+      "source_tiers": [
+       "specialist_defence"
+      ],
+      "official_source": false,
+      "candidate_sources": []
+     },
+     "usa": {
+      "country_id": "usa",
+      "name": "United States",
+      "region": "North America",
+      "status": "ADEQUATE",
+      "events_60d": 20,
+      "events_window": 20,
+      "distinct_sources": 2,
+      "source_tiers": [
+       "specialist_defence"
+      ],
+      "official_source": false,
+      "candidate_sources": []
+     }
+    },
+    "regions": {
+     "North America": {
+      "events_60d": 20,
+      "countries": 3,
+      "gap": 2,
+      "partial": 0,
+      "adequate": 1,
+      "status": "PARTIAL"
+     },
+     "South America": {
+      "events_60d": 0,
+      "countries": 5,
+      "gap": 5,
+      "partial": 0,
+      "adequate": 0,
+      "status": "GAP"
+     },
+     "Western Europe": {
+      "events_60d": 1,
+      "countries": 11,
+      "gap": 10,
+      "partial": 1,
+      "adequate": 0,
+      "status": "PARTIAL"
+     },
+     "Northern Europe": {
+      "events_60d": 0,
+      "countries": 4,
+      "gap": 4,
+      "partial": 0,
+      "adequate": 0,
+      "status": "GAP"
+     },
+     "Eastern Europe": {
+      "events_60d": 22,
+      "countries": 9,
+      "gap": 3,
+      "partial": 4,
+      "adequate": 2,
+      "status": "PARTIAL"
+     },
+     "Baltics": {
+      "events_60d": 0,
+      "countries": 3,
+      "gap": 3,
+      "partial": 0,
+      "adequate": 0,
+      "status": "GAP"
+     },
+     "Balkans": {
+      "events_60d": 5,
+      "countries": 8,
+      "gap": 7,
+      "partial": 0,
+      "adequate": 1,
+      "status": "PARTIAL"
+     },
+     "Middle East": {
+      "events_60d": 3,
+      "countries": 11,
+      "gap": 10,
+      "partial": 1,
+      "adequate": 0,
+      "status": "PARTIAL"
+     },
+     "Eurasia": {
+      "events_60d": 4,
+      "countries": 1,
+      "gap": 0,
+      "partial": 0,
+      "adequate": 1,
+      "status": "ADEQUATE"
+     },
+     "North Africa": {
+      "events_60d": 0,
+      "countries": 5,
+      "gap": 5,
+      "partial": 0,
+      "adequate": 0,
+      "status": "GAP"
+     },
+     "Sub-Saharan Africa": {
+      "events_60d": 0,
+      "countries": 4,
+      "gap": 4,
+      "partial": 0,
+      "adequate": 0,
+      "status": "GAP"
+     },
+     "East Asia": {
+      "events_60d": 0,
+      "countries": 5,
+      "gap": 5,
+      "partial": 0,
+      "adequate": 0,
+      "status": "GAP"
+     },
+     "South Asia": {
+      "events_60d": 0,
+      "countries": 4,
+      "gap": 4,
+      "partial": 0,
+      "adequate": 0,
+      "status": "GAP"
+     },
+     "Southeast Asia": {
+      "events_60d": 0,
+      "countries": 7,
+      "gap": 7,
+      "partial": 0,
+      "adequate": 0,
+      "status": "GAP"
+     },
+     "Oceania": {
+      "events_60d": 0,
+      "countries": 2,
+      "gap": 2,
+      "partial": 0,
+      "adequate": 0,
+      "status": "GAP"
+     },
+     "Central Asia": {
+      "events_60d": 0,
+      "countries": 2,
+      "gap": 2,
+      "partial": 0,
+      "adequate": 0,
+      "status": "GAP"
+     },
+     "Caucasus": {
+      "events_60d": 0,
+      "countries": 3,
+      "gap": 3,
+      "partial": 0,
+      "adequate": 0,
+      "status": "GAP"
+     },
+     "Multinational": {
+      "events_60d": 0,
+      "countries": 1,
+      "gap": 1,
+      "partial": 0,
+      "adequate": 0,
+      "status": "GAP"
+     }
+    },
+    "priority": [
+     {
+      "country_id": "hun",
+      "name": "Hungary",
+      "region": "Eastern Europe",
+      "status": "PARTIAL",
+      "events_60d": 1,
+      "events_window": 1,
+      "distinct_sources": 1,
+      "source_tiers": [
+       "specialist_defence"
+      ],
+      "official_source": false,
+      "candidate_sources": [
+       {
+        "name": "honvedelem.hu (MH official news portal)",
+        "homepage": "https://honvedelem.hu",
+        "tier": "mod",
+        "language": "hu",
+        "caveat": null
+       }
+      ]
+     },
+     {
+      "country_id": "rus",
+      "name": "Russia",
+      "region": "Eurasia",
+      "status": "ADEQUATE",
+      "events_60d": 4,
+      "events_window": 4,
+      "distinct_sources": 2,
+      "source_tiers": [
+       "specialist_defence"
+      ],
+      "official_source": false,
+      "candidate_sources": []
+     },
+     {
+      "country_id": "ukr",
+      "name": "Ukraine",
+      "region": "Eastern Europe",
+      "status": "ADEQUATE",
+      "events_60d": 9,
+      "events_window": 9,
+      "distinct_sources": 2,
+      "source_tiers": [
+       "specialist_defence"
+      ],
+      "official_source": false,
+      "candidate_sources": []
+     },
+     {
+      "country_id": "srb",
+      "name": "Serbia",
+      "region": "Balkans",
+      "status": "ADEQUATE",
+      "events_60d": 5,
+      "events_window": 5,
+      "distinct_sources": 2,
+      "source_tiers": [
+       "specialist_defence"
+      ],
+      "official_source": false,
+      "candidate_sources": []
+     },
+     {
+      "country_id": "blr",
+      "name": "Belarus",
+      "region": "Eastern Europe",
+      "status": "GAP",
+      "events_60d": 0,
+      "events_window": 0,
+      "distinct_sources": 0,
+      "source_tiers": [],
+      "official_source": false,
+      "candidate_sources": [
+       {
+        "name": "Belarus Ministry of Defence",
+        "homepage": "https://www.mil.by",
+        "tier": "mod",
+        "language": "ru",
+        "caveat": "state source of a Russian-aligned government — treat claims as attributed statements"
+       }
+      ]
+     },
+     {
+      "country_id": "bih",
+      "name": "Bosnia and Herzegovina",
+      "region": "Balkans",
+      "status": "GAP",
+      "events_60d": 0,
+      "events_window": 0,
+      "distinct_sources": 0,
+      "source_tiers": [],
+      "official_source": false,
+      "candidate_sources": [
+       {
+        "name": "Bosnia and Herzegovina Ministry of Defence",
+        "homepage": "https://www.mod.gov.ba",
+        "tier": "mod",
+        "language": "bs",
+        "caveat": null
+       }
+      ]
+     },
+     {
+      "country_id": "aut",
+      "name": "Austria",
+      "region": "Western Europe",
+      "status": "PARTIAL",
+      "events_60d": 1,
+      "events_window": 1,
+      "distinct_sources": 1,
+      "source_tiers": [
+       "specialist_defence"
+      ],
+      "official_source": false,
+      "candidate_sources": [
+       {
+        "name": "Austrian Armed Forces (Bundesheer)",
+        "homepage": "https://www.bundesheer.at",
+        "tier": "mod",
+        "language": "de",
+        "caveat": null
+       }
+      ]
+     },
+     {
+      "country_id": "svk",
+      "name": "Slovakia",
+      "region": "Eastern Europe",
+      "status": "PARTIAL",
+      "events_60d": 2,
+      "events_window": 2,
+      "distinct_sources": 1,
+      "source_tiers": [
+       "specialist_defence"
+      ],
+      "official_source": false,
+      "candidate_sources": [
+       {
+        "name": "Slovak Ministry of Defence",
+        "homepage": "https://www.mosr.sk",
+        "tier": "mod",
+        "language": "sk",
+        "caveat": null
+       }
+      ]
+     },
+     {
+      "country_id": "rou",
+      "name": "Romania",
+      "region": "Eastern Europe",
+      "status": "PARTIAL",
+      "events_60d": 3,
+      "events_window": 3,
+      "distinct_sources": 1,
+      "source_tiers": [
+       "specialist_defence"
+      ],
+      "official_source": false,
+      "candidate_sources": [
+       {
+        "name": "Romanian Ministry of National Defence",
+        "homepage": "https://www.mapn.ro",
+        "tier": "mod",
+        "language": "ro",
+        "caveat": null
+       },
+       {
+        "name": "Romanian Air Force",
+        "homepage": "https://www.roaf.ro",
+        "tier": "official_af",
+        "language": "ro",
+        "caveat": null
+       }
+      ]
+     },
+     {
+      "country_id": "hrv",
+      "name": "Croatia",
+      "region": "Balkans",
+      "status": "GAP",
+      "events_60d": 0,
+      "events_window": 0,
+      "distinct_sources": 0,
+      "source_tiers": [],
+      "official_source": false,
+      "candidate_sources": [
+       {
+        "name": "Croatian Ministry of Defence",
+        "homepage": "https://www.morh.hr",
+        "tier": "mod",
+        "language": "hr",
+        "caveat": null
+       }
+      ]
+     },
+     {
+      "country_id": "svn",
+      "name": "Slovenia",
+      "region": "Balkans",
+      "status": "GAP",
+      "events_60d": 0,
+      "events_window": 0,
+      "distinct_sources": 0,
+      "source_tiers": [],
+      "official_source": false,
+      "candidate_sources": [
+       {
+        "name": "Slovenian Ministry of Defence",
+        "homepage": "https://www.gov.si",
+        "tier": "mod",
+        "language": "sl",
+        "caveat": null
+       }
+      ]
+     },
+     {
+      "country_id": "pol",
+      "name": "Poland",
+      "region": "Eastern Europe",
+      "status": "ADEQUATE",
+      "events_60d": 6,
+      "events_window": 6,
+      "distinct_sources": 2,
+      "source_tiers": [
+       "specialist_defence"
+      ],
+      "official_source": false,
+      "candidate_sources": []
+     },
+     {
+      "country_id": "cze",
+      "name": "Czechia",
+      "region": "Eastern Europe",
+      "status": "PARTIAL",
+      "events_60d": 1,
+      "events_window": 1,
+      "distinct_sources": 1,
+      "source_tiers": [
+       "specialist_defence"
+      ],
+      "official_source": false,
+      "candidate_sources": [
+       {
+        "name": "Czech Ministry of Defence",
+        "homepage": "https://mocr.army.cz",
+        "tier": "mod",
+        "language": "cs",
+        "caveat": null
+       }
+      ]
+     },
+     {
+      "country_id": "bgr",
+      "name": "Bulgaria",
+      "region": "Eastern Europe",
+      "status": "GAP",
+      "events_60d": 0,
+      "events_window": 0,
+      "distinct_sources": 0,
+      "source_tiers": [],
+      "official_source": false,
+      "candidate_sources": [
+       {
+        "name": "Bulgarian Ministry of Defence",
+        "homepage": "https://www.mod.bg",
+        "tier": "mod",
+        "language": "bg",
+        "caveat": null
+       }
+      ]
+     },
+     {
+      "country_id": "est",
+      "name": "Estonia",
+      "region": "Baltics",
+      "status": "GAP",
+      "events_60d": 0,
+      "events_window": 0,
+      "distinct_sources": 0,
+      "source_tiers": [],
+      "official_source": false,
+      "candidate_sources": []
+     },
+     {
+      "country_id": "lva",
+      "name": "Latvia",
+      "region": "Baltics",
+      "status": "GAP",
+      "events_60d": 0,
+      "events_window": 0,
+      "distinct_sources": 0,
+      "source_tiers": [],
+      "official_source": false,
+      "candidate_sources": []
+     },
+     {
+      "country_id": "ltu",
+      "name": "Lithuania",
+      "region": "Baltics",
+      "status": "GAP",
+      "events_60d": 0,
+      "events_window": 0,
+      "distinct_sources": 0,
+      "source_tiers": [],
+      "official_source": false,
+      "candidate_sources": []
+     }
+    ],
+    "summary": {
+     "priority_adequate": 4,
+     "priority_partial": 5,
+     "priority_gap": 8,
+     "priority_without_official_source": 17
+    },
+    "note": "Coverage reflects what the collection SEES, not what happened. GAP means no reporting reached the pipeline in 60 days — absence of reporting is not absence of activity."
+   },
+   "command_brief": {
+    "schema": "command_brief_v1",
+    "week_label": "2026-W46",
+    "title": "Command Air Intelligence Brief",
+    "classification": "UNCLASSIFIED // OSINT",
+    "period": {
+     "start": "2026-11-04",
+     "end": "2026-11-10",
+     "timezone": "Europe/Budapest",
+     "window_label": "2026-11-04 00:00:00 -> 2026-11-10 23:59:59 (Europe/Budapest)"
+    },
+    "generated_utc": "2026-11-11 05:20 UTC",
+    "status": "auto-generated, QA clean",
+    "methodology_version": "v3.1",
+    "hu_model_version": "hu-1.0",
+    "restatement": null,
+    "page1": {
+     "bottom_line": {
+      "origin": "deterministic",
+      "sentences": [
+       {
+        "text": "3 of 10 material air-power developments this period are of HIGH relevance to Hungary.",
+        "refs": []
+       },
+       {
+        "text": "Hungary accepts first KC-390 transport — begins replacing Hungary's tactical airlift capacity; IOC depends on crew training.",
+        "refs": [
+         "XS-01"
+        ]
+       },
+       {
+        "text": "Serbia's first Rafale deliveries indicate the start of a Western fighter capability on Hungary's southern border, with meaningful scale 1-3 years away.",
+        "refs": [
+         "KJ-02"
+        ]
+       },
+       {
+        "text": "USAF rotates F-35A squadron to Łask, Poland, for eastern flank air policing — temporarily adds fifth-generation fighters to Allied QRA capacity in Poland.",
+        "refs": [
+         "XS-02"
+        ]
+       },
+       {
+        "text": "In Hungary's immediate and near region, material change was assessed for Hungary, Poland, Romania, Serbia, Ukraine; no material change was identified for Russia, Austria, Slovakia, Czechia.",
+        "refs": [
+         "D-01",
+         "D-02",
+         "D-03",
+         "D-04",
+         "D-11"
+        ]
+       },
+       {
+        "text": "Collection gaps remain for Belarus, Bosnia and Herzegovina, Croatia, Slovenia, Bulgaria: absence of reporting there is not evidence of inactivity.",
+        "refs": []
+       },
+       {
+        "text": "No reported event moved a programme-of-record quantity this period.",
+        "refs": []
+       }
+      ],
+      "dropped_by_validation": [],
+      "note": "Assembled deterministically from the QA-passed key judgements, developments and coverage audit."
+     },
+     "key_judgements": [
+      {
+       "id": "XS-01",
+       "origin": "executive_synthesis",
+       "statement": "Hungary accepts first KC-390 transport",
+       "hu_relevance": {
+        "level": "HIGH",
+        "score": 65,
+        "factors": [
+         {
+          "label": "Geography / actor",
+          "points": 45
+         },
+         {
+          "label": "MH platform",
+          "points": 15
+         },
+         {
+          "label": "Horizon",
+          "points": 5
+         }
+        ],
+        "rationale": "Hungary: directly concerns Hungary / the Hungarian Defence Forces; KC-390 — on order for MH airlift — lessons, sustainment, user-group and interoperability effects carry over to MH."
+       },
+       "significance": 3,
+       "significance_label": "MEDIUM",
+       "confidence": "high",
+       "horizon": "<12 months",
+       "what_changed": "Begins replacing Hungary's tactical airlift capacity; IOC depends on crew training.",
+       "assessment": "Restores national tactical airlift and air-to-air refuelling options for MH.",
+       "why_hungary": "Hungary: directly concerns Hungary / the Hungarian Defence Forces; KC-390 — on order for MH airlift — lessons, sustainment, user-group and interoperability effects carry over to MH.",
+       "why_hungary_origin": "hu_model",
+       "next_observable": "Next official statement on the programme schedule.",
+       "alternative_explanation": "Delivery is not operational capability: crews, weapons and sustainment decide when the effect is real.",
+       "alternative_origin": "system_evidence_state",
+       "refs": [
+        "D-11"
+       ],
+       "detail_ref": "Detailed assessment → D-11",
+       "countries": [
+        "Hungary"
+       ],
+       "traces_to": [
+        "D-11"
+       ]
+      },
+      {
+       "id": "KJ-02",
+       "origin": "report_key_judgement",
+       "statement": "Serbia's first Rafale deliveries indicate the start of a Western fighter capability on Hungary's southern border, with meaningful scale 1-3 years away.",
+       "hu_relevance": {
+        "level": "HIGH",
+        "score": 59,
+        "factors": [
+         {
+          "label": "Geography / actor",
+          "points": 34
+         },
+         {
+          "label": "Regional air balance",
+          "points": 10
+         },
+         {
+          "label": "Major change next door",
+          "points": 10
+         },
+         {
+          "label": "Horizon",
+          "points": 5
+         }
+        ],
+        "rationale": "Serbia: neighbouring non-NATO state — changes to its combat air fleet alter the regional air balance on Hungary's southern border; alters the combat air balance in Hungary's immediate region."
+       },
+       "significance": 4,
+       "significance_label": "HIGH",
+       "confidence": "moderate",
+       "horizon": "<12 months",
+       "what_changed": "Introduces a Western 4.5-generation fighter into the Serbian Air Force alongside its MiG-29 fleet; meaningful scale depends on crew and weapons delivery.",
+       "assessment": "Two aircraft do not yet change Serbia's operational capability; crews, weapons and sustainment determine the pace.",
+       "why_hungary": "Serbia: neighbouring non-NATO state — changes to its combat air fleet alter the regional air balance on Hungary's southern border; alters the combat air balance in Hungary's immediate region.",
+       "why_hungary_origin": "hu_model",
+       "next_observable": "Delivery of the next two aircraft before year end.",
+       "alternative_explanation": "Delivery is not operational capability: crews, weapons and sustainment decide when the effect is real.",
+       "alternative_origin": "system_evidence_state",
+       "refs": [
+        "KJ-02",
+        "D-01"
+       ],
+       "detail_ref": "Detailed assessment → KJ-02, D-01",
+       "countries": [
+        "Serbia"
+       ]
+      },
+      {
+       "id": "XS-02",
+       "origin": "executive_synthesis",
+       "statement": "USAF rotates F-35A squadron to Łask, Poland, for eastern flank air policing",
+       "hu_relevance": {
+        "level": "MEDIUM",
+        "score": 52,
+        "factors": [
+         {
+          "label": "Geography / actor",
+          "points": 8
+         },
+         {
+          "label": "NATO air policing / QRA",
+          "points": 12
+         },
+         {
+          "label": "Allied eastern-flank posture",
+          "points": 15
+         },
+         {
+          "label": "Names a Central/Eastern European state",
+          "points": 12
+         },
+         {
+          "label": "Horizon",
+          "points": 5
+         }
+        ],
+        "rationale": "Changes Allied air posture on NATO's eastern flank, which frames Hungary's own contribution and reinforcement planning; bears on NATO air policing and quick reaction alert, a standing MH mission."
+       },
+       "significance": 3,
+       "significance_label": "MEDIUM",
+       "confidence": "high",
+       "horizon": "immediate",
+       "what_changed": "Temporarily adds fifth-generation fighters to Allied QRA capacity in Poland.",
+       "assessment": "Strengthens Allied air posture on the eastern flank during the rotation.",
+       "why_hungary": "Changes Allied air posture on NATO's eastern flank, which frames Hungary's own contribution and reinforcement planning; bears on NATO air policing and quick reaction alert, a standing MH mission.",
+       "why_hungary_origin": "hu_model",
+       "next_observable": "Duration of the rotation and any follow-on deployment.",
+       "alternative_explanation": "The activity may be routine rather than a change in posture; its duration or repetition is the test.",
+       "alternative_origin": "system_evidence_state",
+       "refs": [
+        "D-04"
+       ],
+       "detail_ref": "Detailed assessment → D-04",
+       "countries": [
+        "United States"
+       ],
+       "traces_to": [
+        "D-04"
+       ]
+      },
+      {
+       "id": "XS-03",
+       "origin": "executive_synthesis",
+       "statement": "Romania signs Letter of Offer and Acceptance for 32 F-35A",
+       "hu_relevance": {
+        "level": "MEDIUM",
+        "score": 45,
+        "factors": [
+         {
+          "label": "Geography / actor",
+          "points": 30
+         },
+         {
+          "label": "Regional air balance",
+          "points": 10
+         },
+         {
+          "label": "Major change next door",
+          "points": 10
+         },
+         {
+          "label": "Horizon",
+          "points": -5
+         }
+        ],
+        "rationale": "Romania: neighbouring NATO state on the Black Sea flank — its air posture shapes the south-eastern air picture around Hungary; alters the combat air balance in Hungary's immediate region."
+       },
+       "significance": 4,
+       "significance_label": "HIGH",
+       "confidence": "high",
+       "horizon": ">3 years",
+       "what_changed": "Commits Romania to a fifth-generation fighter fleet; no operational effect before the 2030s.",
+       "assessment": "Establishes a second F-35 operator on NATO's south-eastern flank next to Hungary.",
+       "why_hungary": "Romania: neighbouring NATO state on the Black Sea flank — its air posture shapes the south-eastern air picture around Hungary; alters the combat air balance in Hungary's immediate region.",
+       "why_hungary_origin": "hu_model",
+       "next_observable": "Romanian pilot training start in the US.",
+       "alternative_explanation": "A signed contract can still slip or be re-scoped; first delivery and IOC dates are the test.",
+       "alternative_origin": "system_evidence_state",
+       "refs": [
+        "D-02"
+       ],
+       "detail_ref": "Detailed assessment → D-02",
+       "countries": [
+        "Romania"
+       ],
+       "traces_to": [
+        "D-02"
+       ]
+      },
+      {
+       "id": "KJ-04",
+       "origin": "report_key_judgement",
+       "statement": "Germany's additional F-35A order grows the European F-35 user base, with first deliveries in 2029.",
+       "hu_relevance": {
+        "level": "MINIMAL",
+        "score": 7,
+        "factors": [
+         {
+          "label": "Geography / actor",
+          "points": 12
+         },
+         {
+          "label": "Horizon",
+          "points": -5
+         }
+        ],
+        "rationale": "No direct link to Hungary, MH or NATO's central-eastern air posture identified (Germany: major European ally and framework nation for eastern-flank air contributions)."
+       },
+       "significance": 4,
+       "significance_label": "HIGH",
+       "confidence": "high",
+       "horizon": ">3 years",
+       "what_changed": "Raises Germany's F-35A programme of record from 35 to 50.",
+       "assessment": "No near-term effect; supports Alliance strike and nuclear-sharing planning in the 2030s.",
+       "why_hungary": "No direct link to Hungary, MH or NATO's central-eastern air posture identified (Germany: major European ally and framework nation for eastern-flank air contributions).",
+       "why_hungary_origin": "hu_model",
+       "next_observable": "Delivery schedule confirmation.",
+       "alternative_explanation": "A signed contract can still slip or be re-scoped; first delivery and IOC dates are the test.",
+       "alternative_origin": "system_evidence_state",
+       "refs": [
+        "KJ-04",
+        "D-09"
+       ],
+       "detail_ref": "Detailed assessment → KJ-04, D-09",
+       "countries": [
+        "Germany"
+       ]
+      }
+     ],
+     "map_cee": {
+      "hotspots": [
+       {
+        "country_id": "hun",
+        "name": "Hungary",
+        "level": "HIGH",
+        "score": 65,
+        "significance": 3,
+        "refs": [
+         "D-11"
+        ],
+        "labels": [
+         "HU KC-390"
+        ]
+       },
+       {
+        "country_id": "srb",
+        "name": "Serbia",
+        "level": "HIGH",
+        "score": 59,
+        "significance": 4,
+        "refs": [
+         "D-01"
+        ],
+        "labels": [
+         "RS Rafale delivery"
+        ]
+       },
+       {
+        "country_id": "ukr",
+        "name": "Ukraine",
+        "level": "HIGH",
+        "score": 59,
+        "significance": 3,
+        "refs": [
+         "D-03"
+        ],
+        "labels": [
+         "UA F-16 loss"
+        ]
+       },
+       {
+        "country_id": "pol",
+        "name": "Poland",
+        "level": "MEDIUM",
+        "score": 52,
+        "significance": 3,
+        "refs": [
+         "D-04"
+        ],
+        "labels": [
+         "US F-35A Łask rotation"
+        ]
+       },
+       {
+        "country_id": "rou",
+        "name": "Romania",
+        "level": "MEDIUM",
+        "score": 45,
+        "significance": 4,
+        "refs": [
+         "D-02"
+        ],
+        "labels": [
+         "RO F-35A LOA"
+        ]
+       }
+      ],
+      "collection_gaps": [
+       "blr",
+       "bih",
+       "hrv",
+       "svn",
+       "bgr",
+       "est",
+       "lva",
+       "ltu"
+      ],
+      "home": "hun",
+      "legend": "Colour = Hungary relevance of the material development (not air-power significance). Dashed outline = collection gap. Hotspots only — no hotspot means no material change identified, not no activity."
+     }
+    },
+    "page2": {
+     "groups": [
+      {
+       "key": "non_nato_priority",
+       "title": "Non-NATO priority",
+       "countries": [
+        "Russia",
+        "Ukraine",
+        "Serbia",
+        "Belarus",
+        "Bosnia and Herzegovina"
+       ]
+      },
+      {
+       "key": "neighbours",
+       "title": "Neighbours",
+       "countries": [
+        "Austria",
+        "Slovakia",
+        "Ukraine",
+        "Romania",
+        "Serbia",
+        "Croatia",
+        "Slovenia"
+       ]
+      },
+      {
+       "key": "extended_nato",
+       "title": "Extended NATO / Allied posture in CEE",
+       "countries": [
+        "Poland",
+        "Czechia",
+        "Bulgaria",
+        "Estonia",
+        "Latvia",
+        "Lithuania"
+       ]
+      }
+     ],
+     "rows": [
+      {
+       "country_id": "hun",
+       "country": "Hungary",
+       "what_changed": "The Hungarian Defence Forces stated that the first KC-390 was accepted at Kecskemét.",
+       "effect": "Begins replacing Hungary's tactical airlift capacity; IOC depends on crew training.",
+       "hu_relevance": "HIGH",
+       "hu_score": 65,
+       "hu_why": "Hungary: directly concerns Hungary / the Hungarian Defence Forces; KC-390 — on order for MH airlift — lessons, sustainment, user-group and interoperability…",
+       "significance": 3,
+       "significance_label": "MEDIUM",
+       "confidence": "high",
+       "horizon": "<12 months",
+       "next_observable": "Next official statement on the programme schedule.",
+       "coverage": "PARTIAL",
+       "ref": "D-11",
+       "detail_ref": "Detailed assessment → D-11",
+       "label": "HU KC-390",
+       "group": "home",
+       "affected_country_id": "hun",
+       "affected_country": "Hungary"
+      },
+      {
+       "country_id": "srb",
+       "country": "Serbia",
+       "what_changed": "The Serbian Ministry of Defence stated that the first two Rafale aircraft landed at Batajnica. Two further aircraft are expected before year end, according to the ministry.",
+       "effect": "Introduces a Western 4.5-generation fighter into the Serbian Air Force alongside its MiG-29 fleet; meaningful scale depends on crew and weapons delivery.",
+       "hu_relevance": "HIGH",
+       "hu_score": 59,
+       "hu_why": "Serbia: neighbouring non-NATO state — changes to its combat air fleet alter the regional air balance on Hungary's southern border; alters the combat air…",
+       "significance": 4,
+       "significance_label": "HIGH",
+       "confidence": "moderate",
+       "horizon": "<12 months",
+       "next_observable": "Delivery of the next two aircraft before year end.",
+       "coverage": "ADEQUATE",
+       "ref": "D-01",
+       "detail_ref": "Detailed assessment → D-01",
+       "label": "RS Rafale delivery",
+       "group": "non_nato_priority",
+       "affected_country_id": "srb",
+       "affected_country": "Serbia"
+      },
+      {
+       "country_id": "ukr",
+       "country": "Ukraine",
+       "what_changed": "The Ukrainian Air Force stated that one F-16AM was lost during a combat mission; the pilot was killed. The cause was not stated.",
+       "effect": "Reduces Ukraine's small F-16 fleet by one airframe; mechanism unknown.",
+       "hu_relevance": "HIGH",
+       "hu_score": 59,
+       "hu_why": "Ukraine: neighbouring state at war — air activity and losses close to Hungary's north-eastern border; alters the combat air balance in Hungary's immediate…",
+       "significance": 3,
+       "significance_label": "MEDIUM",
+       "confidence": "moderate",
+       "horizon": "immediate",
+       "next_observable": "Ukrainian Air Force statement on the cause of the loss.",
+       "coverage": "ADEQUATE",
+       "ref": "D-03",
+       "detail_ref": "Detailed assessment → D-03",
+       "label": "UA F-16 loss",
+       "group": "non_nato_priority",
+       "affected_country_id": "ukr",
+       "affected_country": "Ukraine"
+      },
+      {
+       "country_id": "usa",
+       "country": "United States → Poland",
+       "what_changed": "US Air Forces in Europe stated that a squadron of F-35A deployed to Łask Air Base, Poland, to support NATO air policing on the eastern flank.",
+       "effect": "Temporarily adds fifth-generation fighters to Allied QRA capacity in Poland.",
+       "hu_relevance": "MEDIUM",
+       "hu_score": 52,
+       "hu_why": "Changes Allied air posture on NATO's eastern flank, which frames Hungary's own contribution and reinforcement planning; bears on NATO air policing and quick…",
+       "significance": 3,
+       "significance_label": "MEDIUM",
+       "confidence": "high",
+       "horizon": "immediate",
+       "next_observable": "Duration of the rotation and any follow-on deployment.",
+       "coverage": "ADEQUATE",
+       "ref": "D-04",
+       "detail_ref": "Detailed assessment → D-04",
+       "label": "US F-35A Łask rotation",
+       "group": "extended_nato",
+       "affected_country_id": "pol",
+       "affected_country": "Poland"
+      },
+      {
+       "country_id": "rou",
+       "country": "Romania",
+       "what_changed": "The Romanian Ministry of National Defence stated it signed the LOA for 32 F-35A. First deliveries are planned for 2032, per the ministry.",
+       "effect": "Commits Romania to a fifth-generation fighter fleet; no operational effect before the 2030s.",
+       "hu_relevance": "MEDIUM",
+       "hu_score": 45,
+       "hu_why": "Romania: neighbouring NATO state on the Black Sea flank — its air posture shapes the south-eastern air picture around Hungary; alters the combat air balance…",
+       "significance": 4,
+       "significance_label": "HIGH",
+       "confidence": "high",
+       "horizon": ">3 years",
+       "next_observable": "Romanian pilot training start in the US.",
+       "coverage": "PARTIAL",
+       "ref": "D-02",
+       "detail_ref": "Detailed assessment → D-02",
+       "label": "RO F-35A LOA",
+       "group": "neighbours",
+       "affected_country_id": "rou",
+       "affected_country": "Romania"
+      }
+     ],
+     "overflow": 0,
+     "no_material_change": [
+      {
+       "name": "Russia",
+       "coverage": "ADEQUATE"
+      },
+      {
+       "name": "Austria",
+       "coverage": "PARTIAL"
+      },
+      {
+       "name": "Slovakia",
+       "coverage": "PARTIAL"
+      },
+      {
+       "name": "Czechia",
+       "coverage": "PARTIAL"
+      }
+     ],
+     "collection_gap": [
+      "Belarus",
+      "Bosnia and Herzegovina",
+      "Croatia",
+      "Slovenia",
+      "Bulgaria",
+      "Estonia",
+      "Latvia",
+      "Lithuania"
+     ],
+     "note": "Geography sets collection priority, not inclusion: a country appears in the table only if a material development was assessed. 'No material change identified' is stated only where collection is at least PARTIAL; elsewhere it is a collection gap."
+    },
+    "page3": {
+     "sections": [
+      {
+       "key": "middle_east",
+       "title": "Middle East",
+       "items": [
+        {
+         "ref": "D-05",
+         "country": "Israel",
+         "domain": "fighter_strike",
+         "what_changed": "Israel orders 25 additional F-15IA",
+         "assessment": "Sustains Israeli long-range strike capacity; limited direct effect on Europe.",
+         "significance": 4,
+         "significance_label": "HIGH",
+         "confidence": "high",
+         "horizon": ">3 years",
+         "hu_relevance": "MINIMAL",
+         "hu_why": "No direct link to Hungary, MH or NATO's central-eastern air posture identified.",
+         "detail_ref": "Detailed assessment → D-05"
+        }
+       ],
+       "coverage": "PARTIAL",
+       "empty": null
+      },
+      {
+       "key": "africa",
+       "title": "Africa",
+       "items": [
+        {
+         "ref": "D-06",
+         "country": "Algeria",
+         "domain": "fighter_strike",
+         "what_changed": "Algeria reported to receive first Su-57E",
+         "assessment": "First export of Russia's fifth-generation fighter; indicator of Russian production capacity.",
+         "significance": 3,
+         "significance_label": "MEDIUM",
+         "confidence": "low",
+         "horizon": "<12 months",
+         "hu_relevance": "MINIMAL",
+         "hu_why": "No direct link to Hungary, MH or NATO's central-eastern air posture identified.",
+         "detail_ref": "Detailed assessment → D-06"
+        }
+       ],
+       "coverage": "GAP",
+       "empty": null
+      },
+      {
+       "key": "wider_nato",
+       "title": "Wider NATO",
+       "items": [
+        {
+         "ref": "D-09",
+         "country": "Germany",
+         "domain": "fighter_strike",
+         "what_changed": "Germany orders 15 additional F-35A",
+         "assessment": "Grows the European F-35 user base the Alliance's nuclear sharing and strike planning depends on.",
+         "significance": 4,
+         "significance_label": "HIGH",
+         "confidence": "high",
+         "horizon": ">3 years",
+         "hu_relevance": "MINIMAL",
+         "hu_why": "No direct link to Hungary, MH or NATO's central-eastern air posture identified (Germany: major European ally and framework nation for eastern-flank…",
+         "detail_ref": "Detailed assessment → D-09"
+        }
+       ],
+       "coverage": "PARTIAL",
+       "empty": null
+      }
+     ]
+    },
+    "change_table": {
+     "previous_week": "2026-W45",
+     "rows": [
+      {
+       "country": "Serbia",
+       "capability": "RS Rafale delivery",
+       "previous": "Production · moderate",
+       "current": "Delivery · moderate",
+       "delta": "lifecycle Production -> Delivery",
+       "moved": true,
+       "hu_relevance": "HIGH",
+       "hu_score": 59,
+       "confidence": "moderate",
+       "ref": "D-01",
+       "programme_id": "srb-rafale-2024",
+       "priority": 1
+      },
+      {
+       "country": "Romania",
+       "capability": "RO F-35A LOA",
+       "previous": "Export approval · high",
+       "current": "Contract signed · high",
+       "delta": "lifecycle Export approval -> Contract signed",
+       "moved": true,
+       "hu_relevance": "MEDIUM",
+       "hu_score": 45,
+       "confidence": "high",
+       "ref": "D-02",
+       "programme_id": "rou-f35-2024",
+       "priority": 2
+      },
+      {
+       "country": "Germany",
+       "capability": "DE F-35A +15",
+       "previous": "not reported",
+       "current": "Contract signed · high",
+       "delta": "new to the reporting this period",
+       "moved": true,
+       "hu_relevance": "MINIMAL",
+       "hu_score": 7,
+       "confidence": "high",
+       "ref": "D-09",
+       "programme_id": "deu-f35-2022",
+       "priority": 3
+      },
+      {
+       "country": "Poland",
+       "capability": "PL AH-64E",
+       "previous": "Contract signed · high",
+       "current": "not reported",
+       "delta": "no new evidence this period",
+       "moved": false,
+       "hu_relevance": "LOW",
+       "hu_score": 22,
+       "confidence": null,
+       "ref": null,
+       "programme_id": "pol-ah64e-2024",
+       "priority": 4
+      }
+     ],
+     "overflow": 0,
+     "note": "Programme-level comparison against the previous published report.",
+     "source": "since_last_week (published previous report) — no separate baseline"
+    },
+    "page4": {
+     "global": {
+      "items": [
+       {
+        "ref": "D-08",
+        "country": "China",
+        "domain": "fighter_strike",
+        "what_changed": "China displays J-35A in PLAAF service markings",
+        "assessment": "A second Chinese fifth-generation type would broaden PLAAF modernisation.",
+        "significance": 4,
+        "significance_label": "HIGH",
+        "confidence": "moderate",
+        "horizon": "<12 months",
+        "hu_relevance": "MINIMAL",
+        "hu_why": "No direct link to Hungary, MH or NATO's central-eastern air posture identified.",
+        "detail_ref": "Detailed assessment → D-08"
+       },
+       {
+        "ref": "D-07",
+        "country": "Japan",
+        "domain": "fighter_strike",
+        "what_changed": "Japan declares IOC for first F-35B squadron at Nyutabaru",
+        "assessment": "Strengthens Allied air posture in the East China Sea.",
+        "significance": 3,
+        "significance_label": "MEDIUM",
+        "confidence": "high",
+        "horizon": "immediate",
+        "hu_relevance": "MINIMAL",
+        "hu_why": "No direct link to Hungary, MH or NATO's central-eastern air posture identified.",
+        "detail_ref": "Detailed assessment → D-07"
+       }
+      ],
+      "empty": null
+     },
+     "priority_watch": [
+      {
+       "question": "Serbian Rafale deliveries 3-4",
+       "why": "Pace of Serbia's fighter transition next to Hungary.",
+       "next_observable": "Arrival of aircraft 3 and 4 at Batajnica.",
+       "horizon": "weeks",
+       "impact": "high",
+       "hu_relevance": "MEDIUM"
+      },
+      {
+       "question": "Cause of Ukrainian F-16 loss",
+       "why": "Indicates the threat to Western fighters operating near the front.",
+       "next_observable": "Ukrainian Air Force statement on the cause.",
+       "horizon": "days",
+       "impact": "medium",
+       "hu_relevance": "MEDIUM"
+      },
+      {
+       "question": "J-35A operational basing",
+       "why": "Scale of the second PLAAF fifth-generation type.",
+       "next_observable": "Imagery of J-35A at an operational base.",
+       "horizon": "months",
+       "impact": "medium",
+       "hu_relevance": "MINIMAL"
+      }
+     ],
+     "intelligence_gaps": [
+      {
+       "text": "Whether Serbia's Rafale contract includes Meteor missiles is not established in reporting.",
+       "origin": "report"
+      },
+      {
+       "text": "The cause of the Ukrainian F-16 loss is not reported.",
+       "origin": "report"
+      },
+      {
+       "text": "No reporting reached the collection on Belarus, Bosnia and Herzegovina, Croatia, Slovenia, Bulgaria, Estonia in 60 days: the brief cannot distinguish quiet from unobserved there.",
+       "origin": "coverage_audit"
+      }
+     ],
+     "next_30_days": [
+      {
+       "what": "Arrival of aircraft 3 and 4 at Batajnica.",
+       "why": "Serbian Rafale deliveries 3-4",
+       "horizon": "weeks"
+      },
+      {
+       "what": "Ukrainian Air Force statement on the cause.",
+       "why": "Cause of Ukrainian F-16 loss",
+       "horizon": "days"
+      }
+     ],
+     "next_30_days_empty": null
+    },
+    "map_global": {
+     "hotspots": [
+      {
+       "country_id": "srb",
+       "name": "Serbia",
+       "significance": 4,
+       "refs": [
+        "D-01"
+       ]
+      },
+      {
+       "country_id": "rou",
+       "name": "Romania",
+       "significance": 4,
+       "refs": [
+        "D-02"
+       ]
+      },
+      {
+       "country_id": "isr",
+       "name": "Israel",
+       "significance": 4,
+       "refs": [
+        "D-05"
+       ]
+      },
+      {
+       "country_id": "chn",
+       "name": "China",
+       "significance": 4,
+       "refs": [
+        "D-08"
+       ]
+      },
+      {
+       "country_id": "deu",
+       "name": "Germany",
+       "significance": 4,
+       "refs": [
+        "D-09"
+       ]
+      },
+      {
+       "country_id": "ukr",
+       "name": "Ukraine",
+       "significance": 3,
+       "refs": [
+        "D-03"
+       ]
+      },
+      {
+       "country_id": "usa",
+       "name": "United States",
+       "significance": 3,
+       "refs": [
+        "D-04"
+       ]
+      },
+      {
+       "country_id": "dza",
+       "name": "Algeria",
+       "significance": 3,
+       "refs": [
+        "D-06"
+       ]
+      },
+      {
+       "country_id": "jpn",
+       "name": "Japan",
+       "significance": 3,
+       "refs": [
+        "D-07"
+       ]
+      },
+      {
+       "country_id": "hun",
+       "name": "Hungary",
+       "significance": 3,
+       "refs": [
+        "D-11"
+       ]
+      }
+     ],
+     "legend": "Colour = air-power significance (1–5), independent of Hungary relevance."
+    },
+    "matrix": [
+     {
+      "ref": "D-01",
+      "label": "RS Rafale delivery",
+      "significance": 4,
+      "hu_score": 59,
+      "hu_level": "HIGH"
+     },
+     {
+      "ref": "D-02",
+      "label": "RO F-35A LOA",
+      "significance": 4,
+      "hu_score": 45,
+      "hu_level": "MEDIUM"
+     },
+     {
+      "ref": "D-03",
+      "label": "UA F-16 loss",
+      "significance": 3,
+      "hu_score": 59,
+      "hu_level": "HIGH"
+     },
+     {
+      "ref": "D-04",
+      "label": "US F-35A Łask rotation",
+      "significance": 3,
+      "hu_score": 52,
+      "hu_level": "MEDIUM"
+     },
+     {
+      "ref": "D-05",
+      "label": "IL F-15IA +25",
+      "significance": 4,
+      "hu_score": 0,
+      "hu_level": "MINIMAL"
+     },
+     {
+      "ref": "D-06",
+      "label": "DZ Su-57E",
+      "significance": 3,
+      "hu_score": 5,
+      "hu_level": "MINIMAL"
+     },
+     {
+      "ref": "D-07",
+      "label": "JP F-35B IOC",
+      "significance": 3,
+      "hu_score": 5,
+      "hu_level": "MINIMAL"
+     },
+     {
+      "ref": "D-08",
+      "label": "CN J-35A",
+      "significance": 4,
+      "hu_score": 5,
+      "hu_level": "MINIMAL"
+     },
+     {
+      "ref": "D-09",
+      "label": "DE F-35A +15",
+      "significance": 4,
+      "hu_score": 7,
+      "hu_level": "MINIMAL"
+     },
+     {
+      "ref": "D-11",
+      "label": "HU KC-390",
+      "significance": 3,
+      "hu_score": 65,
+      "hu_level": "HIGH"
+     }
+    ],
+    "coverage_summary": {
+     "priority": [
+      {
+       "name": "Hungary",
+       "status": "PARTIAL",
+       "events_window": 1,
+       "official_source": false
+      },
+      {
+       "name": "Russia",
+       "status": "ADEQUATE",
+       "events_window": 4,
+       "official_source": false
+      },
+      {
+       "name": "Ukraine",
+       "status": "ADEQUATE",
+       "events_window": 9,
+       "official_source": false
+      },
+      {
+       "name": "Serbia",
+       "status": "ADEQUATE",
+       "events_window": 5,
+       "official_source": false
+      },
+      {
+       "name": "Belarus",
+       "status": "GAP",
+       "events_window": 0,
+       "official_source": false
+      },
+      {
+       "name": "Bosnia and Herzegovina",
+       "status": "GAP",
+       "events_window": 0,
+       "official_source": false
+      },
+      {
+       "name": "Austria",
+       "status": "PARTIAL",
+       "events_window": 1,
+       "official_source": false
+      },
+      {
+       "name": "Slovakia",
+       "status": "PARTIAL",
+       "events_window": 2,
+       "official_source": false
+      },
+      {
+       "name": "Romania",
+       "status": "PARTIAL",
+       "events_window": 3,
+       "official_source": false
+      },
+      {
+       "name": "Croatia",
+       "status": "GAP",
+       "events_window": 0,
+       "official_source": false
+      },
+      {
+       "name": "Slovenia",
+       "status": "GAP",
+       "events_window": 0,
+       "official_source": false
+      },
+      {
+       "name": "Poland",
+       "status": "ADEQUATE",
+       "events_window": 6,
+       "official_source": false
+      },
+      {
+       "name": "Czechia",
+       "status": "PARTIAL",
+       "events_window": 1,
+       "official_source": false
+      },
+      {
+       "name": "Bulgaria",
+       "status": "GAP",
+       "events_window": 0,
+       "official_source": false
+      },
+      {
+       "name": "Estonia",
+       "status": "GAP",
+       "events_window": 0,
+       "official_source": false
+      },
+      {
+       "name": "Latvia",
+       "status": "GAP",
+       "events_window": 0,
+       "official_source": false
+      },
+      {
+       "name": "Lithuania",
+       "status": "GAP",
+       "events_window": 0,
+       "official_source": false
+      }
+     ],
+     "summary": {
+      "priority_adequate": 4,
+      "priority_partial": 5,
+      "priority_gap": 8,
+      "priority_without_official_source": 17
+     },
+     "note": "Coverage reflects what the collection SEES, not what happened. GAP means no reporting reached the pipeline in 60 days — absence of reporting is not absence of activity."
+    },
+    "traceability": {
+     "refs_used": [
+      "D-01",
+      "D-02",
+      "D-03",
+      "D-04",
+      "D-05",
+      "D-06",
+      "D-07",
+      "D-08",
+      "D-09",
+      "D-11",
+      "KJ-02",
+      "KJ-04",
+      "XS-01",
+      "XS-02"
+     ],
+     "unresolved_refs": [],
+     "executive_synthesis_items": [
+      "XS-01",
+      "XS-02",
+      "XS-03"
+     ],
+     "withheld_judgements_excluded": [
+      "KJ-05"
+     ],
+     "note": "Single analytical truth: every brief item is a view of a development (D-xx) or key judgement (KJ-xx) in the detailed report. XS-xx items are executive synthesis and trace to the listed D-xx."
+    }
+   }
+  }
+ },
+ {
+  "report_id": 1,
+  "week_label": "2026-W45",
+  "period_start": "2026-10-27",
+  "period_end": "2026-11-03",
+  "generated_at": "2026-11-04T05:20:00+00:00",
+  "payload": {
+   "schema": "air_power_v3",
+   "week_label": "2026-W45",
+   "_fixture": "SYNTHETIC TEST DATA — not real reporting",
+   "report_meta": {
+    "week_label": "2026-W45",
+    "period_start": "2026-10-27",
+    "period_end": "2026-11-03",
+    "timezone": "Europe/Budapest",
+    "window_label": "2026-11-04 00:00:00 -> 2026-11-10 23:59:59 (Europe/Budapest)",
+    "generated_utc": "2026-11-11 05:20 UTC",
+    "status": "auto-generated, QA clean",
+    "version": "v3.1",
+    "methodology_version": "v3.0"
+   },
+   "stats": {
+    "events_this_week": 24,
+    "wow": null,
+    "wow_basis": "not comparable — collection methodology changed (v3.0 -> v3.1)",
+    "baseline_movement": {
+     "events_moving_baseline": 0,
+     "total_on_order_delta": 0
+    },
+    "collection_health": {
+     "wow_comparable": false
+    }
+   },
+   "bottom_line": "Fixture bottom line.",
+   "key_judgements": [
+    {
+     "id": "KJ-01",
+     "domain": "fighter_strike",
+     "judgement": "Israel's additional F-15IA order indicates sustained investment in long-range strike, with no operational effect before 2031.",
+     "confidence": "high",
+     "basis": "Ministry statement; two lineages.",
+     "assessment": "Expands Israeli heavy strike capacity in the 2030s; near-term operational effect is zero.",
+     "effect_timing": ">3 years",
+     "alternative_explanation": "The order may replace attrition rather than grow the fleet.",
+     "indicators": [
+      "US production slot allocation for the additional F-15IA."
+     ],
+     "supporting_event_ids": [
+      105
+     ]
+    },
+    {
+     "id": "KJ-02",
+     "domain": "fighter_strike",
+     "judgement": "Serbia's first Rafale deliveries indicate the start of a Western fighter capability on Hungary's southern border, with meaningful scale 1-3 years away.",
+     "confidence": "moderate",
+     "basis": "MoD statement; deliveries observed.",
+     "assessment": "Two aircraft do not yet change Serbia's operational capability; crews, weapons and sustainment determine the pace.",
+     "effect_timing": "<12 months",
+     "alternative_explanation": null,
+     "indicators": [
+      "Delivery of the next two aircraft before year end."
+     ],
+     "supporting_event_ids": [
+      101
+     ]
+    },
+    {
+     "id": "KJ-03",
+     "domain": "fighter_strike",
+     "judgement": "The J-35A in PLAAF markings suggests a second Chinese fifth-generation type is entering service.",
+     "confidence": "moderate",
+     "basis": "State media imagery; single display.",
+     "assessment": "Service entry broadens PLAAF modernisation; scale and unit are unknown.",
+     "effect_timing": "<12 months",
+     "alternative_explanation": "The display may show test-unit aircraft in service paint for publicity.",
+     "indicators": [
+      "Imagery at an operational base."
+     ],
+     "supporting_event_ids": [
+      108
+     ]
+    },
+    {
+     "id": "KJ-04",
+     "domain": "fighter_strike",
+     "judgement": "Germany's additional F-35A order grows the European F-35 user base, with first deliveries in 2029.",
+     "confidence": "high",
+     "basis": "Ministry and parliament statements.",
+     "assessment": "No near-term effect; supports Alliance strike and nuclear-sharing planning in the 2030s.",
+     "effect_timing": ">3 years",
+     "alternative_explanation": null,
+     "indicators": [
+      "Delivery schedule confirmation."
+     ],
+     "supporting_event_ids": [
+      109
+     ]
+    }
+   ],
+   "judgements_requiring_review": [
+    {
+     "id": "KJ-05",
+     "domain": "fighter_strike",
+     "judgement": "Russia demonstrated effective counter-air capability against Ukrainian F-16 operations.",
+     "confidence": "low",
+     "supporting_event_ids": [
+      103,
+      113
+     ],
+     "withheld_reason": "mechanism claim without evidence"
+    }
+   ],
+   "developments": [
+    {
+     "event_ids": [
+      101
+     ],
+     "title": "Serbia receives first two Rafale fighters",
+     "display_label": "RS Rafale delivery",
+     "capability_domain": "fighter_strike",
+     "lifecycle_stage": "delivery",
+     "fact": "The Serbian Ministry of Defence stated that the first two Rafale aircraft landed at Batajnica. Two further aircraft are expected before year end, according to the ministry.",
+     "capability_delta": "Introduces a Western 4.5-generation fighter into the Serbian Air Force alongside its MiG-29 fleet; meaningful scale depends on crew and weapons delivery.",
+     "so_what": "Changes the combat air balance on Hungary's southern border over the next 1-3 years.",
+     "significance": 4,
+     "confidence": "moderate",
+     "effect_timing": "<12 months",
+     "novelty": "new",
+     "independent_lineages": 2,
+     "reports_count": 3,
+     "indicators_to_watch": [
+      "Delivery of the next two aircraft before year end."
+     ],
+     "programme_id": "srb-rafale-2024"
+    },
+    {
+     "event_ids": [
+      102
+     ],
+     "title": "Romania signs Letter of Offer and Acceptance for 32 F-35A",
+     "display_label": "RO F-35A LOA",
+     "capability_domain": "fighter_strike",
+     "lifecycle_stage": "contract_signed",
+     "fact": "The Romanian Ministry of National Defence stated it signed the LOA for 32 F-35A. First deliveries are planned for 2032, per the ministry.",
+     "capability_delta": "Commits Romania to a fifth-generation fighter fleet; no operational effect before the 2030s.",
+     "so_what": "Establishes a second F-35 operator on NATO's south-eastern flank next to Hungary.",
+     "significance": 4,
+     "confidence": "high",
+     "effect_timing": ">3 years",
+     "novelty": "new",
+     "independent_lineages": 2,
+     "reports_count": 3,
+     "indicators_to_watch": [
+      "Romanian pilot training start in the US."
+     ],
+     "programme_id": "rou-f35-2024"
+    },
+    {
+     "event_ids": [
+      103,
+      113
+     ],
+     "title": "Ukraine loses one F-16AM in combat",
+     "display_label": "UA F-16 loss",
+     "capability_domain": "fighter_strike",
+     "lifecycle_stage": "loss",
+     "fact": "The Ukrainian Air Force stated that one F-16AM was lost during a combat mission; the pilot was killed. The cause was not stated.",
+     "capability_delta": "Reduces Ukraine's small F-16 fleet by one airframe; mechanism unknown.",
+     "so_what": "Attrition of a scarce Western fighter fleet next to Hungary's north-eastern border.",
+     "significance": 3,
+     "confidence": "moderate",
+     "effect_timing": "immediate",
+     "novelty": "new",
+     "independent_lineages": 2,
+     "reports_count": 3,
+     "indicators_to_watch": [
+      "Ukrainian Air Force statement on the cause of the loss."
+     ],
+     "programme_id": "ukr-f16-2023"
+    },
+    {
+     "event_ids": [
+      104
+     ],
+     "title": "USAF rotates F-35A squadron to Łask, Poland, for eastern flank air policing",
+     "display_label": "US F-35A Łask rotation",
+     "capability_domain": "fighter_strike",
+     "lifecycle_stage": "other",
+     "fact": "US Air Forces in Europe stated that a squadron of F-35A deployed to Łask Air Base, Poland, to support NATO air policing on the eastern flank.",
+     "capability_delta": "Temporarily adds fifth-generation fighters to Allied QRA capacity in Poland.",
+     "so_what": "Strengthens Allied air posture on the eastern flank during the rotation.",
+     "significance": 3,
+     "confidence": "high",
+     "effect_timing": "immediate",
+     "novelty": "new",
+     "independent_lineages": 2,
+     "reports_count": 3,
+     "indicators_to_watch": [
+      "Duration of the rotation and any follow-on deployment."
+     ],
+     "programme_id": null
+    },
+    {
+     "event_ids": [
+      105
+     ],
+     "title": "Israel orders 25 additional F-15IA",
+     "display_label": "IL F-15IA +25",
+     "capability_domain": "fighter_strike",
+     "lifecycle_stage": "contract_signed",
+     "fact": "The Israeli Ministry of Defense stated it signed for 25 additional F-15IA aircraft. Deliveries begin in 2031, according to the ministry.",
+     "capability_delta": "Expands Israel's heavy strike fleet in the 2030s.",
+     "so_what": "Sustains Israeli long-range strike capacity; limited direct effect on Europe.",
+     "significance": 4,
+     "confidence": "high",
+     "effect_timing": ">3 years",
+     "novelty": "new",
+     "independent_lineages": 2,
+     "reports_count": 3,
+     "indicators_to_watch": [
+      "Next official statement on the programme schedule."
+     ],
+     "programme_id": "isr-f15ia-2024"
+    },
+    {
+     "event_ids": [
+      106
+     ],
+     "title": "Algeria reported to receive first Su-57E",
+     "display_label": "DZ Su-57E",
+     "capability_domain": "fighter_strike",
+     "lifecycle_stage": "delivery",
+     "fact": "A specialist outlet reported, citing imagery, that Algeria received its first Su-57E. Neither government confirmed.",
+     "capability_delta": "Would make Algeria the first export operator of the Su-57, if confirmed.",
+     "so_what": "First export of Russia's fifth-generation fighter; indicator of Russian production capacity.",
+     "significance": 3,
+     "confidence": "low",
+     "effect_timing": "<12 months",
+     "novelty": "new",
+     "independent_lineages": 1,
+     "reports_count": 2,
+     "indicators_to_watch": [
+      "Official confirmation or imagery of Su-57E at an Algerian base."
+     ],
+     "programme_id": null
+    },
+    {
+     "event_ids": [
+      107
+     ],
+     "title": "Japan declares IOC for first F-35B squadron at Nyutabaru",
+     "display_label": "JP F-35B IOC",
+     "capability_domain": "fighter_strike",
+     "lifecycle_stage": "ioc",
+     "fact": "The Japan Air Self-Defense Force stated that its first F-35B squadron reached initial operational capability at Nyutabaru.",
+     "capability_delta": "Adds short-take-off fifth-generation capability to Japan's south-western defence.",
+     "so_what": "Strengthens Allied air posture in the East China Sea.",
+     "significance": 3,
+     "confidence": "high",
+     "effect_timing": "immediate",
+     "novelty": "new",
+     "independent_lineages": 2,
+     "reports_count": 3,
+     "indicators_to_watch": [
+      "Next official statement on the programme schedule."
+     ],
+     "programme_id": "jpn-f35b-2019"
+    },
+    {
+     "event_ids": [
+      108
+     ],
+     "title": "China displays J-35A in PLAAF service markings",
+     "display_label": "CN J-35A",
+     "capability_domain": "fighter_strike",
+     "lifecycle_stage": "production",
+     "fact": "State media showed J-35A aircraft in PLAAF markings at an air show. Unit and quantity were not stated.",
+     "capability_delta": "Indicates the J-35A is moving from test into service; scale unknown.",
+     "so_what": "A second Chinese fifth-generation type would broaden PLAAF modernisation.",
+     "significance": 4,
+     "confidence": "moderate",
+     "effect_timing": "<12 months",
+     "novelty": "new",
+     "independent_lineages": 2,
+     "reports_count": 3,
+     "indicators_to_watch": [
+      "Imagery of J-35A at an operational PLAAF base."
+     ],
+     "programme_id": null
+    },
+    {
+     "event_ids": [
+      109
+     ],
+     "title": "Germany orders 15 additional F-35A",
+     "display_label": "DE F-35A +15",
+     "capability_domain": "fighter_strike",
+     "lifecycle_stage": "contract_signed",
+     "fact": "The German Ministry of Defence stated that parliament approved and it signed for 15 additional F-35A. Deliveries begin in 2029, per the ministry.",
+     "capability_delta": "Raises Germany's F-35A programme of record from 35 to 50.",
+     "so_what": "Grows the European F-35 user base the Alliance's nuclear sharing and strike planning depends on.",
+     "significance": 4,
+     "confidence": "high",
+     "effect_timing": ">3 years",
+     "novelty": "new",
+     "independent_lineages": 2,
+     "reports_count": 3,
+     "indicators_to_watch": [
+      "Next official statement on the programme schedule."
+     ],
+     "programme_id": "deu-f35-2022"
+    },
+    {
+     "event_ids": [
+      110
+     ],
+     "title": "Czech Republic opens Gripen lease extension talks",
+     "display_label": "CZ Gripen extension",
+     "capability_domain": "fighter_strike",
+     "lifecycle_stage": "requirement",
+     "fact": "The Czech Ministry of Defence said talks on extending the Gripen lease have begun.",
+     "capability_delta": "No capability change at this stage.",
+     "so_what": "Routine sustainment of an existing fleet.",
+     "significance": 2,
+     "confidence": "moderate",
+     "effect_timing": "unknown",
+     "novelty": "new",
+     "independent_lineages": 2,
+     "reports_count": 3,
+     "indicators_to_watch": [
+      "Next official statement on the programme schedule."
+     ],
+     "programme_id": null
+    },
+    {
+     "event_ids": [
+      111
+     ],
+     "title": "Hungary accepts first KC-390 transport",
+     "display_label": "HU KC-390",
+     "capability_domain": "air_mobility_fixed",
+     "lifecycle_stage": "delivery",
+     "fact": "The Hungarian Defence Forces stated that the first KC-390 was accepted at Kecskemét.",
+     "capability_delta": "Begins replacing Hungary's tactical airlift capacity; IOC depends on crew training.",
+     "so_what": "Restores national tactical airlift and air-to-air refuelling options for MH.",
+     "significance": 3,
+     "confidence": "high",
+     "effect_timing": "<12 months",
+     "novelty": "new",
+     "independent_lineages": 2,
+     "reports_count": 3,
+     "indicators_to_watch": [
+      "Next official statement on the programme schedule."
+     ],
+     "programme_id": "hun-c390-2020"
+    }
+   ],
+   "background_items": [
+    {
+     "event_ids": [
+      112
+     ],
+     "title": "Slovakia completes F-16 simulator training block",
+     "display_label": "SK F-16 sim",
+     "capability_domain": "fighter_strike",
+     "lifecycle_stage": "other",
+     "fact": "The Slovak MoD reported completion of a simulator training block.",
+     "capability_delta": "No capability change at this stage.",
+     "so_what": "Routine.",
+     "significance": 2,
+     "confidence": "high",
+     "effect_timing": "unknown",
+     "novelty": "new",
+     "independent_lineages": 2,
+     "reports_count": 3,
+     "indicators_to_watch": [
+      "Next official statement on the programme schedule."
+     ],
+     "programme_id": null,
+     "country_ids": [
+      "svk"
+     ],
+     "ref": "B-01"
+    }
+   ],
+   "priority_watch": [
+    {
+     "issue": "Serbian Rafale deliveries 3-4",
+     "why_it_matters": "Pace of Serbia's fighter transition next to Hungary.",
+     "next_observable": "Arrival of aircraft 3 and 4 at Batajnica.",
+     "horizon": "weeks",
+     "impact_if_confirmed": "high"
+    },
+    {
+     "issue": "Cause of Ukrainian F-16 loss",
+     "why_it_matters": "Indicates the threat to Western fighters operating near the front.",
+     "next_observable": "Ukrainian Air Force statement on the cause.",
+     "horizon": "days",
+     "impact_if_confirmed": "medium"
+    },
+    {
+     "issue": "J-35A operational basing",
+     "why_it_matters": "Scale of the second PLAAF fifth-generation type.",
+     "next_observable": "Imagery of J-35A at an operational base.",
+     "horizon": "months",
+     "impact_if_confirmed": "medium"
+    }
+   ],
+   "intelligence_gaps": [
+    "Whether Serbia's Rafale contract includes Meteor missiles is not established in reporting.",
+    "The cause of the Ukrainian F-16 loss is not reported."
+   ],
+   "since_last_week": {
+    "previous_week": "2026-W45",
+    "programmes": [
+     {
+      "programme": "RS Rafale delivery",
+      "programme_id": "srb-rafale-2024",
+      "previous": "Production · moderate",
+      "current": "Delivery · moderate",
+      "change": "lifecycle Production -> Delivery",
+      "moved": true
+     },
+     {
+      "programme": "RO F-35A LOA",
+      "programme_id": "rou-f35-2024",
+      "previous": "Export approval · high",
+      "current": "Contract signed · high",
+      "change": "lifecycle Export approval -> Contract signed",
+      "moved": true
+     },
+     {
+      "programme": "DE F-35A +15",
+      "programme_id": "deu-f35-2022",
+      "previous": "not reported",
+      "current": "Contract signed · high",
+      "change": "new to the reporting this period",
+      "moved": true
+     },
+     {
+      "programme": "PL AH-64E",
+      "programme_id": "pol-ah64e-2024",
+      "previous": "Contract signed · high",
+      "current": "not reported",
+      "change": "no new evidence this period",
+      "moved": false
+     }
+    ],
+    "watch": [
+     {
+      "issue": "Serbian Rafale deliveries 3-4",
+      "state": "unchanged",
+      "state_label": "unchanged — no new evidence this period",
+      "next_observable": "Arrival of aircraft 3 and 4."
+     }
+    ],
+    "note": "Programme-level comparison against the previous published report."
+   },
+   "annex_events": [
+    {
+     "event_id": 103,
+     "country": "Ukraine"
+    },
+    {
+     "event_id": 113,
+     "country": "Ukraine"
+    }
+   ],
+   "orbat_delta": [],
+   "capability_timeline": [],
+   "self_checks": []
+  }
+ }
+]

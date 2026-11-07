@@ -1,21 +1,44 @@
-# weekly_digest.yml — Monday-morning digest of the last 7 days of fleet
-# events. Prints to the Actions log; if TELEGRAM_BOT_TOKEN and
-# TELEGRAM_CHAT_ID secrets are set, also pushes to Telegram.
+# weekly_digest.yml — WEDNESDAY weekly report (v3.1, 2026-11).
+#
+# Reporting window: Europe/Budapest Wednesday 00:00:00 -> Tuesday 23:59:59.
+# Daily collection (aircraft_sync.yml) keeps running every day. On Wednesday
+# morning this job first runs one last collection + extraction pass (articles
+# published up to Tuesday midnight), then generates the weekly report —
+# including the 4-page Command Air Intelligence Brief built from the same
+# payload — and finally the Telegram digest.
+#
+# 05:15 UTC = 06:15 CET (winter) / 07:15 CEST (summer) — Wednesday morning in
+# Budapest all year. The concurrency group is shared with the daily sync, so
+# the two never run at the same time: if the 04:30 daily run is still going,
+# this job waits for it.
+#
+# A week that is already published is NOT overwritten by a re-run. To
+# deliberately restate it, use "Run workflow" and fill in restate_reason —
+# the report then shows a visible RESTATEMENT banner.
 
 name: weekly-digest
 
 on:
   schedule:
-    - cron: "0 5 * * 1"   # Monday 05:00 UTC
-  workflow_dispatch: {}
+    - cron: "15 5 * * 3"   # Wednesday 05:15 UTC
+  workflow_dispatch:
+    inputs:
+      restate_reason:
+        description: "Only to re-issue an already published week: reason shown in the report (leave empty otherwise)"
+        required: false
+        default: ""
 
 permissions:
   contents: read
 
+concurrency:
+  group: aircraft-sync
+  cancel-in-progress: false
+
 jobs:
   digest:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v5
 
@@ -24,15 +47,36 @@ jobs:
           python-version: "3.12"
 
       - name: Install dependencies
-        run: pip install anthropic
+        run: pip install feedparser anthropic
 
-      - name: Generate analyst weekly report (archived in ac_reports)
+      - name: Final collection pass (articles up to Tuesday midnight)
+        working-directory: scripts
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: python collect_rss.py
+
+      - name: Final extraction pass
         working-directory: scripts
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        run: python generate_weekly_report.py
+        run: python process_articles.py
+
+      - name: Generate weekly report + Command Brief (archived in ac_reports)
+        working-directory: scripts
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          RESTATE_REASON: ${{ github.event.inputs.restate_reason }}
+        run: |
+          if [ -n "$RESTATE_REASON" ]; then
+            python generate_weekly_report.py --restate "$RESTATE_REASON"
+          else
+            python generate_weekly_report.py
+          fi
 
       - name: Generate and send digest
         working-directory: scripts

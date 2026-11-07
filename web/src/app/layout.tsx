@@ -12,6 +12,7 @@ const NAV = [
   { href: "/countries", label: "Countries" },
   { href: "/aircraft", label: "Aircraft" },
   { href: "/weekly", label: "Weekly report" },
+  { href: "/weekly/command-brief", label: "Command brief" },
   { href: "/admin/review", label: "Review" },
 ];
 

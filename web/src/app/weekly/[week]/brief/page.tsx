@@ -1,4 +1,4 @@
-import { fetchTable } from "@/lib/db";
+import { loadReport } from "@/lib/reports";
 import { PageHeader } from "@/components/ui";
 import { BriefingView } from "@/components/BriefingView";
 import { PrintButton } from "@/components/PrintButton";
@@ -18,11 +18,7 @@ export default async function BriefingPage({
 }: {
   params: { week: string };
 }) {
-  const query = params.week === "latest"
-    ? "select=*&order=period_end.desc&limit=1"
-    : `select=*&week_label=eq.${encodeURIComponent(params.week)}&limit=1`;
-  const rows = await fetchTable<ReportRow>("ac_reports", query);
-  const report = rows[0];
+  const report: ReportRow | undefined = await loadReport(params.week);
 
   if (!report) {
     return (
