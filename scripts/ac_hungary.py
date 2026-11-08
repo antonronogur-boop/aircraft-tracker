@@ -194,8 +194,9 @@ def score_item(item, country_ids, countries_by_id, cfg=None):
                    and bool(signals or gates))
             why = f["why"]
         if hit:
+            pts = (f.get("points_by_tier") or {}).get(tier, f["points"])
             factors.append({"id": f["id"], "label": f["label"],
-                            "points": f["points"], "why": why})
+                            "points": pts, "why": why})
 
     # --- horizont ---
     hm = (cfg.get("horizon_modifier") or {}).get(
@@ -210,16 +211,21 @@ def score_item(item, country_ids, countries_by_id, cfg=None):
     ranked = sorted([f for f in factors
                      if f["points"] > 0 and f["id"] != "horizon"],
                     key=lambda f: -f["points"])
-    rationale = "; ".join(f["why"] for f in ranked[:2])
-    if rationale:
-        rationale = rationale[0].upper() + rationale[1:] + "."
+    # Teljes mondatok (a vezetoi szovegben nincs nyers adatbazis-toredek).
+    rationale = " ".join(_as_sentence(f["why"]) for f in ranked[:2])
     if score < 15:
-        rationale = ("No direct link to Hungary, MH or NATO's central-eastern "
-                     "air posture identified{}.".format(
-                         " ({})".format(ranked[0]["why"]) if ranked else ""))
+        rationale = ("No direct link to Hungary, MH or NATO's Central/Eastern "
+                     "European air posture is identified.")
     return {"score": score, "level": level, "tier": tier,
             "primary_country": primary, "factors": factors,
             "rationale": rationale, "version": cfg.get("version")}
+
+
+def _as_sentence(text):
+    t = str(text or "").strip().rstrip(".;, ")
+    if not t:
+        return ""
+    return t[0].upper() + t[1:] + "."
 
 
 def rank_key(hu, significance, confidence, effect_timing):

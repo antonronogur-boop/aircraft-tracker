@@ -228,6 +228,12 @@ def main(dry_run=False, restate_reason=None):
         articles = {a["article_id"]: a for a in db.select(
             "ac_articles", {"select": "article_id,title,url,source_id,"
                                       "publish_date"})}
+        try:
+            sources_by_id = {s["source_id"]: s for s in db.select(
+                "ac_sources", {"select": "source_id,source_name,language,"
+                                         "homepage"})}
+        except Exception:  # noqa: BLE001
+            sources_by_id = {}
         fleets = db.select("ac_fleets", {
             "select": "country_id,type_id,fleet_status,quantity,variant,"
                       "service,baseline_scope"})
@@ -646,19 +652,29 @@ def main(dry_run=False, restate_reason=None):
                 payload, countries, coverage=coverage, cfg=hu_cfg,
                 client=synth_client,
                 events_by_id={e.get("event_id"): e for e in raw},
-                window=win)
+                window=win, articles_by_id=articles,
+                sources_by_id=sources_by_id)
             cb = payload["command_brief"]
-            print("  Command brief: {} KJ ({} executive synthesis), {} "
-                  "regional row(s), bottom line: {}".format(
-                      len(cb["page1"]["key_judgements"]),
-                      len(cb["traceability"]["executive_synthesis_items"]),
-                      len(cb["page2"]["rows"]),
+            tr = cb["traceability"]
+            print("  Command brief v2: {} primary KJ ({} executive "
+                  "synthesis), {} secondary, {} regional row(s), {} "
+                  "source(s), bottom line: {}".format(
+                      len(cb["page1"]["primary"]),
+                      len(tr["executive_synthesis_items"]),
+                      len(cb["page1"]["secondary_watch"]),
+                      len(cb["page2"]["rows"]), len(cb["page5"]["sources"]),
                       cb["page1"]["bottom_line"]["origin"]))
-            if cb["traceability"]["unresolved_refs"]:
+            if tr["unresolved_refs"] or tr["unresolved_sources"]:
                 self_checks.append({
                     "check": "command brief cites a reference missing from "
-                             "the detailed report",
-                    "item": ", ".join(cb["traceability"]["unresolved_refs"])})
+                             "the report or source register",
+                    "item": ", ".join(tr["unresolved_refs"]
+                                      + tr["unresolved_sources"])})
+            if tr["items_without_source"]:
+                self_checks.append({
+                    "check": "command brief item without an original source",
+                    "item": ", ".join(str(x) for x in
+                                      tr["items_without_source"])})
         except Exception as exc:  # noqa: BLE001
             print("  [warn] command brief unavailable ({}: {})".format(
                 type(exc).__name__, str(exc)[:200]))

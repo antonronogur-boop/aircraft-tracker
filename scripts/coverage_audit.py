@@ -146,7 +146,28 @@ def audit(events, articles_by_id, countries_by_id, hu_cfg, window=None,
         out_r[reg] = dict(r, status=st)
 
     prio = [out_c[c] for c in priority_ids if c in out_c]
+
+    # Audit-csoportok (kozvetlen regio, Kozel-Kelet, Afrika, Indo-Pacific):
+    # orszagonkent ADEQUATE / PARTIAL / GAP.
+    groups = {}
+    for gname, ids in (src_cfg.get("audit_groups") or {}).items():
+        rows = []
+        for cid in ids:
+            r = out_c.get(cid)
+            if r is None:
+                c = countries_by_id.get(cid) or {}
+                r = {"country_id": cid, "name": c.get("name") or cid,
+                     "status": "GAP", "events_60d": 0, "events_window": 0,
+                     "distinct_sources": 0, "official_source": False,
+                     "candidate_sources": [
+                         {"name": x.get("name"), "homepage": x.get("homepage"),
+                          "tier": x.get("tier"), "language": x.get("language"),
+                          "caveat": x.get("caveat")}
+                         for x in candidates.get(cid, [])]}
+            rows.append(r)
+        groups[gname] = rows
     return {
+        "groups": groups,
         "days": days,
         "thresholds": {"adequate_events": ADEQUATE_EVENTS,
                        "adequate_sources": ADEQUATE_SOURCES},
@@ -189,7 +210,7 @@ def main():
     arts = {a["article_id"]: a for a in db.select(
         "ac_articles", {"select": "article_id,source_id"})}
     countries = {c["country_id"]: c for c in db.select(
-        "ac_countries", {"select": "country_id,name,region"})}
+        "ac_countries", {"select": "country_id,name,region,aliases"})}
     hu = ac_hungary.load_config()
     win = ac_window.reporting_window(now)
     res = audit(events, arts, countries, hu, window=win, days=days,
@@ -203,6 +224,15 @@ def main():
         print("  {:<26} {:<9} {:>5} {:>5} {:>4}  {}".format(
             p["name"][:26], p["status"], p["events_60d"], p["events_window"],
             p["distinct_sources"], "yes" if p["official_source"] else "NO"))
+    for gname, rows in (res.get("groups") or {}).items():
+        if gname == "immediate_region":
+            continue
+        print("\n{}:".format(gname.replace("_", " ").title()))
+        for p in rows:
+            print("  {:<26} {:<9} {:>5} {:>5} {:>4}  {}".format(
+                p["name"][:26], p["status"], p["events_60d"],
+                p["events_window"], p["distinct_sources"],
+                "yes" if p["official_source"] else "NO"))
     print("\nRegions:")
     for reg, r in sorted(res["regions"].items()):
         print("  {:<22} {:<9} events_60d={:<4} countries={} (gap {})".format(

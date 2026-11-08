@@ -59,10 +59,18 @@ def main():
     since = (end - timedelta(days=95)).isoformat()
     events = db.select("ac_events", {
         "select": "event_id,country_id,article_id,event_date,"
-                  "announcement_date,created_at,review_status",
+                  "announcement_date,created_at,review_status,"
+                  "originating_evidence_id",
         "review_status": "neq.rejected", "created_at": "gte." + since})
     articles = {a["article_id"]: a for a in db.select(
-        "ac_articles", {"select": "article_id,source_id"})}
+        "ac_articles", {"select": "article_id,title,url,source_id,"
+                                  "publish_date"})}
+    try:
+        sources_by_id = {s["source_id"]: s for s in db.select(
+            "ac_sources", {"select": "source_id,source_name,language,"
+                                     "homepage"})}
+    except Exception:  # noqa: BLE001
+        sources_by_id = {}
     start = datetime.fromisoformat(str(row.get("period_start"))[:10])
     window = {"start_date": start.date(), "end_date": end.date()}
     hu_cfg = ac_hungary.load_config()
@@ -75,7 +83,8 @@ def main():
         client = anthropic.Anthropic()
     brief = ac_command_brief.build_command_brief(
         payload, countries, coverage=cov, cfg=hu_cfg, client=client,
-        events_by_id={e["event_id"]: e for e in events})
+        events_by_id={e["event_id"]: e for e in events},
+        articles_by_id=articles, sources_by_id=sources_by_id)
     payload["command_brief"] = brief
 
     out = ROOT / "data" / "command_brief_{}.json".format(week)
@@ -88,12 +97,14 @@ def main():
     p1 = brief["page1"]
     print("\nBottom line ({}):".format(p1["bottom_line"]["origin"]))
     for s in p1["bottom_line"]["sentences"]:
-        print("  - {} {}".format(s["text"], s["refs"] or ""))
-    print("\nPage 1 key judgements:")
-    for k in p1["key_judgements"]:
+        print("  - {} {}".format(s["text"], s.get("sources") or ""))
+    print("\nPage 1 primary key judgements:")
+    for k in p1["primary"]:
         print("  {:<6} HU {:<8} SIG {}  {}".format(
             k["id"], k["hu_relevance"]["level"], k["significance"],
             k["statement"][:90]))
+    print("Secondary watch: {}".format(", ".join(
+        s["line"][:60] for s in p1["secondary_watch"]) or "—"))
     print("\nPage 2 regional rows: {}".format(len(brief["page2"]["rows"])))
     for r in brief["page2"]["rows"]:
         print("  {:<26} HU {:<8} {}".format(r["country"][:26],
@@ -102,8 +113,12 @@ def main():
         x["name"] for x in brief["page2"]["no_material_change"])))
     print("  collection gap:     {}".format(", ".join(
         brief["page2"]["collection_gap"])))
-    print("\nUnresolved refs: {}".format(
-        brief["traceability"]["unresolved_refs"] or "none"))
+    tr = brief["traceability"]
+    print("\nSources in register: {}".format(len(brief["page5"]["sources"])))
+    print("Unresolved refs/sources: {}".format(
+        (tr["unresolved_refs"] + tr["unresolved_sources"]) or "none"))
+    print("Items without source: {}".format(
+        tr["items_without_source"] or "none"))
     print("Saved {}\n      {}".format(out, rows_out))
 
     if write:
@@ -117,7 +132,10 @@ def main():
                 "%Y-%m-%d %H:%M UTC"),
             "number": int(prev.get("number") or 0) + 1,
         }
-        brief["restatement"] = meta["restatement"]
+        brief["meta"]["revision"] = {
+            "number": meta["restatement"]["number"],
+            "reason": meta["restatement"]["reason"],
+            "restated_utc": meta["restatement"]["restated_utc"]}
         db.upsert("ac_reports", [{
             "week_label": week, "period_start": row.get("period_start"),
             "period_end": row.get("period_end"),

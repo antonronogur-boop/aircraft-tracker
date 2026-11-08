@@ -1,5 +1,4 @@
 import { loadReport } from "@/lib/reports";
-import { BriefEmbed } from "@/components/BriefEmbed";
 import { PageHeader } from "@/components/ui";
 import { WeeklyReportView } from "@/components/WeeklyReportView";
 import { PrintButton } from "@/components/PrintButton";
@@ -20,8 +19,7 @@ export default async function ArchivedReportPage({ params }: { params: { week: s
   }
   return (
     <div>
-      {/* Nyomtataskor a jelentes ELSO 4 oldala a Command Brief. */}
-      <div className={`flex flex-wrap items-start justify-between gap-3 ${report.payload?.command_brief ? "cb-print-hide" : ""}`}>
+      <div className={`flex flex-wrap items-start justify-between gap-3`}>
         <PageHeader
           title={`Weekly report — ${report.week_label}`}
           description={`Archived report · generated ${report.generated_at?.slice(0, 16).replace("T", " ")} UTC`}
@@ -31,7 +29,7 @@ export default async function ArchivedReportPage({ params }: { params: { week: s
           {report.payload?.command_brief && (
             <Link href={`/weekly/${report.week_label}/command`}
                   className="rounded border border-amber-600/60 bg-amber-500/10 px-3 py-1.5 text-xs text-amber-200 hover:border-amber-400">
-              Command brief (4 pages) →
+              Command brief (separate product) →
             </Link>
           )}
           <Link href={`/weekly/${report.week_label}/brief`}
@@ -41,7 +39,6 @@ export default async function ArchivedReportPage({ params }: { params: { week: s
           <PrintButton />
         </div>
       </div>
-      <BriefEmbed payload={report.payload} />
       <WeeklyReportView
         payload={report.payload}
         weekLabel={report.week_label}

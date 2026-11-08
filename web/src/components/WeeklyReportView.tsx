@@ -21,7 +21,7 @@ export interface ReportPayload {
                     restated_utc?: string; number?: number } | null;
   };
   // v3.1: a 4 oldalas Command Air Intelligence Brief UGYANABBOL a payloadbol
-  command_brief?: import("./CommandBrief").CommandBriefPayload;
+  command_brief?: import("@/lib/briefTypes").CommandBriefV2;
   stats: {
     events_this_week: number; events_prev_week?: number;
     events_prev_4wk_weekly_avg?: number; events_prev_4wk_avg?: number;

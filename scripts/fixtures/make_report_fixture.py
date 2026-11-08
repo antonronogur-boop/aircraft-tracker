@@ -94,7 +94,7 @@ DEVS = [
         "confirmed.",
         "First export of Russia's fifth-generation fighter; indicator of "
         "Russian production capacity.", 3, "low", "<12 months",
-        countries=["dza"], lin=1,
+        countries=["dza"], lin=1, events=[106, 116],
         ind=["Official confirmation or imagery of Su-57E at an Algerian "
              "base."]),
     dev(7, "Japan declares IOC for first F-35B squadron at Nyutabaru",
@@ -205,10 +205,47 @@ WITHHELD = [
      "withheld_reason": "mechanism claim without evidence"},
 ]
 
-ANNEX = [
-    {"event_id": 103, "country": "Ukraine"},
-    {"event_id": 113, "country": "Ukraine"},
-]
+# Forrasok (SZINTETIKUS URL-ek). Benne: magyar ekezetes eredeti cim, egy
+# allami ellenorzes alatti forras (egy lineage), es egy cikk, amely ket
+# fejlemenyt is alatamaszt.
+_ART = {
+    101: ("Serbia receives first Rafale jets at Batajnica",
+          "https://www.defensenews.com/fixture/serbia-rafale"),
+    102: ("Romania signs F-35 Letter of Offer and Acceptance",
+          "https://breakingdefense.com/fixture/romania-f35"),
+    103: ("Ukraine loses F-16AM in combat mission",
+          "https://mil.in.ua/en/fixture/f16-loss"),
+    113: ("Ukrainian Air Force confirms F-16 loss",
+          "https://www.defensenews.com/fixture/ukraine-f16"),
+    104: ("USAFE F-35A squadron deploys to Łask",
+          "https://www.airandspaceforces.com/fixture/lask"),
+    105: ("Israel orders 25 more F-15IA",
+          "https://breakingdefense.com/fixture/f15ia"),
+    106: ("Алжир получил первые Су-57Э",
+          "https://tass.ru/fixture/su57e"),
+    116: ("Алжир получил Су-57Э — РИА Новости",
+          "https://ria.ru/fixture/su57e"),
+    107: ("JASDF F-35B squadron reaches IOC",
+          "https://theaviationist.com/fixture/f35b-ioc"),
+    108: ("J-35A appears in PLAAF markings",
+          "https://theaviationist.com/fixture/j35a"),
+    109: ("Germany signs for 15 more F-35A",
+          "https://www.defensenews.com/fixture/germany-f35"),
+    110: ("Czech Gripen lease talks begin",
+          "https://www.airforce-technology.com/fixture/cz-gripen"),
+    111: ("Kecskemétre érkezett az első KC-390 — Magyar Honvédség",
+          "https://honvedelem.hu/fixture/kc-390-kecskemet"),
+    112: ("Slovak F-16 simulator block completed",
+          "https://www.airforce-technology.com/fixture/sk-sim"),
+}
+_COUNTRY = {101: "Serbia", 102: "Romania", 103: "Ukraine", 113: "Ukraine",
+            104: "United States", 105: "Israel", 106: "Algeria",
+            116: "Algeria",
+            107: "Japan", 108: "China", 109: "Germany", 110: "Czechia",
+            111: "Hungary", 112: "Slovakia"}
+ANNEX = [{"event_id": k, "country": _COUNTRY[k], "article_title": v[0],
+          "article_url": v[1], "event_date": "2026-11-0{}".format(4 + k % 6)}
+         for k, v in _ART.items()]
 
 PRIORITY_WATCH = [
     {"issue": "Serbian Rafale deliveries 3-4", "why_it_matters": "Pace of "

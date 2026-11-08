@@ -40,10 +40,16 @@
 }
 .cb .cb-body { flex: 1 1 auto; min-height: 0; overflow: hidden; }
 .cb .cb-foot {
-  display: flex; justify-content: space-between; gap: 8px;
+  display: flex; justify-content: space-between; gap: 10px;
   border-top: 1px solid #cbd5e1; margin-top: 4px; padding-top: 2px;
-  font-size: 7.5px; color: #64748b;
+  font-size: 7.3px; line-height: 1.25; color: #64748b;
 }
+.cb .cb-micro { min-width: 0; }
+.cb .cb-map svg { display: block; width: 100%; height: auto; }
+/* Page 5 (Sources & Legend): a forrasjegyzek hossza hetrol hetre valtozik,
+   ezert ez az oldal folyhat — a vezetoi 1–4. oldal fix marad. */
+.cb .cb-page.cb-flow { height: auto; min-height: 210mm; overflow: visible; }
+.cb .cb-flow .cb-body { overflow: visible; }
 @media print {
   @page cmdbrief { size: A4 landscape; margin: 0; }
   .cb { overflow: visible; padding: 0; }
@@ -55,6 +61,10 @@
   /* Az utolso brief-oldal utan nincs ures oldal; a reszletes jelentes a
      nevesitett oldal valtasa miatt amugy is uj (allo) oldalon kezdodik. */
   .cb .cb-page:last-child { break-after: auto; }
+  @page cmdflow { size: A4 landscape; margin: 7mm 9mm 7mm; }
+  .cb .cb-page.cb-flow { page: cmdflow; padding: 0; min-height: 0; break-inside: auto; }
+  .cb .cb-keep { break-inside: avoid; }
+  .cb tr { break-inside: avoid; }
   .cb-print-hide { display: none !important; }
   .cb a.cb-ref { color: #075985 !important; }
 }

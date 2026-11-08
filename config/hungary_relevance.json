@@ -1,5 +1,5 @@
 {
-  "version": "hu-1.0",
+  "version": "hu-1.1",
   "_doc": "Hungary-relevance model for the Command Air Intelligence Brief. Deterministic and editable. HU relevance is a SEPARATE dimension from air-power significance (1-5, from the analytical layer): a distant item can be HIGH here, a significant item can be LOW. Points add up from geography plus factor matches; the level follows the thresholds. Every applied factor is written into the report with its points and reason, so a score can always be traced. Edit mh_platforms when the MH inventory or plans change.",
   "levels": [
     {
@@ -317,10 +317,13 @@
     },
     {
       "id": "cee_named",
-      "label": "Names a Central/Eastern European state",
-      "points": 12,
+      "label": "Regional state named (partner / supplier)",
+      "points": 6,
       "names_cee_country": true,
-      "why": "the reporting names a Central/Eastern European state other than the actor — a supplier, partner or affected party in Hungary's region"
+      "why": "the reporting names a Central/Eastern European state as partner, supplier or affected party — a supplier link alone is a weak tie to Hungary",
+      "points_by_tier": {
+        "distant": 3
+      }
     },
     {
       "id": "regional_logistics",
@@ -337,6 +340,55 @@
       "text_rx": "\\b(exercise|drill)\\b",
       "regional_actor": true,
       "why": "a regional exercise shows Allied or adversary air activity patterns near Hungary"
+    },
+    {
+      "id": "neighbour_capability_milestone",
+      "label": "Capability milestone next door",
+      "points": 12,
+      "domains": [
+        "fighter_strike",
+        "attack_helicopter",
+        "counter_uas",
+        "isr_aew_sigint",
+        "tanker",
+        "uncrewed_cca"
+      ],
+      "tiers": [
+        "neighbour",
+        "neighbour_non_nato",
+        "non_nato_priority"
+      ],
+      "stages": [
+        "contract_signed",
+        "delivery",
+        "ioc",
+        "foc",
+        "loss"
+      ],
+      "why": "a combat-relevant capability milestone (contract, delivery, IOC/FOC or loss) in a state on or next to Hungary's border changes the regional air picture directly"
+    },
+    {
+      "id": "flank_qra_change",
+      "label": "Regional QRA / air policing change",
+      "points": 16,
+      "text_rx": "\\b(air policing|QRA|quick reaction alert)\\b",
+      "tiers": [
+        "neighbour",
+        "extended_nato",
+        "home"
+      ],
+      "why": "a change in who holds QRA or air policing duty in the region alters NATO's Central/Eastern European air posture that Hungary is part of"
+    },
+    {
+      "id": "doctrinal_relevance",
+      "label": "Capability adoption / NATO doctrinal relevance",
+      "points": 10,
+      "domains": [
+        "uncrewed_cca",
+        "counter_uas"
+      ],
+      "min_significance": 4,
+      "why": "an uncrewed or counter-UAS capability milestone with doctrinal weight for NATO and for MH capability development, even if distant"
     }
   ],
   "horizon_modifier": {
@@ -393,5 +445,9 @@
       "Southeast Asia",
       "Oceania"
     ]
+  },
+  "strategic_watch": {
+    "_doc": "PO-defined strategic watch: a LOW/MINIMAL item may take a PRIMARY page-1 slot only if its title or fact matches one of these patterns (or it is significance 5 at high confidence). Keep this list short.",
+    "patterns": []
   }
 }

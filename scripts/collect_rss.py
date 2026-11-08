@@ -88,7 +88,7 @@ def main():
     try:
         type_keywords = build_keyword_index()
         sources = db.select("ac_sources", {
-            "select": "source_id,source_name,rss_url",
+            "select": "source_id,source_name,rss_url,language",
             "rss_url": "not.is.null", "enabled": "eq.true"})
         print("RSS sources: {}".format(len(sources)))
 
@@ -106,7 +106,13 @@ def main():
                     continue
                 title = entry.get("title") or ""
                 summary = entry.get("summary") or entry.get("description") or ""
-                if not is_relevant(title, summary, type_keywords):
+                # Nem angol nyelvu (pl. szerb MoD, cirill) forrasnal az angol
+                # kulcsszo-szuro mindent kidobna: ott a tobbnyelvu olcso
+                # Haiku-kapu dont (config/source_policy.json -> haiku_gate).
+                # Az eredeti nyelvu cim valtozatlanul kerul tarolasra.
+                english = (source.get("language") or "en").lower().startswith(
+                    "en")
+                if english and not is_relevant(title, summary, type_keywords):
                     skipped += 1
                     continue
                 rows.append(article_row(entry, source))

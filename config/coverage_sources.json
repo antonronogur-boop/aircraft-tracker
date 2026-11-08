@@ -1,13 +1,25 @@
 {
-  "_doc": "Source tiers and CANDIDATE sources for coverage gaps. Nothing here is collected automatically: the coverage audit (scripts/coverage_audit.py) decides where a gap exists FIRST, and only then is a candidate verified and added to ac_sources. Priority order: official air force > ministry of defence > procurement agency > NATO > OEM > specialist defence media > other (with caveat). Keep original-language evidence: the extraction model reads non-English titles; do not machine-translate the stored article text.",
-  "tier_order": ["official_af", "mod", "procurement_agency", "nato", "oem", "specialist_defence", "general_media"],
+  "_doc": "Source tiers, state-controlled source rules, audit groups and CANDIDATE sources. Nothing here is collected automatically: the coverage audit (scripts/coverage_audit.py) finds the gaps FIRST; a candidate is added to ac_sources only after its feed is verified (see docs/SOURCE_DISCOVERY.md). Priority: Tier 1 primary official > Tier 2 primary industry > Tier 3 specialist defence media > Tier 4 regional media (only if no higher tier covers the topic). RSS/Atom preferred, not mandatory: content relevance > delivery protocol. Keep original-language evidence.",
+  "tier_order": [
+    "official_af",
+    "mod",
+    "procurement_agency",
+    "nato",
+    "government",
+    "oem",
+    "specialist_defence",
+    "regional_media",
+    "general_media"
+  ],
   "tier_labels": {
-    "official_af": "Official air force",
+    "official_af": "Air force (official)",
     "mod": "Ministry of defence",
-    "procurement_agency": "Procurement agency",
+    "procurement_agency": "Procurement authority",
     "nato": "NATO",
-    "oem": "Manufacturer (OEM)",
+    "government": "Government defence agency",
+    "oem": "Manufacturer / prime contractor",
     "specialist_defence": "Specialist defence media",
+    "regional_media": "Regional established media",
     "general_media": "Other media (caveat)"
   },
   "existing_source_tiers": {
@@ -20,28 +32,303 @@
     "ACS-0007": "specialist_defence",
     "ACS-0008": "specialist_defence",
     "ACS-0009": "specialist_defence",
-    "ACS-0010": "specialist_defence"
+    "ACS-0010": "specialist_defence",
+    "ACS-0016": "mod",
+    "ACS-0017": "specialist_defence"
   },
   "default_tier": "specialist_defence",
   "candidates": [
-    {"country_id": "hun", "name": "honvedelem.hu (MH official news portal)", "homepage": "https://honvedelem.hu", "tier": "mod", "language": "hu"},
-    {"country_id": "pol", "name": "Polish Ministry of National Defence", "homepage": "https://www.gov.pl/web/obrona-narodowa", "tier": "mod", "language": "pl"},
-    {"country_id": "pol", "name": "Polish Armament Agency", "homepage": "https://www.gov.pl/web/agencja-uzbrojenia", "tier": "procurement_agency", "language": "pl"},
-    {"country_id": "pol", "name": "Defence24 (English)", "homepage": "https://defence24.com", "tier": "specialist_defence", "language": "en"},
-    {"country_id": "rou", "name": "Romanian Ministry of National Defence", "homepage": "https://www.mapn.ro", "tier": "mod", "language": "ro"},
-    {"country_id": "rou", "name": "Romanian Air Force", "homepage": "https://www.roaf.ro", "tier": "official_af", "language": "ro"},
-    {"country_id": "svk", "name": "Slovak Ministry of Defence", "homepage": "https://www.mosr.sk", "tier": "mod", "language": "sk"},
-    {"country_id": "cze", "name": "Czech Ministry of Defence", "homepage": "https://mocr.army.cz", "tier": "mod", "language": "cs"},
-    {"country_id": "srb", "name": "Serbian Ministry of Defence", "homepage": "https://www.mod.gov.rs", "tier": "mod", "language": "sr"},
-    {"country_id": "hrv", "name": "Croatian Ministry of Defence", "homepage": "https://www.morh.hr", "tier": "mod", "language": "hr"},
-    {"country_id": "svn", "name": "Slovenian Ministry of Defence", "homepage": "https://www.gov.si", "tier": "mod", "language": "sl"},
-    {"country_id": "aut", "name": "Austrian Armed Forces (Bundesheer)", "homepage": "https://www.bundesheer.at", "tier": "mod", "language": "de"},
-    {"country_id": "ukr", "name": "Ukrainian Ministry of Defence", "homepage": "https://www.mil.gov.ua", "tier": "mod", "language": "uk"},
-    {"country_id": "bgr", "name": "Bulgarian Ministry of Defence", "homepage": "https://www.mod.bg", "tier": "mod", "language": "bg"},
-    {"country_id": "blr", "name": "Belarus Ministry of Defence", "homepage": "https://www.mil.by", "tier": "mod", "language": "ru", "caveat": "state source of a Russian-aligned government — treat claims as attributed statements"},
-    {"country_id": "rus", "name": "Russian Ministry of Defence", "homepage": "https://mil.ru", "tier": "mod", "language": "ru", "caveat": "often unreachable from EU networks; state claims are attributed statements, not confirmation"},
-    {"country_id": "bih", "name": "Bosnia and Herzegovina Ministry of Defence", "homepage": "https://www.mod.gov.ba", "tier": "mod", "language": "bs"},
-    {"country_id": null, "name": "NATO Allied Air Command (AIRCOM)", "homepage": "https://ac.nato.int", "tier": "nato", "language": "en"},
-    {"country_id": null, "name": "NATO newsroom", "homepage": "https://www.nato.int", "tier": "nato", "language": "en"}
-  ]
+    {
+      "country_id": "hun",
+      "name": "honvedelem.hu (MH official news portal)",
+      "homepage": "https://honvedelem.hu",
+      "tier": "mod",
+      "language": "hu"
+    },
+    {
+      "country_id": "pol",
+      "name": "Polish Ministry of National Defence",
+      "homepage": "https://www.gov.pl/web/obrona-narodowa",
+      "tier": "mod",
+      "language": "pl"
+    },
+    {
+      "country_id": "pol",
+      "name": "Polish Armament Agency",
+      "homepage": "https://www.gov.pl/web/agencja-uzbrojenia",
+      "tier": "procurement_agency",
+      "language": "pl"
+    },
+    {
+      "country_id": "pol",
+      "name": "Defence24 (English)",
+      "homepage": "https://defence24.com",
+      "tier": "specialist_defence",
+      "language": "en",
+      "rss_url": "https://defence24.com/_rss",
+      "verified": "2026-11-08: RSS 2.0, 50 items, newest 2026-11-07 (English; broad security news)",
+      "status": "added as ACS-0017"
+    },
+    {
+      "country_id": "rou",
+      "name": "Romanian Ministry of National Defence",
+      "homepage": "https://english.mapn.ro",
+      "tier": "mod",
+      "language": "ro",
+      "verified": "2026-11-08: no RSS/Atom found; news at https://english.mapn.ro/event/index.php and /cpresa/index.php — page polling candidate",
+      "status": "candidate (no feed)"
+    },
+    {
+      "country_id": "rou",
+      "name": "Romanian Air Force",
+      "homepage": "https://www.roaf.ro",
+      "tier": "official_af",
+      "language": "ro"
+    },
+    {
+      "country_id": "svk",
+      "name": "Slovak Ministry of Defence",
+      "homepage": "https://www.mosr.sk",
+      "tier": "mod",
+      "language": "sk"
+    },
+    {
+      "country_id": "cze",
+      "name": "Czech Ministry of Defence",
+      "homepage": "https://mocr.army.cz",
+      "tier": "mod",
+      "language": "cs"
+    },
+    {
+      "country_id": "srb",
+      "name": "Serbian Ministry of Defence",
+      "homepage": "https://www.mod.gov.rs",
+      "tier": "mod",
+      "language": "sr",
+      "rss_url": "https://www.mod.gov.rs/rss.php?eng",
+      "verified": "2026-11-08: RSS 2.0, 20 items, newest 2026-11-07 (Serbian Cyrillic titles)",
+      "status": "added as ACS-0016"
+    },
+    {
+      "country_id": "hrv",
+      "name": "Croatian Ministry of Defence",
+      "homepage": "https://www.morh.hr",
+      "tier": "mod",
+      "language": "hr"
+    },
+    {
+      "country_id": "svn",
+      "name": "Slovenian Ministry of Defence",
+      "homepage": "https://www.gov.si",
+      "tier": "mod",
+      "language": "sl"
+    },
+    {
+      "country_id": "aut",
+      "name": "Austrian Armed Forces (Bundesheer)",
+      "homepage": "https://www.bundesheer.at",
+      "tier": "mod",
+      "language": "de"
+    },
+    {
+      "country_id": "ukr",
+      "name": "Ukrainian Ministry of Defence",
+      "homepage": "https://www.mil.gov.ua",
+      "tier": "mod",
+      "language": "uk"
+    },
+    {
+      "country_id": "bgr",
+      "name": "Bulgarian Ministry of Defence",
+      "homepage": "https://www.mod.bg",
+      "tier": "mod",
+      "language": "bg"
+    },
+    {
+      "country_id": "blr",
+      "name": "Belarus Ministry of Defence",
+      "homepage": "https://www.mil.by",
+      "tier": "mod",
+      "language": "ru",
+      "caveat": "state source of a Russian-aligned government — treat claims as attributed statements"
+    },
+    {
+      "country_id": "rus",
+      "name": "Russian Ministry of Defence",
+      "homepage": "https://mil.ru",
+      "tier": "mod",
+      "language": "ru",
+      "caveat": "often unreachable from EU networks; state claims are attributed statements, not confirmation"
+    },
+    {
+      "country_id": "bih",
+      "name": "Bosnia and Herzegovina Ministry of Defence",
+      "homepage": "https://www.mod.gov.ba",
+      "tier": "mod",
+      "language": "bs"
+    },
+    {
+      "country_id": null,
+      "name": "NATO Allied Air Command (AIRCOM)",
+      "homepage": "https://ac.nato.int",
+      "tier": "nato",
+      "language": "en"
+    },
+    {
+      "country_id": null,
+      "name": "NATO newsroom",
+      "homepage": "https://www.nato.int",
+      "tier": "nato",
+      "language": "en"
+    },
+    {
+      "country_id": "isr",
+      "name": "Israel Defense Forces",
+      "homepage": "https://www.idf.il",
+      "tier": "official_af",
+      "language": "he"
+    },
+    {
+      "country_id": "tur",
+      "name": "Türkiye Ministry of National Defence",
+      "homepage": "https://www.msb.gov.tr",
+      "tier": "mod",
+      "language": "tr"
+    },
+    {
+      "country_id": "jpn",
+      "name": "Japan Ministry of Defense",
+      "homepage": "https://www.mod.go.jp",
+      "tier": "mod",
+      "language": "ja"
+    },
+    {
+      "country_id": "twn",
+      "name": "Taiwan Ministry of National Defense",
+      "homepage": "https://www.mnd.gov.tw",
+      "tier": "mod",
+      "language": "zh"
+    },
+    {
+      "country_id": "kor",
+      "name": "Republic of Korea Ministry of National Defense",
+      "homepage": "https://www.mnd.go.kr",
+      "tier": "mod",
+      "language": "ko"
+    },
+    {
+      "country_id": "ind",
+      "name": "Press Information Bureau (Defence)",
+      "homepage": "https://pib.gov.in",
+      "tier": "government",
+      "language": "en"
+    },
+    {
+      "country_id": "aus",
+      "name": "Australian Department of Defence",
+      "homepage": "https://www.defence.gov.au",
+      "tier": "mod",
+      "language": "en"
+    },
+    {
+      "country_id": "chn",
+      "name": "China Military Online (PLA Daily)",
+      "homepage": "http://eng.chinamil.com.cn",
+      "tier": "mod",
+      "language": "en",
+      "caveat": "state-controlled — attributed statements, one lineage"
+    },
+    {
+      "country_id": "aut",
+      "name": "Militär Aktuell (Austrian specialist)",
+      "homepage": "https://militaeraktuell.at",
+      "tier": "specialist_defence",
+      "language": "de"
+    }
+  ],
+  "tier_rank": {
+    "official_af": 1,
+    "mod": 1,
+    "procurement_agency": 1,
+    "nato": 1,
+    "government": 1,
+    "oem": 2,
+    "specialist_defence": 3,
+    "regional_media": 4,
+    "general_media": 4
+  },
+  "state_controlled": {
+    "_doc": "Official or state media of a state-controlled information space. Usable WITH attribution ('Russian MoD states…'); an official statement is not independent confirmation. All publications in one group count as ONE evidence lineage.",
+    "domains": {
+      "mil.ru": "rus-state",
+      "function.mil.ru": "rus-state",
+      "tass.ru": "rus-state",
+      "tass.com": "rus-state",
+      "ria.ru": "rus-state",
+      "rt.com": "rus-state",
+      "sputnikglobe.com": "rus-state",
+      "sputniknews.com": "rus-state",
+      "redstar.ru": "rus-state",
+      "tvzvezda.ru": "rus-state",
+      "mil.by": "blr-state",
+      "belta.by": "blr-state",
+      "sb.by": "blr-state",
+      "xinhuanet.com": "chn-state",
+      "news.cn": "chn-state",
+      "chinamil.com.cn": "chn-state",
+      "globaltimes.cn": "chn-state",
+      "cctv.com": "chn-state",
+      "irna.ir": "irn-state",
+      "presstv.ir": "irn-state",
+      "tasnimnews.com": "irn-state",
+      "kcna.kp": "prk-state"
+    }
+  },
+  "audit_groups": {
+    "immediate_region": [
+      "hun",
+      "rus",
+      "ukr",
+      "srb",
+      "blr",
+      "bih",
+      "aut",
+      "svk",
+      "rou",
+      "hrv",
+      "svn",
+      "pol",
+      "cze",
+      "bgr",
+      "est",
+      "lva",
+      "ltu"
+    ],
+    "middle_east": [
+      "isr",
+      "irn",
+      "tur",
+      "sau",
+      "are",
+      "egy",
+      "jor"
+    ],
+    "africa": [
+      "egy",
+      "dza",
+      "mar",
+      "eth",
+      "nga",
+      "zaf",
+      "lby"
+    ],
+    "indo_pacific": [
+      "chn",
+      "twn",
+      "jpn",
+      "kor",
+      "ind",
+      "aus"
+    ]
+  }
 }

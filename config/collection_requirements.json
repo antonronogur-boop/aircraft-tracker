@@ -1,0 +1,73 @@
+{
+  "_doc": "Standing collection requirements for Hungary's region. Shown on Command Brief page 2 when a priority country has no material development this week: gap -> intelligence question -> desired observable. Edit freely; one entry per country.",
+  "countries": {
+    "srb": {
+      "question": "Has Serbia changed its fighter procurement, readiness, basing or exercise activity (Rafale introduction, MiG-29 status)?",
+      "observable": "Rafale delivery or training milestones, MiG-29 grounding or upgrade news, Serbian Air Force exercise announcements."
+    },
+    "blr": {
+      "question": "Has Russian aviation basing or deployment in Belarus changed?",
+      "observable": "Russian combat aircraft or air defence units arriving at or leaving Belarusian air bases; joint exercise announcements."
+    },
+    "rus": {
+      "question": "Has Russian air posture opposite NATO's eastern flank changed (basing, readiness, losses, new types)?",
+      "observable": "Redeployments to western military districts, new type deliveries, attributed losses, long-range aviation activity near NATO airspace."
+    },
+    "ukr": {
+      "question": "How is Ukraine's Western fighter fleet (F-16, Mirage 2000, future Gripen/Rafale) being generated and sustained?",
+      "observable": "Delivery, training or loss announcements by the Ukrainian Air Force; donor-state statements."
+    },
+    "rou": {
+      "question": "Has Romania's F-16 readiness, F-35 transition or NATO basing changed?",
+      "observable": "F-35 programme milestones, F-16 deliveries from Norway, Allied deployments to Romanian bases, air defence integration news."
+    },
+    "svk": {
+      "question": "Is Slovakia's F-16 fleet operational for QRA, and who covers its airspace?",
+      "observable": "Slovak F-16 operational declaration, QRA assumption, end of Allied cover arrangements."
+    },
+    "hrv": {
+      "question": "What is the readiness of Croatia's Rafale fleet and its role in regional air policing?",
+      "observable": "Rafale FOC or QRA announcements, regional air policing agreements."
+    },
+    "svn": {
+      "question": "Has the Allied arrangement for Slovenian air policing changed?",
+      "observable": "Statements on Italian/Hungarian air policing of Slovenia; Slovenian air defence procurement."
+    },
+    "aut": {
+      "question": "Has Austria moved on Eurofighter succession, trainer replacement or Sky Shield integration?",
+      "observable": "Bundesheer procurement decisions, Sky Shield participation steps, air policing statements."
+    },
+    "bih": {
+      "question": "Is there any change in Bosnia and Herzegovina's air force or EUFOR air activity?",
+      "observable": "Helicopter procurement or donation news, EUFOR exercise announcements."
+    },
+    "pol": {
+      "question": "How is Poland's air force build-up (F-35, FA-50, AH-64E, air defence) progressing against plan?",
+      "observable": "Deliveries, IOC/FOC declarations, Allied deployments to Polish bases."
+    },
+    "cze": {
+      "question": "Has the Czech transition from Gripen to F-35 changed schedule or scope?",
+      "observable": "F-35 programme milestones, Gripen lease decisions."
+    },
+    "bgr": {
+      "question": "Is Bulgaria's F-16 Block 70 introduction on track, and has Black Sea air policing changed?",
+      "observable": "F-16 deliveries, Allied air policing rotations."
+    },
+    "est": {
+      "question": "Has Baltic air policing or Estonian air defence changed?",
+      "observable": "BAP rotation changes, Ämari deployments, air defence procurement."
+    },
+    "lva": {
+      "question": "Has Baltic air policing or Latvian air defence changed?",
+      "observable": "BAP rotation changes, air defence procurement."
+    },
+    "ltu": {
+      "question": "Has Baltic air policing or Lithuanian air defence changed?",
+      "observable": "BAP rotation changes at Šiauliai, air defence procurement."
+    },
+    "hun": {
+      "question": "Have MH air capability programmes (Gripen, KC-390, H145M/H225M, L-39NG, air defence) passed a milestone?",
+      "observable": "Deliveries, IOC statements and procurement decisions published by the Hungarian MoD."
+    }
+  }
+}

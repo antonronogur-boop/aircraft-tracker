@@ -1,7 +1,6 @@
 import { loadReports } from "@/lib/reports";
 import { PageHeader } from "@/components/ui";
 import { WeeklyReportView } from "@/components/WeeklyReportView";
-import { BriefEmbed } from "@/components/BriefEmbed";
 import { PrintButton } from "@/components/PrintButton";
 import Link from "next/link";
 
@@ -15,9 +14,7 @@ export default async function WeeklyPage() {
 
   return (
     <div>
-      {/* Nyomtataskor a jelentes ELSO 4 oldala a Command Brief: a fejlec
-          ilyenkor nem kerul a PDF-be (a briefnek sajat fejlece van). */}
-      <div className={`flex flex-wrap items-start justify-between gap-3 ${latest?.payload?.command_brief ? "cb-print-hide" : ""}`}>
+      <div className={`flex flex-wrap items-start justify-between gap-3`}>
         <PageHeader
           title="Weekly report"
           description={latest
@@ -29,7 +26,7 @@ export default async function WeeklyPage() {
             {latest.payload?.command_brief && (
               <Link href="/weekly/command-brief"
                     className="rounded border border-amber-600/60 bg-amber-500/10 px-3 py-1.5 text-xs text-amber-200 hover:border-amber-400">
-                Command brief (4 pages) →
+                Command brief (separate product) →
               </Link>
             )}
             {/* A 4 slide-os briefing nezet — ebbol lehet eloadni. */}
@@ -50,7 +47,6 @@ export default async function WeeklyPage() {
         </p>
       ) : (
         <>
-        <BriefEmbed payload={latest.payload} />
         <WeeklyReportView
           payload={latest.payload}
           weekLabel={latest.week_label}

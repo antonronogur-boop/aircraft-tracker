@@ -1,112 +1,80 @@
-# Command Air Intelligence Brief — v3.1 (2026-11)
+# Command Air Intelligence Brief — v2 (2026-11)
 
-A heti jelentés elé került egy **4 oldalas vezetői brief** egy magyar katonai vezető számára. Nem új projekt és nem második pipeline: a brief a heti jelentés **már elkészült, QA-n átment payloadjából** épül, ugyanabban a futásban, ugyanabba a `ac_reports.payload`-ba (`payload.command_brief`). A részletes jelentés változatlanul megmaradt (Part II), minden brief-tétel rá hivatkozik.
+A Command Brief **önálló termék**: 4 vezetői oldal és egy 5. oldal (Sources & Legend), magyar fókusszal. A részletes heti jelentés (Detailed Weekly Report) külön elemzői termék marad, és a brief nélküle is érthető. Nem új pipeline: a brief ugyanabból a heti, befagyasztott korpuszból és ugyanazokból az elemzői objektumokból épül (developments, key judgements, programme state, confidence, significance, lineage, watch items), ugyanabban a szerdai futásban.
 
-## 1. Adatfolyam — egy pipeline, egy igazság
+Három formátum, **egyetlen kanonikus adatmodellből** (`payload.command_brief`, schema `command_brief_v2`):
 
-```
-RSS (napi) → source policy → Haiku gate → Sonnet extraction → ac_events (pending/approved; rejected kizárva)
-                                                                    │
-SZERDA reggel  generate_weekly_report.py  ──────────────────────────┘
-   ├─ heti ablak: Europe/Budapest szerda 00:00:00 → kedd 23:59:59   (ac_window.py)
-   ├─ developments / key_judgements / QA / since_last_week          (változatlan, ac_intel.py)
-   ├─ coverage audit (ADEQUATE / PARTIAL / GAP)                      (coverage_audit.py)
-   └─ command brief = nézet a fenti objektumokra                     (ac_command_brief.py + ac_hungary.py)
-          └─ egyetlen jelölt új szöveg: EXECUTIVE SYNTHESIS (validált, hivatkozott, fallbackkel)
-                                   │
-                         ac_reports.payload  ──►  /weekly (brief + Part II)  ·  /weekly/command-brief  ·  4 oldalas PDF
-```
-
-A brief minden tétele egy `D-xx` fejleményre vagy `KJ-xx` ítéletre mutat. A generátor ezeket a hivatkozási kulcsokat a **részletes rétegbe is visszaírja** (`developments[].ref`, `country_ids`, `hu_relevance`), így a részletes jelentés ugyanazt a HU-relevanciát mutatja, mint a brief. Egy brief-hivatkozás, ami a részletes jelentésben nem létezik, self-check hibát ad.
-
-## 2. A négy oldal
-
-| Oldal | Tartalom | Forrás a payloadban |
+| Formátum | Hol | Hogyan készül |
 |---|---|---|
-| 1 | HU Air Intelligence Bottom Line (5–7 mondat) · Top 3–5 KJ (HU relevance → significance → confidence → immediacy) · CEE térkép (hotspotok HU-relevancia szerint, collection gap szaggatottan) | `key_judgements`, `developments`, coverage |
-| 2 | Közvetlen és közeli régió: non-NATO prioritás, szomszédok, kiterjesztett NATO / szövetséges légtérpozíció CEE-ben · táblázat · *No material change identified* vs *Collection gap* · coverage csíkok | `developments`, coverage |
-| 3 | Közel-Kelet · Afrika · tágabb NATO (régiónként 2–4, csak anyagi) · **Executive change table** (Priority · Country · Capability · Previous · Current · Delta · HU relevance · Confidence) | `developments`, `since_last_week` |
-| 4 | Globális stratégiai kép (Indo-Pacific) + globális térkép (significance szerint) · Priority Intelligence Watch ≤5 · Intelligence Gaps 3–5 · Next 7–30 days | `developments`, `priority_watch`, `intelligence_gaps`, coverage |
+| Web | `/weekly/command-brief`, `/weekly/<hét>/command` | React, ugyanaz az adatmodell |
+| PDF | „Download PDF” gomb | a web nézet nyomtatási CSS-e: 4 fix A4 fekvő oldal + Sources & Legend (folyhat) |
+| Word (.docx) | „Download Word (.docx)” gomb, `/api/command-brief/<hét>/docx` | `docx` könyvtár ugyanabból az adatmodellből — **nem a PDF-ből konvertálva** |
 
-Szabályok: nincs töltelék (csak anyagi fejlemény: significance ≥3, vagy HIGH HU-relevancia és ≥2); egy fejlemény a 2–4. oldalon legfeljebb egyszer szerepel; üres régió = `NO MATERIAL CHANGE IDENTIFIED` (ha a gyűjtés legalább PARTIAL) vagy `COLLECTION GAP` (ha 60 napig semmi nem érkezett onnan). A page-1 KJ-knél mindig van „What would make this wrong” sor: a jelentés `alternative_explanation`-je, vagy ha az üres, a bizonyíték állapotából képzett, jelölt rendszer-alternatíva.
+A Word-fájl szerkesztése nem módosítja a rendszerben tárolt jelentést (a dokumentumon: `EDITABLE EXPORT — GENERATED FROM AIRCRAFT TRACKER`). A kanonikus publikáció a web/PDF.
 
-**Executive synthesis (XS-xx).** Ha egy HIGH/MEDIUM HU-relevanciájú, anyagi fejleményt egyetlen riport-KJ sem fed le, a page-1-re XS-tételként kerülhet (legfeljebb 3). Lila keret, „Executive synthesis” címke, `traces_to: [D-xx]`. **Visszatartott (QA-n elbukott) ítélet eseményeiből XS nem készülhet** — a fejlemény ténysorként a 2. oldalon ettől még megjelenik. A bottom line modellből jön (egy rövid Sonnet-hívás), de minden mondat: (1) hivatkozik egy D-/KJ-/XS-tételre, (2) nem tartalmazhat a hivatkozott tételekben nem szereplő számot, (3) nem nevezhet meg más országot, (4) nem sértheti a trend/szuperlatívusz QA-szabályokat, (5) nem idézheti vissza a visszatartott ítéletet. Ami elbukik, kiesik (okkal naplózva); ha 3-nál kevesebb mondat marad, **determinisztikus bottom line** lép be. A brief modell nélkül is teljes (`AC_BRIEF_SYNTHESIS=0`).
+## 1. Oldalak
 
-## 3. Hungary relevance — külön dimenzió
+**Page 1 — Hungary Air Intelligence Bottom Line.** Bottom line (5–7 egész mondat, forrásokkal); **legfeljebb 3 PRIMARY KJ** (HU relevance → significance → confidence → immediacy). LOW/MINIMAL HU-relevancia csak kivétellel kerülhet ide (significance 5 + high confidence, vagy a PO strategic watch listája a `config/hungary_relevance.json`-ban). Minden primary KJ: What changed · Assessment · Why Hungary should care · Next observable · What would make this wrong · Sources S-xx. Alatta **Secondary Air Power Watch** (≤3 rövid sor): globálisan fontos, de alacsony HU-relevanciájú tételek. CEE térkép: HU-relevancia szerinti hotspotok, collection gap szaggatottan.
 
-`config/hungary_relevance.json` + `scripts/ac_hungary.py`. Determinisztikus, szerkeszthető, verziózott (`hu-1.0`). A **significance (1–5)** a légierő-kép változásának súlya az elemzői rétegből; a **HU relevance** (0–100 → HIGH ≥55 · MEDIUM ≥35 · LOW ≥15 · MINIMAL) azt méri, mennyire számít Magyarországnak / az MH-nak / a NATO közép-keleti légtérpozíciójának. A kettő független: egy japán F-35 rendelés lehet SIG 5 és MINIMAL, egy amerikai F-16 telepítés Romániába SIG 3 és HIGH.
+**Page 2 — Immediate & Near-Regional Air Picture.** A táblázat marad (non-NATO prioritás, szomszédok, kiterjesztett regionális NATO; csak anyagi változás). *No material change identified* csak legalább PARTIAL lefedettségnél, különben *Collection gap*. A felszabaduló hely: **Regional collection requirements** — gap → intelligence question → desired observable (`config/collection_requirements.json`, országonként szerkeszthető).
 
-| Tényező | Pont | Mikor |
-|---|---|---|
-| Földrajz / szereplő | 0–45 | Magyarország 45 · Ukrajna 36 · Szerbia 34 · Oroszország 34 · Szlovákia/Románia 30 · Ausztria 28 · Belarusz 28 · Horvát/Szlovén 26 · Lengyel/Cseh 22 … más NATO 8, Európa 5 |
-| Names Hungary / MH | 40 | a FORRÁS (cím, tény) nevezi meg Magyarországot — a saját elemzésünk nem számít |
-| MH platform | 15 | Gripen, KC-390, H145M, H225M, L-39NG, Falcon 7X, NASAMS, SAC C-17 (Pápa), NATO AWACS |
-| Air policing / QRA | 12 | air policing, QRA, scramble, intercept |
-| Eastern-flank posture | 15 | eastern flank, forward/rotational deployment Lengyelo./Románia/Szlovákia/Baltikum… |
-| Airspace incident | 15 | légtérsértés, drón-berepülés a régióban |
-| Air defence / counter-air | 10 | légvédelem, SAM, Patriot, NASAMS, IRIS-T, C-UAS |
-| Regional air balance | 10 | vadász/támadó helikopter szomszédnál vagy non-NATO prioritásnál |
-| Major change next door | 10 | significance ≥4 szomszédnál / prioritásnál |
-| NATO enabler | 8 | ISR/tanker/airlift NATO-szereplőnél (nem MH saját) |
-| Attrition adjacent | 8 | veszteség a háborús szomszédságban |
-| Names a CEE state | 12 | a forrás egy másik CEE-államot nevez meg |
-| Regional sustainment / exercise | 5 | MRO/képzési központ, gyakorlat CEE-szereplővel |
-| Horizon | −5…+5 | immediate/<12 hó +5, >3 év −5 |
+**Page 3 — Extended Air Power Picture.** Kompakt Közel-Kelet / Afrika / tágabb NATO blokkok (≤3), **Capability change / maturity matrix** (Intent → Committed → Contracted → Fielding → IOC → FOC; a meglévő életciklus-érettségből, új adatmodell nélkül; veszteség/kivonás külön), **Executive change table** (az előző publikált jelentéshez).
 
-Minden alkalmazott tényező pontszámmal és indoklással bekerül a payloadba — a szint mindig visszakövethető. **Az MH-platformlistát (mh_platforms) érdemes ellenőrizni és szükség szerint bővíteni** — ez határozza meg, mikor emel egy távoli tétel az MH tervezés szempontjából.
+**Page 4 — Global Strategic Air Power Watch.** Globális stratégiai tételek, globális térkép (significance szerint — nem HU-relevancia), Priority Intelligence Watch (≤5), Intelligence Gaps (≤5), **Outlook & expected observables — next 7–30 days** (a fő tételek következő ellenőrizhető jele; intelligence outlook, nem eseménynaptár).
 
-## 4. Coverage audit
+**Page 5 — Sources & Legend.** Source register (ID · forrás + tier · eredeti nyelvű, kattintható cím · publikálás · ország · forrástípus · nyelv · lineage · melyik tétel használja), állandó, teljes jelmagyarázat (HU relevance, SIG, CONF, horizon, collection status, terminológia) és az elemzői fegyelem elvei (significance ≠ confidence, procurement ≠ operational capability, delivery ≠ IOC, multiple articles ≠ independent lineage, official statement ≠ independent confirmation). Minden oldal alján egysoros **micro-legend**.
 
-`scripts/coverage_audit.py` (önállóan is futtatható, és a heti generátor is ezt hívja). Országonként 60 napra: ADEQUATE (≥4 esemény, ≥2 forrás) · PARTIAL (≥1) · GAP (0). Elutasított esemény nem számít, pending igen (ugyanaz a szemantika, mint a jelentésnél). Jelzi azt is, ha egy prioritási országra **nincs hivatalos (AF/MoD/NATO) forrás** a gyűjtésben — jelenleg ez mind a 10 forrásra igaz (szakmédia). `config/coverage_sources.json` tartalmazza a forrás-prioritást és a **jelölt** hivatalos forrásokat (honvedelem.hu, MApN, MON/Agencja Uzbrojenia, MoSR, MORH, Bundesheer, mod.gov.rs, AIRCOM…). Ezek NINCSENEK automatikusan felvéve: az audit eredménye alapján, a feed ellenőrzése után kerülhetnek az `ac_sources`-ba. Eredeti nyelvű evidencia megmarad (a gyűjtés nem fordít).
+## 2. Forrás-nyomonkövetés
 
-## 5. Heti ablak, ütemezés, késői adat
+Minden vezetői tétel `Sources: S-03 · S-07` hivatkozást kap, ami az **eredeti cikkre** mutat (webben és PDF-ben kattintható, Wordben hiperhivatkozás). Az S-számok a brief olvasási sorrendjében keletkeznek. A korábbi `Detailed assessment → D-06` jelölés kikerült a briefből; a D-xx / KJ-xx kulcsok csak a belső auditnyomban (`traceability`) maradnak. Lineage: egy evidencia-lánc (azonos cikk / azonosított primer forrás) egy `L-xx`. **Állami ellenőrzés alatti forrás** (orosz, belarusz, kínai, iráni stb. — `config/coverage_sources.json → state_controlled`) mindig attribúcióval szerepel, és egy állam összes ilyen közlése **egy** lineage — ez a confidence-plafont is meghatározza (`ac_intel.evidence_chain_id`).
 
-- **Ablak:** Europe/Budapest szerda 00:00:00 → kedd 23:59:59. Saját EU-DST szabály (a Windows Python 3.9 zoneinfo-ja tzdata nélkül nem megbízható). A hétcímke a kedd ISO-hete — folytonos a korábbi hétfői címkékkel.
-- **Ütemezés:** `weekly_digest.yml` szerda 05:15 UTC (06:15 CET / 07:15 CEST). Előtte még egy gyűjtés + feldolgozás fut (keddig megjelent cikkek). Közös concurrency group a napi szinkronnal — sosem futnak egyszerre. A napi gyűjtés (04:30 UTC) változatlan.
-- **Átállás:** az első szerdai futás az ablak elejét az utolsó hétfői jelentés utáni napra húzza (pl. W46: 2026-11-03 → 11-10), és ezt a jelentés kiírja. Egy nap sem esik ki.
-- **Késői adat:** ami egy már publikált ablakról a publikálás UTÁN érkezik, a következő héten `late-arriving confirmation`-ként jelenik meg (`stats.collection_health.late_arriving_from_previous_period`). Ami még a szerdai gyűjtésben bekerült az előző jelentésbe, nem számít újra.
-- **Nincs csendes felülírás:** egy már publikált hét újrafuttatása nem ír semmit. Szándékos újrakiadás: `python scripts/generate_weekly_report.py --restate "<ok>"` vagy GitHub Actions → weekly-digest → Run workflow → `restate_reason`. A jelentés és a brief látható RESTATEMENT sávot kap.
+## 3. Csonkolás nélkül
 
-## 6. Felület és PDF
+A vezetői szöveg mindig egész mondatokból áll (`fit()` sosem vág mondatot, nincs „…”). Ha egy mező egész mondatként is hosszú, a validált **executive editor** (ugyanabban a rövid modellhívásban, mint az executive synthesis) rövidebb, teljes mondatra írja át — csak akkor fogadjuk el, ha nem hoz új számot vagy országot, és megtartja a hedge-et/tagadást. Különben az eredeti egész mondat marad, és a layout alkalmazkodik. A böngészős teszt mind a szintetikus, mind a valós W45 adaton ellenőrzi, hogy az 1–4. oldalon semmi nem lóg ki.
 
-- `/weekly` és `/weekly/<hét>` — az első 4 oldal a Command Brief, utána „Part II — Detailed assessment”. Nyomtatás/PDF: 4 fekvő A4 oldal, majd a részletes jelentés álló A4-en.
-- `/weekly/command-brief` (legfrissebb) és `/weekly/<hét>/command` — önálló brief; Print / Save as PDF = pontosan 4 oldal.
-- `/weekly/<hét>/brief` — a korábbi 4 slide-os briefing változatlanul megmaradt.
-- Térképek: Natural Earth (world-atlas, public domain) előre vetített SVG-útvonalakként a kódban (`web/src/lib/geo/*.ts`, generátor: `web/scripts/build-geo.cjs`). Nincs futásidejű térképkönyvtár, nincs külső tile.
-- Webes kereszthivatkozás: `#D-03`, `#KJ-01` horgonyok; PDF-ben determinisztikus szöveg: „Detailed assessment → KJ-02, D-01”.
-- Régebbi (v3.1 előtti) jelentésnél az oldal megmondja, hogy nincs brief, és hogyan építhető utólag: `python scripts/backfill_command_brief.py --week <hét>` (csak olvas; `--write` esetén látható restatementként írja be).
+## 4. Hungary relevance — hu-1.1
 
-## 7. Ellenőrzés (2026-11-07)
+A v1 modell működött, két finomítással: (1) a **supplier/partner kapcsolat legfeljebb egy kis faktor** (6 pont, távoli szereplőnél 3) — Etiópia Su-35SE + Oroszország így MINIMAL, nem LOW; (2) a **HIGH elérhető, ha indokolt**: új faktorok — *Capability milestone next door* (szomszéd / non-NATO prioritás harci képesség-mérföldköve, +12), *Regional QRA / air policing change* (+16), *Capability adoption / NATO doctrinal relevance* (uncrewed / C-UAS, SIG ≥4, +10). Eredmény W45-ön: Lengyelország FA-50 QRA → HIGH (59), Ukrajna Rafale-képzés → HIGH (63), kínai GJ-21 → LOW (doktrinális), etióp Su-35 → MINIMAL.
+
+## 5. Gyűjtés
+
+- **Coverage audit** (`scripts/coverage_audit.py`): a közvetlen régió 17 országa mellett Közel-Kelet, Afrika és Indo-Pacific csoportok, országonként ADEQUATE / PARTIAL / GAP, hivatalos-forrás jelzéssel. W45: a 17 regionális prioritásból **10 GAP** (Szerbia, Belarusz, BiH, Ausztria, Szlovákia, Horvátország, Szlovénia, Bulgária, Észtország, Lettország), és egyikre sincs hivatalos forrás. Az Indo-Pacific szinte teljesen ADEQUATE (Kína PARTIAL); a Közel-Keleten Irán és az Emírségek GAP.
+- **Forrásprioritás:** Tier 1 hivatalos (légierő, MoD, haderő, beszerzési hatóság, NATO, kormányzati ügynökség) → Tier 2 ipar (OEM) → Tier 3 szakmédia → Tier 4 regionális média (csak ha magasabb nem fedi).
+- **RSS/Atom felderítés** (`scripts/source_discovery.py`, csak olvas): a jelölt forrásokon `<link rel=alternate>` + szokásos útvonalak, validált feed, elemszám, legfrissebb dátum → `data/source_discovery.json`. RSS preferált, nem kötelező; ahol nincs feed, „page polling” jelölt.
+- **Célzott bővítés** (`config/source_expansion.json`, `scripts/add_sources.py` — csak az új forrásokat veszi fel, a meglévőkhöz és a policy által kikapcsoltakhoz nem nyúl): **ACS-0016 Serbian Ministry of Defence** (RSS ellenőrizve, szerb cirill — Tier 1, a GAP-ország Szerbia lefedésére) és **ACS-0017 Defence24** (RSS ellenőrizve, lengyel/CEE szakmédia). Mindkettő a Haiku-kapu mögött; nem angol nyelvű forrásnál az angol kulcsszó-előszűrő kimarad, a többnyelvű olcsó kapu dönt, az eredeti nyelvű cím megmarad.
+- **Review triage** (`scripts/triage_events.py`, `supabase/add_review_triage.sql`): tanácsadó besorolás minden pending eseményre — ország, forrás, tier, domain, HU relevance, AI relevance, újdonság (programhoz képest), duplikátum-valószínűség, materialitás, indoklás; osztály: *likely material / routine / likely duplicate / low relevance*. A review-sor ezek szerint rendez; bulk *Select likely material* és *Select duplicates + low relevance*, a meglévő bulk approve/reject-tel. **A jóváhagyás szemantikája változatlan** — a triage soha nem állít `review_status`-t.
+
+## 6. Ellenőrzés (2026-11-08)
 
 | Teszt | Eredmény |
 |---|---|
-| `test_ac_match.py`, `test_ac_programmes.py`, `test_report_integration.py` (meglévő regresszió) | PASS |
-| `test_programme_write.py` (valódi PostgreSQL 16, 5 migráció, 127 program) | PASS |
-| `test_command_brief.py` — A: ablak/DST/átállás (15) · B: HU-modell (11) · C: brief konzisztencia, no filler, limitek (38) · D: synthesis validáció/fallback (9) · E: a **valódi** `generate_weekly_report.main()` memória-adatbázison: rejected kizárva, pending benne, szerdai dátum a következő hétre, kedd 23:50 helyi idő benne, late-arriving jelölve, már lefedett esemény nem számít újra, brief a payloadban, nincs csendes felülírás, `--restate` látható (23) | PASS |
+| Meglévő regresszió (`test_ac_match`, `test_ac_programmes`, `test_report_integration`, `test_programme_write` valódi PostgreSQL-lel) | PASS |
+| `test_command_brief.py` — ablak/DST, HU-modell (v2 finomítások), brief v2 (max 3 primary, nincs „…”, források, gap→kérdés, maturity, outlook, register, állami lineage, legend), synthesis + executive editor validáció, a valódi `generate_weekly_report.main()` memória-adatbázison, review triage | PASS |
 | `next build` (típusellenőrzéssel) | PASS |
-| Playwright E2E (`web/e2e/command-brief.e2e.cjs`): 4 oldal, egyik sem csordul túl; 2 SVG térkép; nincs külső asset; minden brief-hivatkozásnak van horgonya a részletes jelentésben; önálló PDF = 4 db A4 fekvő oldal; teljes jelentés PDF = 4 fekvő + álló folytatás; régi jelentés és a meglévő route-ok működnek | PASS |
+| Böngészős E2E (`web/e2e/command-brief.e2e.cjs`) a szintetikus és a **valós W45** adaton: 4+1 oldal, az 1–4. nem csordul túl, micro-legend minden oldalon, nincs „…”, nincs „Detailed assessment →”, minden S-xx az eredeti URL-re és a registerre mutat, PDF = 5 A4 fekvő oldal, DOCX letöltés, régi hét 404 (nem hibás fájl), a részletes jelentés külön és ép, a meglévő route-ok működnek | PASS |
+| Word/PDF egyezés (`web/e2e/check_parity.py`): OOXML séma-validáció (Word-kompatibilitás), nincs ZIP mappa-bejegyzés, valódi stílusok (Title, Heading 1–3, Caption, Header, Footer, Brief Table, Hyperlink) használatban, fejléc + lábléc oldalszámmal, minden forrás hiperhivatkozás, térképek 2400 px szélesek, magyar ékezetek épek, **mind a 107 (W45) / 114 (fixture) vezetői szöveg szerepel a PDF-ben és a Wordben is** | PASS |
 
-## 8. BEFORE / AFTER
+## 7. BEFORE / AFTER — ugyanaz a 2026-W45 korpusz
 
-| Szempont | ELŐTTE (v3.0) | UTÁNA (v3.1) |
+| | Command Brief v1 | Command Brief v2 |
 |---|---|---|
-| Vezetői termék | 13–14 oldalas reference report + 4 slide-os briefing | + 4 oldalas Command Air Intelligence Brief (web, önálló route, 4 oldalas PDF), a teljes jelentés első 4 oldala |
-| Magyar nézőpont | nincs; a rangsor significance + horizont | külön **HU relevance** dimenzió (tényezőkkel, pontokkal, indoklással); page-1 rangsor HU → SIG → conf → horizont |
-| Regionális lefedettség | régió szerinti darabszám | prioritási országlista (non-NATO, szomszédok, kiterjesztett NATO) — anyagi változás / *no material change* / *collection gap* szétválasztva |
-| „Nincs hír” értelmezése | nem különböztetett | coverage audit: ADEQUATE / PARTIAL / GAP országonként, hivatalos forrás jelzéssel |
-| Heti ablak | futás pillanatától visszafelé 7 nap (UTC), hétfőn | Budapest szerda 00:00 → kedd 23:59:59, szerda reggeli futás, átállás nap-vesztés nélkül |
-| Késői adat | a frissesség az ablak elejéhez mérve | az előző **publikálás** idejéhez mérve, `late_arriving` jelöléssel |
-| Újrafuttatás | csendben felülírta a hetet | nem ír; csak `--restate "<ok>"`, látható sávval |
-| Új ítélet a vezetői rétegben | — | csak jelölt executive synthesis, hivatkozással, validálva, visszatartott ítéletből soha |
-| Változástábla | Since last week (részletes rétegben) | ugyanabból: Executive change table HU-relevanciával és prioritással (nincs új baseline) |
-| Térkép | nincs | CEE (HU-relevancia) + globális (significance), determinisztikus SVG |
-| Kereszthivatkozás | — | D-xx / KJ-xx horgonyok; PDF-ben szöveges hivatkozás |
-| Approval / napi gyűjtés | — | változatlan (rejected kizárva, pending jelölve — tesztelve) |
+| Termék | a részletes jelentés első 4 oldala | önálló 4+1 oldal; a részletes jelentés külön analyst product |
+| Page 1 | 5 egyforma KJ-kártya, köztük 2 MINIMAL (Kína, MQ-25) és 1 LOW (Etiópia) | 2 PRIMARY (Lengyelország FA-50 QRA, Ukrajna Rafale — mindkettő HU HIGH) + 3 sor Secondary Watch (Kína, MQ-25, Etiópia) |
+| Levágott szöveg | 22 „…” a vezetői szövegben | 0 — csak egész mondatok |
+| HU-relevancia | Lengyelország és Ukrajna MEDIUM; Etiópia LOW a „Russia” supplier miatt; Oroszország hotspot az etióp vásárlás miatt | Lengyelország és Ukrajna HIGH (QRA-változás, szomszédos képesség-mérföldkő); Etiópia MINIMAL; Oroszország nem hotspot |
+| Nyomonkövetés | `→ Detailed assessment D-06` (belső oldalra) | 9 eredeti forrás (S-01…S-09) kattintható címmel, tierrel, lineage-dzsel |
+| Üres terület p. 2 | üres | 6 regionális gyűjtési követelmény (Szerbia, Belarusz, BiH, Ausztria, Szlovákia, Horvátország) |
+| Page 3 | sok üres hely | maturity matrix (7 fejlemény) + változástábla |
+| Outlook | „No dated, intelligence-relevant event” | 5 expected observable a fő tételekre |
+| Jelmagyarázat | szétszórt | micro-legend minden oldalon + teljes legend a p. 5-ön |
+| Revision | hangsúlyos RESTATEMENT sáv minden oldalon | kis „rev.” jelölés a fejlécben, részletek a p. 5-ön |
+| Formátum | web + PDF | web + PDF + szerkeszthető Word |
 
-## 9. Ismert korlátok / következő lépések
+**Megmaradt collection gapek (W45):** Szerbia (az új MoD-feed szerdától gyűjt), Belarusz, Bosznia-Hercegovina, Ausztria, Szlovákia, Horvátország, Szlovénia, Bulgária, Észtország, Lettország; Irán, Egyesült Arab Emírségek, Nigéria, Dél-Afrika, Líbia. A következő lépés a `source_discovery.py` lefuttatása és a talált hivatalos feedek felvétele `source_expansion.json`-ba.
 
-- A **review felület** (article approval) szemantikája szándékosan változatlan; a javasolt bővítések (AI relevancia-javaslat, ország, domain, újdonság, duplikátum, indoklás) ebben a körben nem készültek el.
-- A „Next 7–30 days” csak a napokon/heteken belüli watch-tételekből épül — dátumozott regionális eseménynaptár (gyakorlatok, átadások) nincs a gyűjtésben.
-- Régi payloadnál (v3.1 előtt) az ország a mellékelt eseményekből, végső esetben a címből származik — a backfill ezért kevésbé pontos, mint egy éles szerdai futás.
-- A coverage audit ma minden prioritási országra „nincs hivatalos forrás”-t mutat. A jelölt források felvétele a következő lépés, feedenként ellenőrizve.
-- Az executive synthesis heti egy rövid Sonnet-hívás (nagyságrendileg néhány cent); kikapcsolható.
+## 8. Ismert korlátok
+
+- A „Download PDF” a böngésző nyomtatásából készül (Save as PDF); szerveroldali PDF-generálás nincs (a Vercel serverless környezetben nincs böngésző).
+- A Word-export oldaltörései eltérhetnek a PDF-től (szándékosan: a szerkeszthetőség fontosabb), a tartalom azonos.
+- Nem RSS-es hivatalos oldalak lekérdezése („page polling”) még nincs megvalósítva — dokumentált jelöltként szerepelnek.
+- A triage szabályalapú, az AI-kinyerés mezőire épül (külön modellhívás nélkül).

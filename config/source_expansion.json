@@ -1,0 +1,25 @@
+{
+  "_doc": "Targeted source expansion after the 2026-11 coverage audit. scripts/add_sources.py inserts ONLY the ids that are not yet in ac_sources (existing sources, including ones disabled by the source policy, are never touched). Every entry here has a verified feed.",
+  "sources": [
+    {
+      "source_id": "ACS-0016",
+      "source_name": "Serbian Ministry of Defence",
+      "rss_url": "https://www.mod.gov.rs/rss.php?eng",
+      "homepage": "https://www.mod.gov.rs",
+      "reliability_score": 80,
+      "language": "sr",
+      "enabled": true,
+      "_why": "Serbia was a COLLECTION GAP (0 events in 60 days). Tier 1 official source; titles in Serbian Cyrillic (original-language evidence kept)."
+    },
+    {
+      "source_id": "ACS-0017",
+      "source_name": "Defence24",
+      "rss_url": "https://defence24.com/_rss",
+      "homepage": "https://defence24.com",
+      "reliability_score": 75,
+      "language": "en",
+      "enabled": true,
+      "_why": "Poland/CEE specialist defence media; broad security coverage, therefore behind the cheap Haiku gate."
+    }
+  ]
+}

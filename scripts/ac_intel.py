@@ -229,6 +229,36 @@ ORIGIN_KIND_WEIGHT = {
 }
 
 
+_STATE_DOMAINS = None
+
+
+def state_group_of_url(url):
+    """Allami ellenorzes alatti forras csoportja (pl. 'rus-state') vagy None.
+
+    Egy allami informacios ter (orosz MoD, TASS, RIA ...) minden kozlese EGY
+    bizonyitek-lancnak szamit: hivatalos kozles != fuggetlen megerosites.
+    """
+    global _STATE_DOMAINS
+    if _STATE_DOMAINS is None:
+        try:
+            cfg_path = os.path.join(os.path.dirname(os.path.dirname(
+                os.path.abspath(__file__))), "config", "coverage_sources.json")
+            with open(cfg_path, "r", encoding="utf-8") as fh:
+                _STATE_DOMAINS = (json.load(fh).get("state_controlled")
+                                  or {}).get("domains") or {}
+        except Exception:  # noqa: BLE001
+            _STATE_DOMAINS = {}
+    m = re.match(r"^[a-z]+://([^/:?#]+)", str(url or "").strip().lower())
+    if not m:
+        return None
+    host = m.group(1)
+    for dom, group in _STATE_DOMAINS.items():
+        if host == dom or host.endswith("." + dom) or (
+                "." not in dom and dom in host):
+            return group
+    return None
+
+
 def evidence_chain_id(event, articles_by_id=None):
     """Egy esemeny forraslancanak azonositoja.
 
@@ -241,6 +271,10 @@ def evidence_chain_id(event, articles_by_id=None):
     oid = event.get("originating_evidence_id")
     if oid:
         return "origin:" + str(oid)
+    art = (articles_by_id or {}).get(event.get("article_id") or "") or {}
+    grp = state_group_of_url(art.get("url"))
+    if grp:
+        return "state:" + grp
     aid = event.get("article_id")
     if aid:
         return "article:" + str(aid)
