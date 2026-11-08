@@ -16,7 +16,7 @@ export interface PrimaryKJ {
   alternative_origin?: string;
   hu_relevance: HuView; significance: number; significance_label: string;
   confidence?: string; horizon?: string;
-  sources: string[]; refs: string[]; countries?: string[];
+  sources: string[]; context_sources?: string[]; refs: string[]; countries?: string[];
   primary_reason?: string; headline?: string; edited_fields?: string[];
 }
 
@@ -32,6 +32,7 @@ export interface RegionalRow {
   hu_relevance?: string; hu_why?: string; significance: number;
   significance_label?: string; confidence?: string; horizon?: string;
   next_observable?: string; coverage?: string; sources: string[];
+  context_sources?: string[]; evidence?: string;
 }
 
 export interface CollectionRequirement {
@@ -42,15 +43,19 @@ export interface BriefItem {
   ref: string; country: string; domain?: string; what_changed: string;
   assessment?: string; significance: number; significance_label?: string;
   confidence?: string; horizon?: string; hu_relevance?: string;
-  sources: string[];
+  sources: string[]; context_sources?: string[];
 }
 
 export interface SourceEntry {
-  id: string; title: string; url: string; source_name: string;
-  source_type: string; tier: string; language: string;
-  publication_date?: string | null; event_date?: string | null;
+  id: string; title: string; title_kind?: string; url: string; source_name: string;
+  source_type: string; tier: string; tier_rank: number; language: string;
+  // KIZAROLAG a cikk sajat publikacios datuma (feed / URL / ellenorzott).
+  // Az event_date kulon mezo, es SOHA nem jelenik meg 'Published'-kent.
+  published?: string | null; published_basis?: "feed" | "url" | "analyst-verified" | null;
+  retrieved?: string | null; event_date?: string | null;
   country: string; lineage: string; state_controlled: boolean;
-  used_by: string[];
+  role: string; note?: string | null;
+  used_by: string[]; supports: Record<string, string>;
 }
 
 export interface CeeMapData {
@@ -114,7 +119,7 @@ export interface CommandBriefV2 {
     map_global: GlobalMapData;
   };
   page5: {
-    sources: SourceEntry[]; source_note?: string;
+    sources: SourceEntry[]; source_note?: string; register_title?: string;
     legend: { title: string; items: [string, string][] }[];
     principles: string[];
   };

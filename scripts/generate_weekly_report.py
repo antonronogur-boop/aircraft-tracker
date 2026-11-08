@@ -112,6 +112,22 @@ def load_prior_report(current_week):
     return payload, metrics, meta
 
 
+def load_articles(article_ids):
+    """Csak a hivatkozott cikkek (cim, URL, PUBLIKACIOS datum, gyujtesi
+    datum, rovid osszefoglalo) — 100-as csomagokban, nem a teljes tabla."""
+    ids = sorted({a for a in article_ids if a})
+    out = {}
+    for i in range(0, len(ids), 100):
+        chunk = ",".join('"{}"'.format(x.replace('"', '')) for x in
+                         ids[i:i + 100])
+        for a in db.select("ac_articles", {
+                "select": "article_id,title,url,source_id,publish_date,"
+                          "collected_date,short_summary",
+                "article_id": "in.({})".format(chunk)}):
+            out[a["article_id"]] = a
+    return out
+
+
 def existing_report(week_label):
     """Van-e mar publikalt jelentes erre a hetre? (csendes feluliras ellen)"""
     try:
@@ -225,9 +241,7 @@ def main(dry_run=False, restate_reason=None):
             "ac_countries", {"select": "country_id,name,region,aliases"})}
         types = {t["type_id"]: t for t in db.select(
             "ac_aircraft_types", {"select": "type_id,name,category"})}
-        articles = {a["article_id"]: a for a in db.select(
-            "ac_articles", {"select": "article_id,title,url,source_id,"
-                                      "publish_date"})}
+        articles = load_articles(e.get("article_id") for e in raw)
         try:
             sources_by_id = {s["source_id"]: s for s in db.select(
                 "ac_sources", {"select": "source_id,source_name,language,"

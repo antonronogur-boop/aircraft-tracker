@@ -18,8 +18,9 @@ triage_class:
   low_relevance     — gyenge kinyeres (orszag/tipus nem azonosithato)
 
 Usage: python scripts/triage_events.py [--all-pending] [--dry-run]
-Elofeltetel: supabase/add_review_triage.sql (ha hianyzik, a script jelzi
-es kilep — a pipeline-t nem allitja meg).
+A supabase/add_review_triage.sql migracio (supabase/migrations.txt) nelkul a
+script semmit nem ir, csak jelzi, hogy a triage ki van hagyva — a pipeline
+es a review-sor valtozatlanul mukodik.
 """
 import json
 import sys
@@ -136,8 +137,9 @@ def main():
     if "--all-pending" not in sys.argv:
         pending = [e for e in pending if not e.get("triage")]
     if pending and "triage" not in pending[0]:
-        print("ac_events.triage column missing — run "
-              "supabase/add_review_triage.sql once. Skipping triage.")
+        print("ac_events.triage column not present yet (migration "
+              "supabase/add_review_triage.sql not applied) — triage "
+              "skipped; the review queue works unchanged.")
         return
     others = db.select("ac_events", {
         "select": "event_id,country_id,type_id,event_type,quantity,"

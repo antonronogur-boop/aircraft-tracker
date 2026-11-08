@@ -305,8 +305,11 @@ def test_brief():
     mrows = {r["ref"]: r for r in mat["rows"]}
     check("maturity: Romania LOA = Contracted", mrows["D-02"]["column"],
           "Contracted")
-    check("maturity: Japan IOC = IOC", mrows.get("D-07", {}).get("column"),
-          "IOC")
+    check("maturity: IOC milestones sit in the IOC column", all(
+        r["column"] == "IOC" for r in mat["rows"] if r["stage"] == "IOC"),
+        True)
+    check("maturity: FOC milestone sits in the FOC column", any(
+        r["column"] == "FOC" for r in mat["rows"]), True)
     check("maturity: loss shown as withdrawal",
           mrows["D-03"]["withdrawal"], True)
     secs = {x["key"]: x for x in b["page3"]["sections"]}
@@ -621,7 +624,8 @@ def test_pipeline():
                          for v in COUNTRIES.values()],
         "ac_aircraft_types": [{"type_id": "rafale", "name": "Dassault "
                                "Rafale", "category": "fighter"}],
-        "ac_articles": [{"article_id": "art%d" % i, "title": "t%d" % i,
+        "ac_articles": [{"article_id": "art%d" % i,
+                         "title": "Rafale fighters delivered (report %d)" % i,
                          "url": "https://example.org/%d" % i,
                          "source_id": "ACS-0001" if i % 2 else "ACS-0002",
                          "publish_date": None} for i in range(1, 8)],
@@ -756,6 +760,110 @@ def test_triage():
     check("triage never sets review_status", "review_status" in t4, False)
 
 
+def test_sources():
+    section("G. Source traceability and publication dates (PO blocker 1)")
+    p = fixture()
+    cov = coverage_for()
+    # 1) Supplement NELKUL: a MiG-29-cikk nem bizonyitek az FA-50 allitashoz.
+    b = B.build_command_brief(json.loads(json.dumps(p)), COUNTRIES,
+                              coverage=cov, evidence_supplements=[])
+    reg = {e["id"]: e for e in b["page5"]["sources"]}
+    mig = [e for e in reg.values() if "MiG-29" in e["title"]][0]
+    check("MiG-29 transfer article is CONTEXT, not evidence, for FA-50",
+          mig["role"], "Context — not cited as evidence")
+    fa = [r for r in b["page2"]["rows"] if "FA-50" in r["what_changed"]
+          or r["country"] == "Poland"]
+    check("FA-50 item without direct source is not a PRIMARY KJ", any(
+        "FA-50" in k["statement"] for k in b["page1"]["primary"]), False)
+    check("… and is shown on page 2 as 'indirect only'",
+          [r["evidence"] for r in fa], ["indirect only"])
+    check("… with the context article named, not cited",
+          (fa[0]["sources"], fa[0]["context_sources"]), ([], [mig["id"]]))
+    check("traceability reports the indirect-only item",
+          len(b["traceability"]["items_with_indirect_evidence_only"]), 1)
+    # 2) Ellenorzott, verziokezelt forras csatolva: hivatalos forras elol.
+    sup = [{"id": "t-fa50", "verified_on": "2026-11-08",
+            "match": {"country_ids": ["pol"], "subject_rx": "FA-?50",
+                      "period_end_between": ["2026-10-01", "2026-11-30"]},
+            "sources": [
+                {"title": "Wpis ministra: FA-50GF weszły w dyżur bojowy",
+                 "url": "https://example.gov.pl/fa50", "publisher": "MON",
+                 "published": "2026-10-02", "tier_key": "mod",
+                 "language": "pl", "lineage_key": "stmt:fa50"},
+                {"title": "Polish FA-50s Have Begun Combat Duty",
+                 "url": "https://example.org/militarnyi-fa50",
+                 "publisher": "Militarnyi", "published": "2026-10-03",
+                 "tier_key": "specialist_defence", "language": "en",
+                 "lineage_key": "stmt:fa50"}]}]
+    b2 = B.build_command_brief(json.loads(json.dumps(p)), COUNTRIES,
+                               coverage=cov, evidence_supplements=sup)
+    reg2 = {e["id"]: e for e in b2["page5"]["sources"]}
+    items = ([k for k in b2["page1"]["primary"]
+              if "FA-50" in k["statement"]]
+             + [r for r in b2["page2"]["rows"] if r["country"] == "Poland"])
+    srcs = items[0]["sources"]
+    check("with verified evidence the FA-50 item cites it",
+          len(srcs) >= 2, True)
+    check("official (Tier 1) source listed FIRST", reg2[srcs[0]]["tier"],
+          "Tier 1")
+    check("official source role = Primary (official)",
+          reg2[srcs[0]]["role"], "Primary (official)")
+    check("specialist media = Corroborating", reg2[srcs[1]]["role"],
+          "Corroborating")
+    check("restatements of one statement share ONE lineage",
+          reg2[srcs[0]]["lineage"] == reg2[srcs[1]]["lineage"], True)
+    check("the MiG-29 article is still not cited for FA-50",
+          any("MiG-29" in reg2[x]["title"] for x in srcs), False)
+    # 3) Minden hivatkozott S-xx kozvetlenul tamogatja a hivatkozo tetelt.
+    check("no S-xx cited without direct support (fixture)",
+          b2["traceability"]["non_direct_citations"], [])
+    for bb in (b, b2):
+        for e in bb["page5"]["sources"]:
+            if e["role"].startswith("Context"):
+                continue
+            if not any(v in ("direct", "unverified")
+                       for v in e["supports"].values()):
+                FAILS.append(("cited without support", e["id"], "direct"))
+    # 4) 'Published' = publikacios datum, SOHA nem esemeny-datum.
+    for e in b2["page5"]["sources"]:
+        if e["published_basis"] is None:
+            if e["published"] is not None:
+                FAILS.append(("published without basis", e["id"], None))
+        if e["published"] and e["published"] == e["event_date"] and \
+                e["published_basis"] not in ("feed", "url",
+                                             "analyst-verified"):
+            FAILS.append(("event date used as published", e["id"], None))
+    nofeed = [e for e in reg2.values() if "/fixture/" in e["url"]]
+    check("no feed date, no URL date -> 'Published' empty (not event date)",
+          all(e["published"] is None and e["event_date"] for e in nofeed),
+          True)
+    arts = {"art-x": {"title": "Serbia receives first Rafale jets",
+                      "url": "https://www.defensenews.com/2026/10/08/x/",
+                      "publish_date": "2026-10-09", "source_id": "ACS-0001",
+                      "collected_date": "2026-10-10"}}
+    evs = {101: {"event_id": 101, "country_id": "srb",
+                 "article_id": "art-x", "event_date": "2024-03-01"}}
+    b3 = B.build_command_brief(json.loads(json.dumps(p)), COUNTRIES,
+                               coverage=cov, events_by_id=evs,
+                               articles_by_id=arts, evidence_supplements=[])
+    e3 = [e for e in b3["page5"]["sources"]
+          if e["url"].endswith("/2026/10/08/x/")][0]
+    check("feed publish_date wins over URL date and event date",
+          (e3["published"], e3["published_basis"], e3["event_date"]),
+          ("2026-10-09", "feed", "2024-03-01"))
+    check("retrieval date kept separately", e3["retrieved"], "2026-10-10")
+    check("URL date used only when no feed date",
+          B.url_publication_date("https://theaviationist.com/2026/10/31/x"),
+          "2026-10-31")
+    check("no date in URL -> None", B.url_publication_date(
+        "https://defence-blog.com/poland-hands-ukraine"), None)
+    check("register title is not 'original publications'",
+          "original publications" in b2["page5"]["register_title"].lower(),
+          False)
+    check("designation family: Su-35SE ~ Su-35",
+          "SU35" in B.designation_stems("Su-35SE"), True)
+
+
 if __name__ == "__main__":
     test_window()
     test_hu_model()
@@ -763,6 +871,7 @@ if __name__ == "__main__":
     test_synthesis()
     test_pipeline()
     test_triage()
+    test_sources()
     print("\n" + "=" * 92)
     if FAILS:
         print("{} check(s) FAILED:".format(len(FAILS)))

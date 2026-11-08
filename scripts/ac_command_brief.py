@@ -357,35 +357,114 @@ def _host(url):
         m.group(1) if m else "")
 
 
+# Tipusjel: nagybetuvel kezdodo 1-4 betu, opcionalis kotojel, 1-3 szamjegy,
+# opcionalis betu-utotag (FA-50, Su-35SE, F-35A, MQ-25A, GJ-21, KC-390).
+_DESIG_RX = re.compile(r"\b([A-Z][A-Za-z]{0,3})-?(\d{1,3})([A-Z]{0,3})\b")
+_URL_DATE_RX = re.compile(r"/(20\d\d)[/-](\d\d)[/-](\d\d)(?:/|[-_])")
+_GENERIC_WORDS = {"fighter", "aircraft", "helicopter", "transport", "trainer",
+                  "light", "combat", "block", "super", "multirole", "tanker",
+                  "jet", "jets", "new", "the", "and", "air", "force", "first"}
+
+
+_CYR = dict(zip("АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ",
+                ["A", "B", "V", "G", "D", "E", "E", "ZH", "Z", "I", "Y", "K",
+                 "L", "M", "N", "O", "P", "R", "S", "T", "U", "F", "KH", "TS",
+                 "CH", "SH", "SHCH", "", "Y", "", "E", "YU", "YA"]))
+
+
+def _norm_alnum(t):
+    """Osszevetesi alak: nagybetu, cirill -> latin (Су-57Э -> SU57E,
+    МиГ-29 -> MIG29), csak betu es szam."""
+    u = str(t or "").upper()
+    u = "".join(_CYR.get(ch, ch) for ch in u)
+    return re.sub(r"[^A-Z0-9]", "", u)
+
+
+def designation_stems(text):
+    """'FA-50' -> {'FA50'}; 'Su-35SE' -> {'SU35SE','SU35'}; 'F-35A' ->
+    {'F35A','F35'}. Az alaktani valtozatok egy csaladba tartoznak."""
+    out = set()
+    for m in _DESIG_RX.finditer(str(text or "")):
+        base = (m.group(1) + m.group(2)).upper()
+        if len(base) < 3:
+            continue
+        out.add(base)
+        if m.group(3):
+            out.add(base + m.group(3).upper())
+    return out
+
+
+def url_publication_date(url):
+    """Publikacios datum a cikk URL-jebol (/2026/10/30/), vagy None."""
+    m = _URL_DATE_RX.search(str(url or ""))
+    if not m:
+        return None
+    return "{}-{}-{}".format(m.group(1), m.group(2), m.group(3))
+
+
 class SourceRegister(object):
-    """Az eredeti cikkek nyilvantartasa. Az S-szamok a brief olvasasi
-    sorrendjeben keletkeznek (page 1 -> page 4), igy a lista kovetheto."""
+    """A brief forrasjegyzeke — kizarolag VALODI tamogato bizonyitek.
+
+    Szabalyok (2026-11-08, PO blocker 1):
+      * Egy forras csak akkor hivatkozhato egy tetelnel (S-xx), ha a cime
+        vagy osszefoglaloja a tetel TARGYAT (tipusjel / tipusnev) kozvetlenul
+        megnevezi — 'direct'. Ha a tetel allitasa csak a cikk torzseben
+        szerepel (pl. egy MiG-29-atadasrol szolo cikk mellekmondata az FA-50
+        QRA-rol), a forras 'context': a jegyzekben latszik, de NEM
+        bizonyitekkent hivatkozott.
+      * Elol a hivatalos (Tier 1) forras, utana a szakmedia mint
+        megerosites.
+      * 'Published' KIZAROLAG a cikk publikacios datuma: a feed
+        publish_date-je, ennek hianyaban az URL-ben levo datum; ha egyik
+        sincs: nincs datum. Esemeny-, szerzodes-, milestone- vagy gyujtesi
+        datum SOHA nem helyettesiti.
+      * Analitikus altal csatolt, ellenorzott forras (config/
+        evidence_supplements.json) verziokezelt, datumozott, es ugyanigy
+        tier-rel es lineage-dzsel szerepel.
+    """
 
     def __init__(self, payload, events_by_id=None, articles_by_id=None,
-                 sources_by_id=None, countries_by_id=None):
-        import ac_intel  # lusta: csak a lineage-szabaly miatt
+                 sources_by_id=None, countries_by_id=None, supplements=None,
+                 period_end=None):
+        import ac_intel  # lusta: a lineage-szabaly miatt
         self._intel = ac_intel
         self.events = events_by_id or {}
         self.articles = articles_by_id or {}
         self.sources = sources_by_id or {}
         self.countries = countries_by_id or {}
+        self.period_end = str(period_end or "")[:10]
         self.annex = {a.get("event_id"): a
                       for a in (payload.get("annex_events") or [])}
         self.cfg = _load_json(ROOT / "config" / "coverage_sources.json", {})
+        if supplements is None:
+            supplements = (_load_json(ROOT / "config" /
+                                      "evidence_supplements.json", {})
+                           .get("supplements") or [])
+        self.supplements = supplements
         cat = _load_json(ROOT / "data" / "sources.json", [])
         self.catalog = {}
-        for s in cat if isinstance(cat, list) else []:
-            h = _host(s.get("homepage") or s.get("rss_url"))
+        for x in cat if isinstance(cat, list) else []:
+            h = _host(x.get("homepage") or x.get("rss_url"))
             if h:
-                self.catalog[h] = s
-        # Jelolt (meg nem gyujtott) hivatalos forrasok domainje -> tier.
+                self.catalog[h] = x
         self.candidate_tiers = {}
         for c in self.cfg.get("candidates") or []:
             h = _host(c.get("homepage"))
             if h:
                 self.candidate_tiers[h] = (c.get("tier"), c.get("name"))
-        self.entries, self.by_key, self.lineage_labels = [], {}, {}
+        types = _load_json(ROOT / "data" / "aircraft_catalogue.json", [])
+        self.type_words = set()
+        for t in types if isinstance(types, list) else []:
+            maker = str(t.get("manufacturer") or "").lower()
+            for n in [t.get("name")] + list(t.get("aliases") or []):
+                for w in re.findall(r"[A-Za-z][A-Za-z]{3,}", str(n or "")):
+                    lw = w.lower()
+                    if lw not in _GENERIC_WORDS and lw not in maker:
+                        self.type_words.add(lw)
+        self.entries, self.by_key = [], {}
+        self._dev_cache = {}
 
+    # ---------------------------------------------------------- inputs --
     def _article_for(self, eid):
         e = self.events.get(eid) or {}
         a = self.articles.get(e.get("article_id") or "") or {}
@@ -394,12 +473,21 @@ class SourceRegister(object):
         title = a.get("title") or ax.get("article_title")
         if not (url or title):
             return None, None
-        key = e.get("article_id") or url or title
+        key = "art:" + str(e.get("article_id") or url or title)
+        feed_pub = str(a.get("publish_date") or "")[:10] or None
+        url_pub = url_publication_date(url)
         return key, {
             "article_id": e.get("article_id"), "url": url, "title": title,
-            "publish_date": a.get("publish_date"),
+            "title_kind": "original",
+            "summary": a.get("short_summary") or "",
+            "published": feed_pub or url_pub,
+            "published_basis": ("feed" if feed_pub else
+                                "url" if url_pub else None),
+            "retrieved": str(a.get("collected_date") or "")[:10] or None,
             "source_id": a.get("source_id"),
             "event": e or ax,
+            "chain": ("origin:" + str(e.get("originating_evidence_id"))
+                      if e.get("originating_evidence_id") else None),
         }
 
     def _describe(self, info):
@@ -414,69 +502,215 @@ class SourceRegister(object):
         for h, v in self.candidate_tiers.items():
             if host == h or host.endswith("." + h):
                 cand = v
-        tier_key = ("mod" if state else tiers.get(sid or "")
+        tier_key = (info.get("tier_key")
+                    or ("mod" if state else tiers.get(sid or ""))
                     or (cand or (None,))[0]
                     or self.cfg.get("default_tier") or "specialist_defence")
         rank = (self.cfg.get("tier_rank") or {}).get(tier_key, 3)
         label = (self.cfg.get("tier_labels") or {}).get(tier_key, tier_key)
         if state:
             label = "State-controlled official (attributed; not independent)"
+        chain = info.get("chain") or ("state:" + state if state else
+                                      "article:" + str(info.get("article_id")
+                                                       or url
+                                                       or info.get("title")))
         return {
-            "source_name": src.get("source_name") or cat.get("source_name")
-            or (cand or (None, None))[1] or host or "—",
+            "source_name": info.get("publisher") or src.get("source_name")
+            or cat.get("source_name") or (cand or (None, None))[1]
+            or host or "—",
             "source_id": sid,
             "source_type": label,
+            "tier_rank": rank,
             "tier": "Tier {}".format(rank),
-            "language": src.get("language") or ("en" if cat else "—"),
+            "language": info.get("language") or src.get("language")
+            or ("en" if cat else "—"),
             "state_controlled": bool(state),
-            # Lineage: allami csoport > azonositott primer forras > cikk.
-            "_chain": ("state:" + state if state else
-                       "origin:" + str(info["event"].get(
-                           "originating_evidence_id"))
-                       if (info["event"] or {}).get("originating_evidence_id")
-                       else "article:" + str(info.get("article_id")
-                                             or url or info.get("title"))),
+            "_chain": chain,
         }
 
-    def ids_for_events(self, event_ids, used_by):
+    def _entry(self, key, info):
+        ent = self.by_key.get(key)
+        if ent is None:
+            ent = dict(self._describe(info), **{
+                "key": key, "id": None,
+                "title": info["title"] or info["url"],
+                "title_kind": info.get("title_kind") or "original",
+                "url": info["url"],
+                "published": info.get("published"),
+                "published_basis": info.get("published_basis"),
+                "retrieved": info.get("retrieved"),
+                "event_date": str((info.get("event") or {}).get(
+                    "event_date") or "")[:10] or None,
+                "country": info.get("country") or "—",
+                "note": info.get("note"),
+                "used_by": [], "supports": {},
+            })
+            ev = info.get("event") or {}
+            cid = ev.get("country_id")
+            if not info.get("country"):
+                ent["country"] = ((self.countries.get(cid) or {}).get("name")
+                                  if cid else ev.get("country")) or "—"
+            self.entries.append(ent)
+            self.by_key[key] = ent
+        return ent
+
+    # --------------------------------------------------------- support --
+    def subject_terms(self, d):
+        text = " ".join([d.get("title") or "", d.get("display_label") or ""])
+        stems = designation_stems(text)
+        words = {w.lower() for w in re.findall(r"[A-Za-z]{4,}", text)
+                 if w.lower() in self.type_words}
+        return stems, words
+
+    def supports(self, d, text):
+        stems, words = self.subject_terms(d)
+        if not stems and not words:
+            return "unverified"
+        n = _norm_alnum(text)
+        if any(st in n for st in stems):
+            return "direct"
+        low = str(text or "").lower()
+        if any(re.search(r"\b" + re.escape(w) + r"\b", low) for w in words):
+            return "direct"
+        return "indirect"
+
+    def _supplements_for(self, d):
         out = []
-        for eid in event_ids or []:
+        blob = " ".join([d.get("title") or "", d.get("display_label") or "",
+                         d.get("fact") or ""])
+        for sup in self.supplements:
+            m = sup.get("match") or {}
+            if m.get("country_ids") and not (
+                    set(m["country_ids"]) & set(d.get("country_ids") or [])):
+                continue
+            try:
+                if m.get("subject_rx") and not re.search(
+                        m["subject_rx"], blob, re.I):
+                    continue
+            except re.error:
+                continue
+            win = m.get("period_end_between")
+            if win and self.period_end and not (
+                    win[0] <= self.period_end <= win[1]):
+                continue
+            out.append(sup)
+        return out
+
+    def _resolve(self, d):
+        ref = d.get("ref") or id(d)
+        if ref in self._dev_cache:
+            return self._dev_cache[ref]
+        direct, context = [], []
+        for eid in d.get("event_ids") or []:
             key, info = self._article_for(eid)
             if key is None:
                 continue
-            ent = self.by_key.get(key)
-            if ent is None:
-                desc = self._describe(info)
-                chain = desc.pop("_chain")
-                if chain not in self.lineage_labels:
-                    self.lineage_labels[chain] = "L-{:02d}".format(
-                        len(self.lineage_labels) + 1)
-                ev = info["event"] or {}
-                cid = ev.get("country_id")
-                country = ((self.countries.get(cid) or {}).get("name")
-                           if cid else ev.get("country")) or "—"
-                ent = dict(desc, **{
-                    "id": "S-{:02d}".format(len(self.entries) + 1),
-                    "title": info["title"] or info["url"],
-                    "url": info["url"],
-                    "publication_date": str(info.get("publish_date")
-                                            or "")[:10] or None,
-                    "event_date": str(ev.get("event_date") or "")[:10]
-                    or None,
-                    "country": country,
-                    "lineage": self.lineage_labels[chain],
-                    "used_by": [],
-                })
-                self.entries.append(ent)
-                self.by_key[key] = ent
-            if used_by and used_by not in ent["used_by"]:
-                ent["used_by"].append(used_by)
-            if ent["id"] not in out:
-                out.append(ent["id"])
-        return out
+            ent = self._entry(key, info)
+            role = self.supports(d, (info["title"] or "") + " " +
+                                 (info.get("summary") or ""))
+            (context if role == "indirect" else direct).append(
+                (ent, role))
+        for sup in self._supplements_for(d):
+            for i, src in enumerate(sup.get("sources") or []):
+                info = {
+                    "url": src["url"], "title": src["title"],
+                    "title_kind": src.get("title_kind") or "original",
+                    "publisher": src.get("publisher"),
+                    "published": src.get("published"),
+                    "published_basis": "analyst-verified"
+                    if src.get("published") else None,
+                    "retrieved": sup.get("verified_on"),
+                    "language": src.get("language"),
+                    "tier_key": src.get("tier_key"),
+                    "country": src.get("country"),
+                    "note": src.get("note"),
+                    "chain": src.get("lineage_key"),
+                    "event": {},
+                }
+                ent = self._entry("sup:{}:{}".format(sup.get("id"), i), info)
+                direct.append((ent, "direct"))
+        self._dev_cache[ref] = (direct, context)
+        return direct, context
+
+    def has_direct(self, d):
+        return bool(self._resolve(d)[0])
 
     def for_dev(self, d, used_by):
-        return self.ids_for_events(d.get("event_ids") or [], used_by)
+        """A tetel KOZVETLEN forrasai (belso kulcsok; S-szam a vegen)."""
+        direct, context = self._resolve(d)
+        for ent, role in direct + context:
+            if used_by and used_by not in ent["used_by"]:
+                ent["used_by"].append(used_by)
+            if used_by:
+                ent["supports"][used_by] = role
+        return [e["key"] for e, _ in direct]
+
+    def context_for(self, d):
+        return [e["key"] for e, _ in self._resolve(d)[1]]
+
+    # -------------------------------------------------------- finalize --
+    def finalize(self, brief):
+        """S-szamok olvasasi sorrendben (eloszor a hivatkozott, aztan a
+        csak kontextus forrasok), lineage-cimkek, szerepek, es a brief
+        osszes 'sources' / 'context_sources' listajanak atirasa — tier
+        szerint rendezve (hivatalos elol)."""
+        order = []
+
+        def walk_collect(o):
+            if isinstance(o, dict):
+                for k, v in o.items():
+                    if k == "sources" and isinstance(v, list):
+                        for x in v:
+                            if x in self.by_key and x not in order:
+                                order.append(x)
+                    elif k != "page5":
+                        walk_collect(v)
+            elif isinstance(o, list):
+                for v in o:
+                    walk_collect(v)
+        walk_collect(brief)
+        cited = set(order)
+        for e in self.entries:
+            if e["key"] not in order:
+                order.append(e["key"])
+        lineage = {}
+        for i, key in enumerate(order):
+            e = self.by_key[key]
+            e["id"] = "S-{:02d}".format(i + 1)
+            chain = e.pop("_chain", None) or key
+            if chain not in lineage:
+                lineage[chain] = "L-{:02d}".format(len(lineage) + 1)
+            e["lineage"] = lineage[chain]
+            if key not in cited:
+                e["role"] = "Context — not cited as evidence"
+            elif e["tier_rank"] == 1:
+                e["role"] = "Primary (official)"
+            else:
+                e["role"] = "Corroborating"
+        rank = {k: (self.by_key[k]["tier_rank"], self.by_key[k]["id"])
+                for k in order}
+
+        def walk_replace(o):
+            if isinstance(o, dict):
+                for k, v in o.items():
+                    if k in ("sources", "context_sources") and \
+                            isinstance(v, list) and all(
+                                isinstance(x, str) for x in v):
+                        keys = [x for x in v if x in self.by_key]
+                        if keys or not v:
+                            keys = sorted(dict.fromkeys(keys),
+                                          key=lambda x: rank[x])
+                            o[k] = [self.by_key[x]["id"] for x in keys]
+                    else:
+                        walk_replace(v)
+            elif isinstance(o, list):
+                for v in o:
+                    walk_replace(v)
+        walk_replace(brief)
+        out = sorted(self.entries, key=lambda e: e["id"])
+        for e in out:
+            e.pop("key", None)
+        return out
 
 
 # --------------------------------------------------------------------------
@@ -526,6 +760,7 @@ def page1(payload, devs, countries_by_id, cfg, reg):
             sig = 3
         covered |= {d["ref"] for d in sup}
         cands.append({"kind": "kj", "k": k, "sup": sup, "best": best,
+                      "direct": any(reg.has_direct(d) for d in sup),
                       "h": h, "sig": sig, "conf": k.get("confidence"),
                       "horizon": k.get("effect_timing")
                       or (best or {}).get("effect_timing") or "unknown"})
@@ -534,6 +769,7 @@ def page1(payload, devs, countries_by_id, cfg, reg):
         if d["ref"] in covered or not is_material(d):
             continue
         cands.append({"kind": "dev", "d": d, "h": h, "sig": _sig(d),
+                      "direct": reg.has_direct(d),
                       "conf": d.get("confidence"),
                       "horizon": d.get("effect_timing") or "unknown",
                       "barred": bool(set(d.get("event_ids") or []) & barred)})
@@ -555,6 +791,10 @@ def page1(payload, devs, countries_by_id, cfg, reg):
         # Uj (XS) itelet csak QA-n atment, nem visszatartott alapbol.
         if c["kind"] == "dev" and (c.get("barred") or n_xs >= MAX_SYNTHESIS
                                    or lvl not in ("HIGH", "MEDIUM")):
+            reason = None
+        # PRIMARY csak KOZVETLEN forrassal: ha a tetel allitasa csak egy
+        # mas temaju cikk torzseben szerepel, nem lehet vezeto itelet.
+        if not c["direct"]:
             reason = None
         if reason and len(primary) < MAX_PRIMARY:
             if c["kind"] == "dev":
@@ -588,6 +828,8 @@ def page1(payload, devs, countries_by_id, cfg, reg):
                 "refs": [k.get("id")] + [d["ref"] for d in sup],
                 "sources": [s for d in sup
                             for s in reg.for_dev(d, k.get("id"))],
+                "context_sources": [s for d in sup
+                                    for s in reg.context_for(d)],
                 "countries": sorted({x for d in sup
                                      for x in d.get("countries") or []}),
             })
@@ -611,6 +853,7 @@ def page1(payload, devs, countries_by_id, cfg, reg):
                 "headline": d.get("title"),
                 "refs": [d["ref"]], "traces_to": [d["ref"]],
                 "sources": reg.for_dev(d, xid),
+                "context_sources": reg.context_for(d),
                 "countries": d.get("countries") or [],
             })
         h = c["h"]
@@ -761,6 +1004,8 @@ def page2(devs, countries_by_id, coverage, cfg, used, reg):
                                                  or [None])[0]),
             "coverage": cov.get("status"),
             "sources": reg.for_dev(d, "p.2 " + name.split(" → ")[-1]),
+            "context_sources": reg.context_for(d),
+            "evidence": "direct" if reg.has_direct(d) else "indirect only",
         })
         used.add(d["ref"])
 
@@ -841,6 +1086,7 @@ def _item(d, reg, page="p.3"):
         "hu_relevance": h.get("level"),
         "sources": reg.for_dev(d, "{} {}".format(
             page, ", ".join(d.get("countries") or []) or d["ref"])),
+        "context_sources": reg.context_for(d),
     }
 
 
@@ -1372,14 +1618,18 @@ def synthesize(client, brief, payload, devs, countries_by_id):
 
 def build_command_brief(payload, countries_by_id, coverage=None, cfg=None,
                         client=None, events_by_id=None, window=None,
-                        articles_by_id=None, sources_by_id=None):
+                        articles_by_id=None, sources_by_id=None,
+                        evidence_supplements=None):
     """A brief kanonikus adatmodellje. A web, a PDF es a Word ebbol
     renderel. A payload developments-et annotalja (ref, orszag,
     HU-relevancia); a brief az EREDETI forrasokra (S-xx) hivatkozik."""
     cfg = cfg or hu.load_config()
     devs = annotate_developments(payload, countries_by_id, events_by_id, cfg)
+    meta0 = payload.get("report_meta") or {}
     reg = SourceRegister(payload, events_by_id, articles_by_id,
-                         sources_by_id, countries_by_id)
+                         sources_by_id, countries_by_id,
+                         supplements=evidence_supplements,
+                         period_end=meta0.get("period_end"))
     used = set()
     primary, secondary = page1(payload, devs, countries_by_id, cfg, reg)
     for x in primary:
@@ -1478,15 +1728,28 @@ def build_command_brief(payload, countries_by_id, coverage=None, cfg=None,
             x for i in s.get("items") or [] for x in src_of.get(i, [])))
     brief["page1"]["bottom_line"] = bl
 
+    # A belso kulcsok -> S-szamok (hivatalos elol), lineage, szerep.
+    entries = reg.finalize(brief)
+    has_secondary_only = all(e["tier_rank"] > 1 for e in entries
+                             if not e["role"].startswith("Context"))
     brief["page5"] = {
-        "sources": reg.entries,
-        "source_note": ("Each S-xx links to the original publication; the "
-                        "title is shown in its original language. Lineage "
-                        "groups publications that restate one evidence "
-                        "chain — several articles on one lineage are one "
-                        "piece of evidence. State-controlled sources are "
-                        "attributed statements, not independent "
-                        "confirmation."),
+        "sources": entries,
+        "register_title": "Source register — evidence behind each judgement",
+        "source_note": (
+            "Each S-xx links to the publication it names; titles are shown "
+            "in their original language. Items cite only sources that "
+            "directly report their subject: an official (Tier 1) source "
+            "comes first where one exists, specialist media follow as "
+            "corroboration. 'Context' sources are listed for audit but are "
+            "not cited as evidence. 'Published' is the article's own "
+            "publication date (from the feed or the article URL) — never an "
+            "event, contract or milestone date; blank means not recorded. "
+            "Lineage groups publications restating one evidence chain; "
+            "state-controlled sources are attributed statements, not "
+            "independent confirmation."
+            + (" This week no official primary source was available: the "
+               "cited evidence is secondary specialist media."
+               if has_secondary_only else "")),
         "legend": LEGEND,
         "principles": PRINCIPLES,
     }
@@ -1496,7 +1759,8 @@ def build_command_brief(payload, countries_by_id, coverage=None, cfg=None,
                    | {k.get("id") for k in payload.get("key_judgements")
                       or []}
                    | {x["id"] for x in primary})
-    valid_sources = {e["id"] for e in reg.entries}
+    valid_sources = {e["id"] for e in entries}
+    supports = {e["id"]: e["supports"] for e in entries}
     used_items, used_sources = set(), set()
     for x in primary + secondary:
         used_items |= set(x.get("refs") or [])
@@ -1529,6 +1793,15 @@ def build_command_brief(payload, countries_by_id, coverage=None, cfg=None,
         "items_without_source": [x.get("id") or x.get("ref")
                                  for kind, x in exec_items
                                  if not x.get("sources")],
+        "items_with_indirect_evidence_only": [
+            x.get("id") or x.get("ref") for kind, x in exec_items
+            if not x.get("sources") and x.get("context_sources")],
+        # Minden hivatkozott S-xx a tetel TARGYAT kozvetlenul tamogatja.
+        "non_direct_citations": sorted(
+            sid for sid in used_sources
+            if sid in supports and supports[sid]
+            and not any(v in ("direct", "unverified")
+                        for v in supports[sid].values())),
         "executive_synthesis_items": [x["id"] for x in primary
                                       if x["origin"] == "executive_synthesis"],
         "withheld_judgements_excluded": [

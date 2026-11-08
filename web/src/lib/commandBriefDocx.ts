@@ -52,6 +52,7 @@ function srcRuns(ids: string[], idx: Map<string, SourceEntry>, prefix = "Sources
     out.push(s
       ? new ExternalHyperlink({ link: s.url, children: [new TextRun({ text: id, style: "Hyperlink", size: 17 })] })
       : new TextRun({ text: id, size: 17 }));
+    if (s && s.tier_rank === 1) out.push(new TextRun({ text: " (official)", color: "64748B", size: 15 }));
   });
   return out;
 }
@@ -106,6 +107,12 @@ async function image(svg: string, svgW: number, svgH: number, displayW: number, 
   });
 }
 
+function noDirect(ctx: string[] | undefined, idx: Map<string, SourceEntry>): (TextRun | ExternalHyperlink)[] {
+  if (!ctx?.length) return [];
+  return [new TextRun({ text: "No direct source — claim appears only in the body of ", color: "92400E", size: 16 }),
+    ...srcRuns(ctx, idx, ""), new TextRun({ text: " (context, not evidence)", color: "92400E", size: 16 })];
+}
+
 function itemParas(it: BriefItem, idx: Map<string, SourceEntry>) {
   return [
     new Paragraph({ spacing: { before: 80, after: 20 }, keepNext: true, children: [
@@ -113,7 +120,7 @@ function itemParas(it: BriefItem, idx: Map<string, SourceEntry>) {
       new TextRun({ text: `  (${it.domain ?? ""})`, color: "64748B", size: 17 })] }),
     ...(it.assessment ? [labelled("Assessment", it.assessment)] : []),
     metaLine([huRun(it.hu_relevance), new TextRun(` · SIG ${it.significance}/5 · CONF ${(it.confidence ?? "—").toUpperCase()} · ${HORIZON_LABEL(it.horizon)}   `),
-              ...srcRuns(it.sources, idx) as TextRun[]]),
+              ...(it.sources.length ? srcRuns(it.sources, idx) : noDirect(it.context_sources, idx)) as TextRun[]]),
   ];
 }
 
@@ -182,12 +189,12 @@ export async function buildCommandBriefDocx(b: CommandBriefV2, svg2png: Svg2Png)
     }
   }
   body.push(new Paragraph({ heading: HeadingLevel.HEADING_2, children: [new TextRun("Regional air picture")] }));
-  body.push(await image(ceeMapSvg(p1.map_cee), 600, 470, 560, svg2png));
+  body.push(await image(ceeMapSvg(p1.map_cee), 600, 470, 400, svg2png));
   body.push(p(`Figure 1 — ${p1.map_cee.caption ?? ""}`, { style: "Caption" }));
 
   // --- 2. regio ---
   const p2 = b.page2;
-  body.push(new Paragraph({ heading: HeadingLevel.HEADING_1, pageBreakBefore: true, children: [new TextRun("2. Immediate & Near-Regional Air Picture")] }));
+  body.push(new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun("2. Immediate & Near-Regional Air Picture")] }));
   body.push(p("Non-NATO priority · Hungary's neighbours · extended regional NATO — material changes only.", { style: "Caption" }));
   if (p2.rows.length) {
     body.push(table(["Country", "What changed", "Capability / operational effect", "HU relevance", "SIG", "CONF", "Next observable", "Sources"],
@@ -197,7 +204,7 @@ export async function buildCommandBriefDocx(b: CommandBriefV2, svg2png: Svg2Png)
         r.what_changed, r.effect,
         [huRun(r.hu_relevance), new TextRun({ text: ` ${r.hu_why ?? ""}`, size: 16 })],
         `${r.significance}/5`, `${r.confidence ?? "—"} · ${HORIZON_LABEL(r.horizon)}`,
-        r.next_observable ?? "—", srcRuns(r.sources, idx, ""),
+        r.next_observable ?? "—", r.sources.length ? srcRuns(r.sources, idx, "") : noDirect(r.context_sources, idx),
       ])));
   } else {
     body.push(p("NO MATERIAL CHANGE IDENTIFIED in the immediate and near region.", { bold: true }));
@@ -218,7 +225,7 @@ export async function buildCommandBriefDocx(b: CommandBriefV2, svg2png: Svg2Png)
 
   // --- 3. tagabb kep ---
   const p3 = b.page3;
-  body.push(new Paragraph({ heading: HeadingLevel.HEADING_1, pageBreakBefore: true, children: [new TextRun("3. Extended Air Power Picture")] }));
+  body.push(new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun("3. Extended Air Power Picture")] }));
   for (const s of p3.sections) {
     body.push(new Paragraph({ heading: HeadingLevel.HEADING_2, children: [new TextRun(`${s.title}${s.coverage ? ` (coverage ${s.coverage.toLowerCase()})` : ""}`)] }));
     if (!s.items.length) body.push(p(s.empty ?? "NO MATERIAL CHANGE IDENTIFIED", { bold: true, color: "475569" }));
@@ -246,11 +253,11 @@ export async function buildCommandBriefDocx(b: CommandBriefV2, svg2png: Svg2Png)
 
   // --- 4. globalis ---
   const p4 = b.page4;
-  body.push(new Paragraph({ heading: HeadingLevel.HEADING_1, pageBreakBefore: true, children: [new TextRun("4. Global Strategic Air Power Watch")] }));
+  body.push(new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun("4. Global Strategic Air Power Watch")] }));
   body.push(new Paragraph({ heading: HeadingLevel.HEADING_2, children: [new TextRun("Global strategic")] }));
   if (!p4.global.items.length) body.push(p(p4.global.empty ?? "NO MATERIAL CHANGE IDENTIFIED", { bold: true, color: "475569" }));
   for (const it of p4.global.items) body.push(...itemParas(it, idx));
-  body.push(await image(globalMapSvg(p4.map_global), 800, 410, 700, svg2png));
+  body.push(await image(globalMapSvg(p4.map_global), 800, 410, 560, svg2png));
   body.push(p(`Figure 2 — ${p4.map_global.caption ?? ""}`, { style: "Caption" }));
   body.push(new Paragraph({ heading: HeadingLevel.HEADING_2, children: [new TextRun("Priority intelligence watch")] }));
   if (!p4.priority_watch.length) body.push(p("No priority watch item this week."));
@@ -274,15 +281,17 @@ export async function buildCommandBriefDocx(b: CommandBriefV2, svg2png: Svg2Png)
 
   // --- 5. forrasok + jelmagyarazat ---
   const p5 = b.page5;
-  body.push(new Paragraph({ heading: HeadingLevel.HEADING_1, pageBreakBefore: true, children: [new TextRun("5. Sources & Legend")] }));
-  body.push(new Paragraph({ heading: HeadingLevel.HEADING_2, children: [new TextRun("Source register")] }));
-  body.push(table(["ID", "Source", "Original title", "Published", "Country", "Source type", "Lang", "Lineage", "Used by"],
-    [5, 12, 32, 8, 9, 16, 5, 6, 7],
+  body.push(new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun("5. Sources & Legend")] }));
+  body.push(new Paragraph({ heading: HeadingLevel.HEADING_2, children: [new TextRun(p5.register_title ?? "Source register")] }));
+  body.push(table(["ID", "Source · tier", "Title (original language)", "Published", "Role", "Country", "Lang", "Lineage", "Used by"],
+    [5, 15, 31, 9, 12, 8, 5, 6, 9],
     p5.sources.map((s) => [
       [new TextRun({ text: s.id, bold: true })],
-      [new TextRun(s.source_name), new TextRun({ text: ` (${s.tier})`, color: "64748B", size: 16 })],
-      [new ExternalHyperlink({ link: s.url, children: [new TextRun({ text: s.title, style: "Hyperlink" })] })],
-      s.publication_date ?? s.event_date ?? "—", s.country, s.source_type, s.language, s.lineage,
+      [new TextRun(s.source_name), new TextRun({ text: ` (${s.tier} · ${s.source_type})`, color: "64748B", size: 15 })],
+      [new ExternalHyperlink({ link: s.url, children: [new TextRun({ text: s.title, style: "Hyperlink" })] }),
+       ...(s.note ? [new TextRun({ text: ` — ${s.note}`, color: "64748B", size: 15 })] : [])],
+      (s.published ?? "not recorded") + (s.published_basis && s.published_basis !== "feed" ? ` (${s.published_basis})` : ""),
+      s.role, s.country, s.language, s.lineage,
       s.used_by.join(", ") || "—",
     ])));
   if (p5.source_note) body.push(p(p5.source_note, { style: "Caption" }));

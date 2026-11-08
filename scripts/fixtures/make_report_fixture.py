@@ -141,6 +141,18 @@ DEVS = [
         prog="hun-c390-2020"),
 ]
 
+# PO blocker 1 (W45): a lengyel FA-50 QRA allitas egyetlen gyujtott cikke egy
+# MiG-29-atadasrol szol — a cikk NEM kozvetlen bizonyitek.
+DEVS.append(dev(
+    13, "Poland FA-50 first 12 aircraft reach full operational capability; "
+        "assume QRA duties", "POL FA-50 FOC (12 ac)", "fighter_strike", "foc",
+    "Reporting confirmed that the first 12 FA-50 delivered to Poland reached "
+    "full operational readiness and have taken over QRA duties.",
+    "Poland fields an operationally ready light fighter on QRA, replacing "
+    "MiG-29s in that role.",
+    "Changes who holds QRA duty on NATO's eastern flank.", 3, "moderate",
+    "immediate", countries=["pol"], events=[117], lin=1))
+
 BACKGROUND = [
     dev(12, "Slovakia completes F-16 simulator training block",
         "SK F-16 sim", "fighter_strike", "other",
@@ -235,12 +247,14 @@ _ART = {
           "https://www.airforce-technology.com/fixture/cz-gripen"),
     111: ("Kecskemétre érkezett az első KC-390 — Magyar Honvédség",
           "https://honvedelem.hu/fixture/kc-390-kecskemet"),
+    117: ("Poland hands Ukraine two more MiG-29 fighter jets",
+          "https://defence-blog.com/poland-hands-ukraine-two-more-mig-29"),
     112: ("Slovak F-16 simulator block completed",
           "https://www.airforce-technology.com/fixture/sk-sim"),
 }
 _COUNTRY = {101: "Serbia", 102: "Romania", 103: "Ukraine", 113: "Ukraine",
             104: "United States", 105: "Israel", 106: "Algeria",
-            116: "Algeria",
+            116: "Algeria", 117: "Poland",
             107: "Japan", 108: "China", 109: "Germany", 110: "Czechia",
             111: "Hungary", 112: "Slovakia"}
 ANNEX = [{"event_id": k, "country": _COUNTRY[k], "article_title": v[0],

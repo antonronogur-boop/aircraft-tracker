@@ -753,6 +753,69 @@
       "rationale": "Hungary: directly concerns Hungary / the Hungarian Defence Forces. KC-390 — on order for MH airlift — lessons, sustainment, user-group and interoperability effects carry over to MH.",
       "version": "hu-1.1"
      }
+    },
+    {
+     "event_ids": [
+      117
+     ],
+     "title": "Poland FA-50 first 12 aircraft reach full operational capability; assume QRA duties",
+     "display_label": "POL FA-50 FOC (12 ac)",
+     "capability_domain": "fighter_strike",
+     "lifecycle_stage": "foc",
+     "fact": "Reporting confirmed that the first 12 FA-50 delivered to Poland reached full operational readiness and have taken over QRA duties.",
+     "capability_delta": "Poland fields an operationally ready light fighter on QRA, replacing MiG-29s in that role.",
+     "so_what": "Changes who holds QRA duty on NATO's eastern flank.",
+     "significance": 3,
+     "confidence": "moderate",
+     "effect_timing": "immediate",
+     "novelty": "new",
+     "independent_lineages": 1,
+     "reports_count": 2,
+     "indicators_to_watch": [
+      "Next official statement on the programme schedule."
+     ],
+     "programme_id": null,
+     "country_ids": [
+      "pol"
+     ],
+     "ref": "D-12",
+     "countries": [
+      "Poland"
+     ],
+     "hu_relevance": {
+      "score": 55,
+      "level": "HIGH",
+      "tier": "extended_nato",
+      "primary_country": "pol",
+      "factors": [
+       {
+        "id": "geography",
+        "label": "Geography / actor",
+        "points": 22,
+        "why": "Poland: NATO's largest eastern-flank air force build-up — sets the pace for regional allied capability"
+       },
+       {
+        "id": "air_policing",
+        "label": "NATO air policing / QRA",
+        "points": 12,
+        "why": "bears on NATO air policing and quick reaction alert, a standing MH mission"
+       },
+       {
+        "id": "flank_qra_change",
+        "label": "Regional QRA / air policing change",
+        "points": 16,
+        "why": "a change in who holds QRA or air policing duty in the region alters NATO's Central/Eastern European air posture that Hungary is part of"
+       },
+       {
+        "id": "horizon",
+        "label": "Horizon",
+        "points": 5,
+        "why": "effect immediate"
+       }
+      ],
+      "rationale": "Poland: NATO's largest eastern-flank air force build-up — sets the pace for regional allied capability. A change in who holds QRA or air policing duty in the region alters NATO's Central/Eastern European air posture that Hungary is part of.",
+      "version": "hu-1.1"
+     }
     }
    ],
    "background_items": [
@@ -949,6 +1012,13 @@
      "event_date": "2026-11-07"
     },
     {
+     "event_id": 117,
+     "country": "Poland",
+     "article_title": "Poland hands Ukraine two more MiG-29 fighter jets",
+     "article_url": "https://defence-blog.com/poland-hands-ukraine-two-more-mig-29",
+     "event_date": "2026-11-07"
+    },
+    {
      "event_id": 112,
      "country": "Slovakia",
      "article_title": "Slovak F-16 simulator block completed",
@@ -960,6 +1030,600 @@
    "capability_timeline": [],
    "self_checks": [],
    "coverage": {
+    "groups": {
+     "immediate_region": [
+      {
+       "country_id": "hun",
+       "name": "Hungary",
+       "region": "Eastern Europe",
+       "status": "PARTIAL",
+       "events_60d": 1,
+       "events_window": 1,
+       "distinct_sources": 1,
+       "source_tiers": [
+        "specialist_defence"
+       ],
+       "official_source": false,
+       "candidate_sources": [
+        {
+         "name": "honvedelem.hu (MH official news portal)",
+         "homepage": "https://honvedelem.hu",
+         "tier": "mod",
+         "language": "hu",
+         "caveat": null
+        }
+       ]
+      },
+      {
+       "country_id": "rus",
+       "name": "Russia",
+       "region": "Eurasia",
+       "status": "ADEQUATE",
+       "events_60d": 4,
+       "events_window": 4,
+       "distinct_sources": 2,
+       "source_tiers": [
+        "specialist_defence"
+       ],
+       "official_source": false,
+       "candidate_sources": []
+      },
+      {
+       "country_id": "ukr",
+       "name": "Ukraine",
+       "region": "Eastern Europe",
+       "status": "ADEQUATE",
+       "events_60d": 9,
+       "events_window": 9,
+       "distinct_sources": 2,
+       "source_tiers": [
+        "specialist_defence"
+       ],
+       "official_source": false,
+       "candidate_sources": []
+      },
+      {
+       "country_id": "srb",
+       "name": "Serbia",
+       "region": "Balkans",
+       "status": "ADEQUATE",
+       "events_60d": 5,
+       "events_window": 5,
+       "distinct_sources": 2,
+       "source_tiers": [
+        "specialist_defence"
+       ],
+       "official_source": false,
+       "candidate_sources": []
+      },
+      {
+       "country_id": "blr",
+       "name": "Belarus",
+       "region": "Eastern Europe",
+       "status": "GAP",
+       "events_60d": 0,
+       "events_window": 0,
+       "distinct_sources": 0,
+       "source_tiers": [],
+       "official_source": false,
+       "candidate_sources": [
+        {
+         "name": "Belarus Ministry of Defence",
+         "homepage": "https://www.mil.by",
+         "tier": "mod",
+         "language": "ru",
+         "caveat": "state source of a Russian-aligned government — treat claims as attributed statements"
+        }
+       ]
+      },
+      {
+       "country_id": "bih",
+       "name": "Bosnia and Herzegovina",
+       "region": "Balkans",
+       "status": "GAP",
+       "events_60d": 0,
+       "events_window": 0,
+       "distinct_sources": 0,
+       "source_tiers": [],
+       "official_source": false,
+       "candidate_sources": [
+        {
+         "name": "Bosnia and Herzegovina Ministry of Defence",
+         "homepage": "https://www.mod.gov.ba",
+         "tier": "mod",
+         "language": "bs",
+         "caveat": null
+        }
+       ]
+      },
+      {
+       "country_id": "aut",
+       "name": "Austria",
+       "region": "Western Europe",
+       "status": "PARTIAL",
+       "events_60d": 1,
+       "events_window": 1,
+       "distinct_sources": 1,
+       "source_tiers": [
+        "specialist_defence"
+       ],
+       "official_source": false,
+       "candidate_sources": [
+        {
+         "name": "Austrian Armed Forces (Bundesheer)",
+         "homepage": "https://www.bundesheer.at",
+         "tier": "mod",
+         "language": "de",
+         "caveat": null
+        },
+        {
+         "name": "Militär Aktuell (Austrian specialist)",
+         "homepage": "https://militaeraktuell.at",
+         "tier": "specialist_defence",
+         "language": "de",
+         "caveat": null
+        }
+       ]
+      },
+      {
+       "country_id": "svk",
+       "name": "Slovakia",
+       "region": "Eastern Europe",
+       "status": "PARTIAL",
+       "events_60d": 2,
+       "events_window": 2,
+       "distinct_sources": 1,
+       "source_tiers": [
+        "specialist_defence"
+       ],
+       "official_source": false,
+       "candidate_sources": [
+        {
+         "name": "Slovak Ministry of Defence",
+         "homepage": "https://www.mosr.sk",
+         "tier": "mod",
+         "language": "sk",
+         "caveat": null
+        }
+       ]
+      },
+      {
+       "country_id": "rou",
+       "name": "Romania",
+       "region": "Eastern Europe",
+       "status": "PARTIAL",
+       "events_60d": 3,
+       "events_window": 3,
+       "distinct_sources": 1,
+       "source_tiers": [
+        "specialist_defence"
+       ],
+       "official_source": false,
+       "candidate_sources": [
+        {
+         "name": "Romanian Ministry of National Defence",
+         "homepage": "https://english.mapn.ro",
+         "tier": "mod",
+         "language": "ro",
+         "caveat": null
+        },
+        {
+         "name": "Romanian Air Force",
+         "homepage": "https://www.roaf.ro",
+         "tier": "official_af",
+         "language": "ro",
+         "caveat": null
+        }
+       ]
+      },
+      {
+       "country_id": "hrv",
+       "name": "Croatia",
+       "region": "Balkans",
+       "status": "GAP",
+       "events_60d": 0,
+       "events_window": 0,
+       "distinct_sources": 0,
+       "source_tiers": [],
+       "official_source": false,
+       "candidate_sources": [
+        {
+         "name": "Croatian Ministry of Defence",
+         "homepage": "https://www.morh.hr",
+         "tier": "mod",
+         "language": "hr",
+         "caveat": null
+        }
+       ]
+      },
+      {
+       "country_id": "svn",
+       "name": "Slovenia",
+       "region": "Balkans",
+       "status": "GAP",
+       "events_60d": 0,
+       "events_window": 0,
+       "distinct_sources": 0,
+       "source_tiers": [],
+       "official_source": false,
+       "candidate_sources": [
+        {
+         "name": "Slovenian Ministry of Defence",
+         "homepage": "https://www.gov.si",
+         "tier": "mod",
+         "language": "sl",
+         "caveat": null
+        }
+       ]
+      },
+      {
+       "country_id": "pol",
+       "name": "Poland",
+       "region": "Eastern Europe",
+       "status": "ADEQUATE",
+       "events_60d": 6,
+       "events_window": 6,
+       "distinct_sources": 2,
+       "source_tiers": [
+        "specialist_defence"
+       ],
+       "official_source": false,
+       "candidate_sources": []
+      },
+      {
+       "country_id": "cze",
+       "name": "Czechia",
+       "region": "Eastern Europe",
+       "status": "PARTIAL",
+       "events_60d": 1,
+       "events_window": 1,
+       "distinct_sources": 1,
+       "source_tiers": [
+        "specialist_defence"
+       ],
+       "official_source": false,
+       "candidate_sources": [
+        {
+         "name": "Czech Ministry of Defence",
+         "homepage": "https://mocr.army.cz",
+         "tier": "mod",
+         "language": "cs",
+         "caveat": null
+        }
+       ]
+      },
+      {
+       "country_id": "bgr",
+       "name": "Bulgaria",
+       "region": "Eastern Europe",
+       "status": "GAP",
+       "events_60d": 0,
+       "events_window": 0,
+       "distinct_sources": 0,
+       "source_tiers": [],
+       "official_source": false,
+       "candidate_sources": [
+        {
+         "name": "Bulgarian Ministry of Defence",
+         "homepage": "https://www.mod.bg",
+         "tier": "mod",
+         "language": "bg",
+         "caveat": null
+        }
+       ]
+      },
+      {
+       "country_id": "est",
+       "name": "Estonia",
+       "region": "Baltics",
+       "status": "GAP",
+       "events_60d": 0,
+       "events_window": 0,
+       "distinct_sources": 0,
+       "source_tiers": [],
+       "official_source": false,
+       "candidate_sources": []
+      },
+      {
+       "country_id": "lva",
+       "name": "Latvia",
+       "region": "Baltics",
+       "status": "GAP",
+       "events_60d": 0,
+       "events_window": 0,
+       "distinct_sources": 0,
+       "source_tiers": [],
+       "official_source": false,
+       "candidate_sources": []
+      },
+      {
+       "country_id": "ltu",
+       "name": "Lithuania",
+       "region": "Baltics",
+       "status": "GAP",
+       "events_60d": 0,
+       "events_window": 0,
+       "distinct_sources": 0,
+       "source_tiers": [],
+       "official_source": false,
+       "candidate_sources": []
+      }
+     ],
+     "middle_east": [
+      {
+       "country_id": "isr",
+       "name": "Israel",
+       "region": "Middle East",
+       "status": "PARTIAL",
+       "events_60d": 3,
+       "events_window": 3,
+       "distinct_sources": 1,
+       "source_tiers": [
+        "specialist_defence"
+       ],
+       "official_source": false,
+       "candidate_sources": [
+        {
+         "name": "Israel Defense Forces",
+         "homepage": "https://www.idf.il",
+         "tier": "official_af",
+         "language": "he",
+         "caveat": null
+        }
+       ]
+      },
+      {
+       "country_id": "irn",
+       "name": "Iran",
+       "status": "GAP",
+       "events_60d": 0,
+       "events_window": 0,
+       "distinct_sources": 0,
+       "official_source": false,
+       "candidate_sources": []
+      },
+      {
+       "country_id": "tur",
+       "name": "Turkey",
+       "status": "GAP",
+       "events_60d": 0,
+       "events_window": 0,
+       "distinct_sources": 0,
+       "official_source": false,
+       "candidate_sources": [
+        {
+         "name": "Türkiye Ministry of National Defence",
+         "homepage": "https://www.msb.gov.tr",
+         "tier": "mod",
+         "language": "tr",
+         "caveat": null
+        }
+       ]
+      },
+      {
+       "country_id": "sau",
+       "name": "Saudi Arabia",
+       "status": "GAP",
+       "events_60d": 0,
+       "events_window": 0,
+       "distinct_sources": 0,
+       "official_source": false,
+       "candidate_sources": []
+      },
+      {
+       "country_id": "are",
+       "name": "United Arab Emirates",
+       "status": "GAP",
+       "events_60d": 0,
+       "events_window": 0,
+       "distinct_sources": 0,
+       "official_source": false,
+       "candidate_sources": []
+      },
+      {
+       "country_id": "egy",
+       "name": "Egypt",
+       "status": "GAP",
+       "events_60d": 0,
+       "events_window": 0,
+       "distinct_sources": 0,
+       "official_source": false,
+       "candidate_sources": []
+      },
+      {
+       "country_id": "jor",
+       "name": "Jordan",
+       "status": "GAP",
+       "events_60d": 0,
+       "events_window": 0,
+       "distinct_sources": 0,
+       "official_source": false,
+       "candidate_sources": []
+      }
+     ],
+     "africa": [
+      {
+       "country_id": "egy",
+       "name": "Egypt",
+       "status": "GAP",
+       "events_60d": 0,
+       "events_window": 0,
+       "distinct_sources": 0,
+       "official_source": false,
+       "candidate_sources": []
+      },
+      {
+       "country_id": "dza",
+       "name": "Algeria",
+       "status": "GAP",
+       "events_60d": 0,
+       "events_window": 0,
+       "distinct_sources": 0,
+       "official_source": false,
+       "candidate_sources": []
+      },
+      {
+       "country_id": "mar",
+       "name": "Morocco",
+       "status": "GAP",
+       "events_60d": 0,
+       "events_window": 0,
+       "distinct_sources": 0,
+       "official_source": false,
+       "candidate_sources": []
+      },
+      {
+       "country_id": "eth",
+       "name": "Ethiopia",
+       "status": "GAP",
+       "events_60d": 0,
+       "events_window": 0,
+       "distinct_sources": 0,
+       "official_source": false,
+       "candidate_sources": []
+      },
+      {
+       "country_id": "nga",
+       "name": "Nigeria",
+       "status": "GAP",
+       "events_60d": 0,
+       "events_window": 0,
+       "distinct_sources": 0,
+       "official_source": false,
+       "candidate_sources": []
+      },
+      {
+       "country_id": "zaf",
+       "name": "South Africa",
+       "status": "GAP",
+       "events_60d": 0,
+       "events_window": 0,
+       "distinct_sources": 0,
+       "official_source": false,
+       "candidate_sources": []
+      },
+      {
+       "country_id": "lby",
+       "name": "Libya",
+       "status": "GAP",
+       "events_60d": 0,
+       "events_window": 0,
+       "distinct_sources": 0,
+       "official_source": false,
+       "candidate_sources": []
+      }
+     ],
+     "indo_pacific": [
+      {
+       "country_id": "chn",
+       "name": "China",
+       "status": "GAP",
+       "events_60d": 0,
+       "events_window": 0,
+       "distinct_sources": 0,
+       "official_source": false,
+       "candidate_sources": [
+        {
+         "name": "China Military Online (PLA Daily)",
+         "homepage": "http://eng.chinamil.com.cn",
+         "tier": "mod",
+         "language": "en",
+         "caveat": "state-controlled — attributed statements, one lineage"
+        }
+       ]
+      },
+      {
+       "country_id": "twn",
+       "name": "Taiwan",
+       "status": "GAP",
+       "events_60d": 0,
+       "events_window": 0,
+       "distinct_sources": 0,
+       "official_source": false,
+       "candidate_sources": [
+        {
+         "name": "Taiwan Ministry of National Defense",
+         "homepage": "https://www.mnd.gov.tw",
+         "tier": "mod",
+         "language": "zh",
+         "caveat": null
+        }
+       ]
+      },
+      {
+       "country_id": "jpn",
+       "name": "Japan",
+       "status": "GAP",
+       "events_60d": 0,
+       "events_window": 0,
+       "distinct_sources": 0,
+       "official_source": false,
+       "candidate_sources": [
+        {
+         "name": "Japan Ministry of Defense",
+         "homepage": "https://www.mod.go.jp",
+         "tier": "mod",
+         "language": "ja",
+         "caveat": null
+        }
+       ]
+      },
+      {
+       "country_id": "kor",
+       "name": "South Korea",
+       "status": "GAP",
+       "events_60d": 0,
+       "events_window": 0,
+       "distinct_sources": 0,
+       "official_source": false,
+       "candidate_sources": [
+        {
+         "name": "Republic of Korea Ministry of National Defense",
+         "homepage": "https://www.mnd.go.kr",
+         "tier": "mod",
+         "language": "ko",
+         "caveat": null
+        }
+       ]
+      },
+      {
+       "country_id": "ind",
+       "name": "India",
+       "status": "GAP",
+       "events_60d": 0,
+       "events_window": 0,
+       "distinct_sources": 0,
+       "official_source": false,
+       "candidate_sources": [
+        {
+         "name": "Press Information Bureau (Defence)",
+         "homepage": "https://pib.gov.in",
+         "tier": "government",
+         "language": "en",
+         "caveat": null
+        }
+       ]
+      },
+      {
+       "country_id": "aus",
+       "name": "Australia",
+       "status": "GAP",
+       "events_60d": 0,
+       "events_window": 0,
+       "distinct_sources": 0,
+       "official_source": false,
+       "candidate_sources": [
+        {
+         "name": "Australian Department of Defence",
+         "homepage": "https://www.defence.gov.au",
+         "tier": "mod",
+         "language": "en",
+         "caveat": null
+        }
+       ]
+      }
+     ]
+    },
     "days": 60,
     "thresholds": {
      "adequate_events": 4,
@@ -983,6 +1647,13 @@
         "name": "Austrian Armed Forces (Bundesheer)",
         "homepage": "https://www.bundesheer.at",
         "tier": "mod",
+        "language": "de",
+        "caveat": null
+       },
+       {
+        "name": "Militär Aktuell (Austrian specialist)",
+        "homepage": "https://militaeraktuell.at",
+        "tier": "specialist_defence",
         "language": "de",
         "caveat": null
        }
@@ -1136,7 +1807,15 @@
        "specialist_defence"
       ],
       "official_source": false,
-      "candidate_sources": []
+      "candidate_sources": [
+       {
+        "name": "Israel Defense Forces",
+        "homepage": "https://www.idf.il",
+        "tier": "official_af",
+        "language": "he",
+        "caveat": null
+       }
+      ]
      },
      "ltu": {
       "country_id": "ltu",
@@ -1191,7 +1870,7 @@
       "candidate_sources": [
        {
         "name": "Romanian Ministry of National Defence",
-        "homepage": "https://www.mapn.ro",
+        "homepage": "https://english.mapn.ro",
         "tier": "mod",
         "language": "ro",
         "caveat": null
@@ -1574,6 +2253,13 @@
         "tier": "mod",
         "language": "de",
         "caveat": null
+       },
+       {
+        "name": "Militär Aktuell (Austrian specialist)",
+        "homepage": "https://militaeraktuell.at",
+        "tier": "specialist_defence",
+        "language": "de",
+        "caveat": null
        }
       ]
      },
@@ -1614,7 +2300,7 @@
       "candidate_sources": [
        {
         "name": "Romanian Ministry of National Defence",
-        "homepage": "https://www.mapn.ro",
+        "homepage": "https://english.mapn.ro",
         "tier": "mod",
         "language": "ro",
         "caveat": null
@@ -1794,7 +2480,7 @@
       "origin": "deterministic",
       "sentences": [
        {
-        "text": "Of 10 material air-power developments this week, 4 of HIGH and 1 of MEDIUM relevance to Hungary.",
+        "text": "Of 11 material air-power developments this week, 5 of HIGH and 1 of MEDIUM relevance to Hungary.",
         "items": [],
         "sources": []
        },
@@ -1843,15 +2529,20 @@
          "D-03",
          "D-11",
          "D-02",
+         "D-12",
          "D-04"
         ],
         "sources": [
-         "S-01",
-         "S-07",
-         "S-08",
          "S-02",
+         "S-08",
+         "S-01",
          "S-03",
-         "S-09"
+         "S-06",
+         "S-07",
+         "S-09",
+         "S-10",
+         "S-11",
+         "S-12"
         ]
        },
        {
@@ -1881,6 +2572,7 @@
        "sources": [
         "S-01"
        ],
+       "context_sources": [],
        "countries": [
         "Serbia"
        ],
@@ -1938,6 +2630,7 @@
        "sources": [
         "S-02"
        ],
+       "context_sources": [],
        "countries": [
         "Hungary"
        ],
@@ -1987,6 +2680,7 @@
        "sources": [
         "S-03"
        ],
+       "context_sources": [],
        "countries": [
         "Romania"
        ],
@@ -2079,7 +2773,7 @@
         "D-05"
        ],
        "sources": [
-        "S-06"
+        "S-13"
        ]
       }
      ],
@@ -2128,11 +2822,12 @@
        {
         "country_id": "pol",
         "name": "Poland",
-        "level": "MEDIUM",
-        "score": 46,
+        "level": "HIGH",
+        "score": 55,
         "significance": 3,
         "refs": [
-         "D-04"
+         "D-04",
+         "D-12"
         ]
        }
       ],
@@ -2171,7 +2866,9 @@
        "coverage": "ADEQUATE",
        "sources": [
         "S-01"
-       ]
+       ],
+       "context_sources": [],
+       "evidence": "direct"
       },
       {
        "ref": "D-03",
@@ -2191,9 +2888,11 @@
        "next_observable": "Ukrainian Air Force statement on the cause of the loss.",
        "coverage": "ADEQUATE",
        "sources": [
-        "S-07",
-        "S-08"
-       ]
+        "S-06",
+        "S-07"
+       ],
+       "context_sources": [],
+       "evidence": "direct"
       },
       {
        "ref": "D-11",
@@ -2214,7 +2913,9 @@
        "coverage": "PARTIAL",
        "sources": [
         "S-02"
-       ]
+       ],
+       "context_sources": [],
+       "evidence": "direct"
       },
       {
        "ref": "D-02",
@@ -2235,7 +2936,37 @@
        "coverage": "PARTIAL",
        "sources": [
         "S-03"
-       ]
+       ],
+       "context_sources": [],
+       "evidence": "direct"
+      },
+      {
+       "ref": "D-12",
+       "group": "extended_nato",
+       "country": "Poland",
+       "country_id": "pol",
+       "affected_country_id": "pol",
+       "what_changed": "Reporting confirmed that the first 12 FA-50 delivered to Poland reached full operational readiness and have taken over QRA duties.",
+       "effect": "Poland fields an operationally ready light fighter on QRA, replacing MiG-29s in that role.",
+       "hu_relevance": "HIGH",
+       "hu_score": 55,
+       "hu_why": "Poland: NATO's largest eastern-flank air force build-up — sets the pace for regional allied capability.",
+       "significance": 3,
+       "significance_label": "MEDIUM",
+       "confidence": "moderate",
+       "horizon": "immediate",
+       "next_observable": "Next official statement on the programme schedule.",
+       "coverage": "ADEQUATE",
+       "sources": [
+        "S-08",
+        "S-09",
+        "S-10",
+        "S-11"
+       ],
+       "context_sources": [
+        "S-17"
+       ],
+       "evidence": "direct"
       },
       {
        "ref": "D-04",
@@ -2255,8 +2986,10 @@
        "next_observable": "Duration of the rotation and any follow-on deployment.",
        "coverage": "ADEQUATE",
        "sources": [
-        "S-09"
-       ]
+        "S-12"
+       ],
+       "context_sources": [],
+       "evidence": "direct"
       }
      ],
      "no_material_change": [
@@ -2330,8 +3063,9 @@
          "horizon": ">3 years",
          "hu_relevance": "MINIMAL",
          "sources": [
-          "S-06"
-         ]
+          "S-13"
+         ],
+         "context_sources": []
         }
        ],
        "coverage": "PARTIAL",
@@ -2353,9 +3087,10 @@
          "horizon": "<12 months",
          "hu_relevance": "MINIMAL",
          "sources": [
-          "S-10",
-          "S-11"
-         ]
+          "S-14",
+          "S-15"
+         ],
+         "context_sources": []
         }
        ],
        "coverage": "GAP",
@@ -2378,7 +3113,8 @@
          "hu_relevance": "MINIMAL",
          "sources": [
           "S-04"
-         ]
+         ],
+         "context_sources": []
         }
        ],
        "coverage": "PARTIAL",
@@ -2436,6 +3172,16 @@
         "horizon": ">3 years"
        },
        {
+        "ref": "D-12",
+        "label": "POL FA-50 FOC (12 ac)",
+        "country": "Poland",
+        "stage": "FOC",
+        "column": "FOC",
+        "withdrawal": false,
+        "hu_relevance": "HIGH",
+        "horizon": "immediate"
+       },
+       {
         "ref": "D-04",
         "label": "US F-35A Łask rotation",
         "country": "United States",
@@ -2464,16 +3210,6 @@
         "withdrawal": false,
         "hu_relevance": "MINIMAL",
         "horizon": "<12 months"
-       },
-       {
-        "ref": "D-07",
-        "label": "JP F-35B IOC",
-        "country": "Japan",
-        "stage": "IOC",
-        "column": "IOC",
-        "withdrawal": false,
-        "hu_relevance": "MINIMAL",
-        "horizon": "immediate"
        }
       ],
       "caption": "Capability maturity of this week's material developments: the filled cell is the stage reached as evidenced; earlier cells are implied, not observed. Losses and retirements are shown as withdrawal, outside the introduction chain."
@@ -2555,7 +3291,8 @@
         "hu_relevance": "MINIMAL",
         "sources": [
          "S-05"
-        ]
+        ],
+        "context_sources": []
        },
        {
         "ref": "D-07",
@@ -2569,8 +3306,9 @@
         "horizon": "immediate",
         "hu_relevance": "MINIMAL",
         "sources": [
-         "S-12"
-        ]
+         "S-16"
+        ],
+        "context_sources": []
        }
       ],
       "empty": null
@@ -2744,6 +3482,14 @@
         "refs": [
          "D-11"
         ]
+       },
+       {
+        "country_id": "pol",
+        "name": "Poland",
+        "significance": 3,
+        "refs": [
+         "D-12"
+        ]
        }
       ],
       "caption": "Global hotspots coloured by air-power significance (1–5) — not by Hungary relevance. An unmarked country is not necessarily quiet."
@@ -2755,231 +3501,486 @@
        "source_name": "Defense News",
        "source_id": "ACS-0001",
        "source_type": "Specialist defence media",
+       "tier_rank": 3,
        "tier": "Tier 3",
        "language": "en",
        "state_controlled": false,
        "id": "S-01",
        "title": "Serbia receives first Rafale jets at Batajnica",
+       "title_kind": "original",
        "url": "https://www.defensenews.com/fixture/serbia-rafale",
-       "publication_date": null,
+       "published": null,
+       "published_basis": null,
+       "retrieved": null,
        "event_date": "2026-11-09",
        "country": "Serbia",
-       "lineage": "L-01",
+       "note": null,
        "used_by": [
         "KJ-02",
         "p.2 Serbia",
         "p.4 outlook"
-       ]
+       ],
+       "supports": {
+        "KJ-02": "direct",
+        "p.2 Serbia": "direct",
+        "p.4 outlook": "direct"
+       },
+       "lineage": "L-01",
+       "role": "Corroborating"
       },
       {
        "source_name": "honvedelem.hu (MH official news portal)",
        "source_id": null,
        "source_type": "Ministry of defence",
+       "tier_rank": 1,
        "tier": "Tier 1",
        "language": "—",
        "state_controlled": false,
        "id": "S-02",
        "title": "Kecskemétre érkezett az első KC-390 — Magyar Honvédség",
+       "title_kind": "original",
        "url": "https://honvedelem.hu/fixture/kc-390-kecskemet",
-       "publication_date": null,
+       "published": null,
+       "published_basis": null,
+       "retrieved": null,
        "event_date": "2026-11-07",
        "country": "Hungary",
-       "lineage": "L-02",
+       "note": null,
        "used_by": [
         "XS-01",
         "p.2 Hungary",
         "p.4 outlook"
-       ]
+       ],
+       "supports": {
+        "XS-01": "direct",
+        "p.2 Hungary": "direct",
+        "p.4 outlook": "direct"
+       },
+       "lineage": "L-02",
+       "role": "Primary (official)"
       },
       {
        "source_name": "Breaking Defense",
        "source_id": "ACS-0002",
        "source_type": "Specialist defence media",
+       "tier_rank": 3,
        "tier": "Tier 3",
        "language": "en",
        "state_controlled": false,
        "id": "S-03",
        "title": "Romania signs F-35 Letter of Offer and Acceptance",
+       "title_kind": "original",
        "url": "https://breakingdefense.com/fixture/romania-f35",
-       "publication_date": null,
+       "published": null,
+       "published_basis": null,
+       "retrieved": null,
        "event_date": "2026-11-04",
        "country": "Romania",
-       "lineage": "L-03",
+       "note": null,
        "used_by": [
         "XS-02",
         "p.2 Romania",
         "p.4 outlook"
-       ]
+       ],
+       "supports": {
+        "XS-02": "direct",
+        "p.2 Romania": "direct",
+        "p.4 outlook": "direct"
+       },
+       "lineage": "L-03",
+       "role": "Corroborating"
       },
       {
        "source_name": "Defense News",
        "source_id": "ACS-0001",
        "source_type": "Specialist defence media",
+       "tier_rank": 3,
        "tier": "Tier 3",
        "language": "en",
        "state_controlled": false,
        "id": "S-04",
        "title": "Germany signs for 15 more F-35A",
+       "title_kind": "original",
        "url": "https://www.defensenews.com/fixture/germany-f35",
-       "publication_date": null,
+       "published": null,
+       "published_basis": null,
+       "retrieved": null,
        "event_date": "2026-11-05",
        "country": "Germany",
-       "lineage": "L-04",
+       "note": null,
        "used_by": [
         "p.1 watch",
         "p.3 Germany",
         "p.4 outlook"
-       ]
+       ],
+       "supports": {
+        "p.1 watch": "direct",
+        "p.3 Germany": "direct",
+        "p.4 outlook": "direct"
+       },
+       "lineage": "L-04",
+       "role": "Corroborating"
       },
       {
        "source_name": "The Aviationist",
        "source_id": "ACS-0003",
        "source_type": "Specialist defence media",
+       "tier_rank": 3,
        "tier": "Tier 3",
        "language": "en",
        "state_controlled": false,
        "id": "S-05",
        "title": "J-35A appears in PLAAF markings",
+       "title_kind": "original",
        "url": "https://theaviationist.com/fixture/j35a",
-       "publication_date": null,
+       "published": null,
+       "published_basis": null,
+       "retrieved": null,
        "event_date": "2026-11-04",
        "country": "China",
-       "lineage": "L-05",
+       "note": null,
        "used_by": [
         "p.1 watch",
         "p.4 China",
         "p.4 outlook"
-       ]
-      },
-      {
-       "source_name": "Breaking Defense",
-       "source_id": "ACS-0002",
-       "source_type": "Specialist defence media",
-       "tier": "Tier 3",
-       "language": "en",
-       "state_controlled": false,
-       "id": "S-06",
-       "title": "Israel orders 25 more F-15IA",
-       "url": "https://breakingdefense.com/fixture/f15ia",
-       "publication_date": null,
-       "event_date": "2026-11-07",
-       "country": "Israel",
-       "lineage": "L-06",
-       "used_by": [
-        "p.1 watch",
-        "p.3 Israel"
-       ]
+       ],
+       "supports": {
+        "p.1 watch": "direct",
+        "p.4 China": "direct",
+        "p.4 outlook": "direct"
+       },
+       "lineage": "L-05",
+       "role": "Corroborating"
       },
       {
        "source_name": "Militarnyi (English)",
        "source_id": "ACS-0009",
        "source_type": "Specialist defence media",
+       "tier_rank": 3,
        "tier": "Tier 3",
        "language": "en",
        "state_controlled": false,
-       "id": "S-07",
+       "id": "S-06",
        "title": "Ukraine loses F-16AM in combat mission",
+       "title_kind": "original",
        "url": "https://mil.in.ua/en/fixture/f16-loss",
-       "publication_date": null,
+       "published": null,
+       "published_basis": null,
+       "retrieved": null,
        "event_date": "2026-11-05",
        "country": "Ukraine",
-       "lineage": "L-07",
+       "note": null,
        "used_by": [
         "p.2 Ukraine"
-       ]
+       ],
+       "supports": {
+        "p.2 Ukraine": "direct"
+       },
+       "lineage": "L-06",
+       "role": "Corroborating"
       },
       {
        "source_name": "Defense News",
        "source_id": "ACS-0001",
        "source_type": "Specialist defence media",
+       "tier_rank": 3,
        "tier": "Tier 3",
        "language": "en",
        "state_controlled": false,
-       "id": "S-08",
+       "id": "S-07",
        "title": "Ukrainian Air Force confirms F-16 loss",
+       "title_kind": "original",
        "url": "https://www.defensenews.com/fixture/ukraine-f16",
-       "publication_date": null,
+       "published": null,
+       "published_basis": null,
+       "retrieved": null,
        "event_date": "2026-11-09",
        "country": "Ukraine",
-       "lineage": "L-08",
+       "note": null,
        "used_by": [
         "p.2 Ukraine"
-       ]
+       ],
+       "supports": {
+        "p.2 Ukraine": "direct"
+       },
+       "lineage": "L-07",
+       "role": "Corroborating"
+      },
+      {
+       "source_name": "Polish Minister of National Defence (official X account)",
+       "source_id": null,
+       "source_type": "Ministry of defence",
+       "tier_rank": 1,
+       "tier": "Tier 1",
+       "language": "pl",
+       "state_controlled": false,
+       "id": "S-08",
+       "title": "Statement by Minister of National Defence W. Kosiniak-Kamysz on X: FA-50GF light fighters have entered combat duty",
+       "title_kind": "descriptive (post text quoted by Defence24.pl and Militarnyi; not retrieved directly)",
+       "url": "https://x.com/KosiniakKamysz/status/2106089480184533407",
+       "published": "2026-10-02",
+       "published_basis": "analyst-verified",
+       "retrieved": "2026-11-08",
+       "event_date": null,
+       "country": "Poland",
+       "note": "Primary official statement. The minister refers to 'dyżur bojowy' (combat alert duty); the term 'QRA' appears only in secondary reporting.",
+       "used_by": [
+        "p.2 Poland"
+       ],
+       "supports": {
+        "p.2 Poland": "direct"
+       },
+       "lineage": "L-08",
+       "role": "Primary (official)"
+      },
+      {
+       "source_name": "Defence24.pl",
+       "source_id": null,
+       "source_type": "Specialist defence media",
+       "tier_rank": 3,
+       "tier": "Tier 3",
+       "language": "pl",
+       "state_controlled": false,
+       "id": "S-09",
+       "title": "FA-50GF weszły w dyżur bojowy. Polskie samoloty wzmocnią ochronę wschodniej granicy",
+       "title_kind": "original",
+       "url": "https://defence24.pl/sily-zbrojne/fa-50gf-weszly-w-dyzur-bojowy-polskie-samoloty-wzmocnia-ochrone-wschodniej-granicy",
+       "published": "2026-10-03",
+       "published_basis": "analyst-verified",
+       "retrieved": "2026-11-08",
+       "event_date": null,
+       "country": "Poland",
+       "note": "Reports and quotes the minister's statement.",
+       "used_by": [
+        "p.2 Poland"
+       ],
+       "supports": {
+        "p.2 Poland": "direct"
+       },
+       "lineage": "L-08",
+       "role": "Corroborating"
+      },
+      {
+       "source_name": "Militarnyi",
+       "source_id": null,
+       "source_type": "Specialist defence media",
+       "tier_rank": 3,
+       "tier": "Tier 3",
+       "language": "en",
+       "state_controlled": false,
+       "id": "S-10",
+       "title": "Polish FA-50s Have Begun Combat Duty",
+       "title_kind": "original",
+       "url": "https://militarnyi.com/en/news/polish-fa-50s-have-begun-combat-duty/",
+       "published": "2026-10-03",
+       "published_basis": "analyst-verified",
+       "retrieved": "2026-11-08",
+       "event_date": null,
+       "country": "Poland",
+       "note": "Reports the minister's statement and links the official post.",
+       "used_by": [
+        "p.2 Poland"
+       ],
+       "supports": {
+        "p.2 Poland": "direct"
+       },
+       "lineage": "L-08",
+       "role": "Corroborating"
+      },
+      {
+       "source_name": "Aviation Week",
+       "source_id": "ACS-0015",
+       "source_type": "Specialist defence media",
+       "tier_rank": 3,
+       "tier": "Tier 3",
+       "language": "en",
+       "state_controlled": false,
+       "id": "S-11",
+       "title": "FA-50s Begin Polish Air Protection Duties",
+       "title_kind": "original",
+       "url": "https://aviationweek.com/defense/budget-policy-operations/fa-50s-begin-polish-air-protection-duties",
+       "published": "2026-10-05",
+       "published_basis": "analyst-verified",
+       "retrieved": "2026-11-08",
+       "event_date": null,
+       "country": "Poland",
+       "note": "States that the minister declared the 12 FA-50GF operational on 2 October 2026 (paywalled).",
+       "used_by": [
+        "p.2 Poland"
+       ],
+       "supports": {
+        "p.2 Poland": "direct"
+       },
+       "lineage": "L-08",
+       "role": "Corroborating"
       },
       {
        "source_name": "Air & Space Forces Magazine",
        "source_id": "ACS-0005",
        "source_type": "Specialist defence media",
+       "tier_rank": 3,
        "tier": "Tier 3",
        "language": "en",
        "state_controlled": false,
-       "id": "S-09",
+       "id": "S-12",
        "title": "USAFE F-35A squadron deploys to Łask",
+       "title_kind": "original",
        "url": "https://www.airandspaceforces.com/fixture/lask",
-       "publication_date": null,
+       "published": null,
+       "published_basis": null,
+       "retrieved": null,
        "event_date": "2026-11-06",
        "country": "United States",
-       "lineage": "L-09",
+       "note": null,
        "used_by": [
         "p.2 Poland"
-       ]
+       ],
+       "supports": {
+        "p.2 Poland": "direct"
+       },
+       "lineage": "L-09",
+       "role": "Corroborating"
+      },
+      {
+       "source_name": "Breaking Defense",
+       "source_id": "ACS-0002",
+       "source_type": "Specialist defence media",
+       "tier_rank": 3,
+       "tier": "Tier 3",
+       "language": "en",
+       "state_controlled": false,
+       "id": "S-13",
+       "title": "Israel orders 25 more F-15IA",
+       "title_kind": "original",
+       "url": "https://breakingdefense.com/fixture/f15ia",
+       "published": null,
+       "published_basis": null,
+       "retrieved": null,
+       "event_date": "2026-11-07",
+       "country": "Israel",
+       "note": null,
+       "used_by": [
+        "p.1 watch",
+        "p.3 Israel"
+       ],
+       "supports": {
+        "p.1 watch": "direct",
+        "p.3 Israel": "direct"
+       },
+       "lineage": "L-10",
+       "role": "Corroborating"
       },
       {
        "source_name": "tass.ru",
        "source_id": null,
        "source_type": "State-controlled official (attributed; not independent)",
+       "tier_rank": 1,
        "tier": "Tier 1",
        "language": "—",
        "state_controlled": true,
-       "id": "S-10",
+       "id": "S-14",
        "title": "Алжир получил первые Су-57Э",
+       "title_kind": "original",
        "url": "https://tass.ru/fixture/su57e",
-       "publication_date": null,
+       "published": null,
+       "published_basis": null,
+       "retrieved": null,
        "event_date": "2026-11-08",
        "country": "Algeria",
-       "lineage": "L-10",
+       "note": null,
        "used_by": [
         "p.3 Algeria"
-       ]
+       ],
+       "supports": {
+        "p.3 Algeria": "direct"
+       },
+       "lineage": "L-11",
+       "role": "Primary (official)"
       },
       {
        "source_name": "ria.ru",
        "source_id": null,
        "source_type": "State-controlled official (attributed; not independent)",
+       "tier_rank": 1,
        "tier": "Tier 1",
        "language": "—",
        "state_controlled": true,
-       "id": "S-11",
+       "id": "S-15",
        "title": "Алжир получил Су-57Э — РИА Новости",
+       "title_kind": "original",
        "url": "https://ria.ru/fixture/su57e",
-       "publication_date": null,
+       "published": null,
+       "published_basis": null,
+       "retrieved": null,
        "event_date": "2026-11-06",
        "country": "Algeria",
-       "lineage": "L-10",
+       "note": null,
        "used_by": [
         "p.3 Algeria"
-       ]
+       ],
+       "supports": {
+        "p.3 Algeria": "direct"
+       },
+       "lineage": "L-11",
+       "role": "Primary (official)"
       },
       {
        "source_name": "The Aviationist",
        "source_id": "ACS-0003",
        "source_type": "Specialist defence media",
+       "tier_rank": 3,
        "tier": "Tier 3",
        "language": "en",
        "state_controlled": false,
-       "id": "S-12",
+       "id": "S-16",
        "title": "JASDF F-35B squadron reaches IOC",
+       "title_kind": "original",
        "url": "https://theaviationist.com/fixture/f35b-ioc",
-       "publication_date": null,
+       "published": null,
+       "published_basis": null,
+       "retrieved": null,
        "event_date": "2026-11-09",
        "country": "Japan",
-       "lineage": "L-11",
+       "note": null,
        "used_by": [
         "p.4 Japan"
-       ]
+       ],
+       "supports": {
+        "p.4 Japan": "direct"
+       },
+       "lineage": "L-12",
+       "role": "Corroborating"
+      },
+      {
+       "source_name": "Defence Blog",
+       "source_id": "ACS-0007",
+       "source_type": "Specialist defence media",
+       "tier_rank": 3,
+       "tier": "Tier 3",
+       "language": "en",
+       "state_controlled": false,
+       "id": "S-17",
+       "title": "Poland hands Ukraine two more MiG-29 fighter jets",
+       "title_kind": "original",
+       "url": "https://defence-blog.com/poland-hands-ukraine-two-more-mig-29",
+       "published": null,
+       "published_basis": null,
+       "retrieved": null,
+       "event_date": "2026-11-07",
+       "country": "Poland",
+       "note": null,
+       "used_by": [
+        "p.2 Poland"
+       ],
+       "supports": {
+        "p.2 Poland": "indirect"
+       },
+       "lineage": "L-13",
+       "role": "Context — not cited as evidence"
       }
      ],
-     "source_note": "Each S-xx links to the original publication; the title is shown in its original language. Lineage groups publications that restate one evidence chain — several articles on one lineage are one piece of evidence. State-controlled sources are attributed statements, not independent confirmation.",
+     "register_title": "Source register — evidence behind each judgement",
+     "source_note": "Each S-xx links to the publication it names; titles are shown in their original language. Items cite only sources that directly report their subject: an official (Tier 1) source comes first where one exists, specialist media follow as corroboration. 'Context' sources are listed for audit but are not cited as evidence. 'Published' is the article's own publication date (from the feed or the article URL) — never an event, contract or milestone date; blank means not recorded. Lineage groups publications restating one evidence chain; state-controlled sources are attributed statements, not independent confirmation.",
      "legend": [
       {
        "title": "Hungary relevance (HU)",
@@ -3269,6 +4270,7 @@
       "D-08",
       "D-09",
       "D-11",
+      "D-12",
       "KJ-01",
       "KJ-02",
       "KJ-03",
@@ -3289,10 +4291,16 @@
       "S-09",
       "S-10",
       "S-11",
-      "S-12"
+      "S-12",
+      "S-13",
+      "S-14",
+      "S-15",
+      "S-16"
      ],
      "unresolved_sources": [],
      "items_without_source": [],
+     "items_with_indirect_evidence_only": [],
+     "non_direct_citations": [],
      "executive_synthesis_items": [
       "XS-01",
       "XS-02"

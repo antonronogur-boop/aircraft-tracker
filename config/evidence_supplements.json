@@ -1,0 +1,63 @@
+{
+  "_doc": "Analyst-attached, verified evidence for Command Brief items whose collected article does not report the item's subject directly. Version-controlled and dated: each source was opened and checked on 'verified_on'. Matching: an entry applies to a development when its country is in match.country_ids, its title/fact matches match.subject_rx, and the report period end falls inside match.period_end_between. Publications restating one statement share one lineage_key (one piece of evidence, not several). 'published' is the publication date of that page, never an event date.",
+  "supplements": [
+    {
+      "id": "pol-fa50gf-combat-duty-2026-10",
+      "verified_on": "2026-11-08",
+      "verified_by": "analyst (Claude), opened and read each page",
+      "match": {
+        "country_ids": ["pol"],
+        "subject_rx": "\\bFA-?50",
+        "period_end_between": ["2026-10-01", "2026-11-30"]
+      },
+      "claim": "Poland's FA-50GF light fighters entered combat (alert) duty in early October 2026.",
+      "sources": [
+        {
+          "title": "Statement by Minister of National Defence W. Kosiniak-Kamysz on X: FA-50GF light fighters have entered combat duty",
+          "title_kind": "descriptive (post text quoted by Defence24.pl and Militarnyi; not retrieved directly)",
+          "url": "https://x.com/KosiniakKamysz/status/2106089480184533407",
+          "publisher": "Polish Minister of National Defence (official X account)",
+          "published": "2026-10-02",
+          "tier_key": "mod",
+          "language": "pl",
+          "country": "Poland",
+          "lineage_key": "statement:pl-mon-fa50gf-2026-10-02",
+          "note": "Primary official statement. The minister refers to 'dyżur bojowy' (combat alert duty); the term 'QRA' appears only in secondary reporting."
+        },
+        {
+          "title": "FA-50GF weszły w dyżur bojowy. Polskie samoloty wzmocnią ochronę wschodniej granicy",
+          "url": "https://defence24.pl/sily-zbrojne/fa-50gf-weszly-w-dyzur-bojowy-polskie-samoloty-wzmocnia-ochrone-wschodniej-granicy",
+          "publisher": "Defence24.pl",
+          "published": "2026-10-03",
+          "tier_key": "specialist_defence",
+          "language": "pl",
+          "country": "Poland",
+          "lineage_key": "statement:pl-mon-fa50gf-2026-10-02",
+          "note": "Reports and quotes the minister's statement."
+        },
+        {
+          "title": "Polish FA-50s Have Begun Combat Duty",
+          "url": "https://militarnyi.com/en/news/polish-fa-50s-have-begun-combat-duty/",
+          "publisher": "Militarnyi",
+          "published": "2026-10-03",
+          "tier_key": "specialist_defence",
+          "language": "en",
+          "country": "Poland",
+          "lineage_key": "statement:pl-mon-fa50gf-2026-10-02",
+          "note": "Reports the minister's statement and links the official post."
+        },
+        {
+          "title": "FA-50s Begin Polish Air Protection Duties",
+          "url": "https://aviationweek.com/defense/budget-policy-operations/fa-50s-begin-polish-air-protection-duties",
+          "publisher": "Aviation Week",
+          "published": "2026-10-05",
+          "tier_key": "specialist_defence",
+          "language": "en",
+          "country": "Poland",
+          "lineage_key": "statement:pl-mon-fa50gf-2026-10-02",
+          "note": "States that the minister declared the 12 FA-50GF operational on 2 October 2026 (paywalled)."
+        }
+      ]
+    }
+  ]
+}

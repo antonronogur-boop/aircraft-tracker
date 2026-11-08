@@ -62,9 +62,8 @@ def main():
                   "announcement_date,created_at,review_status,"
                   "originating_evidence_id",
         "review_status": "neq.rejected", "created_at": "gte." + since})
-    articles = {a["article_id"]: a for a in db.select(
-        "ac_articles", {"select": "article_id,title,url,source_id,"
-                                  "publish_date"})}
+    import generate_weekly_report as G  # ugyanaz a cikk-betolto
+    articles = G.load_articles(e.get("article_id") for e in events)
     try:
         sources_by_id = {s["source_id"]: s for s in db.select(
             "ac_sources", {"select": "source_id,source_name,language,"

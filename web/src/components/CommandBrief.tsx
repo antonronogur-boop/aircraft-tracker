@@ -28,7 +28,7 @@ const GROUP_LABEL: Record<string, string> = {
   neighbours: "Neighbour", extended_nato: "Extended regional NATO",
 };
 
-type SrcIndex = Map<string, { url: string; title: string }>;
+type SrcIndex = Map<string, { url: string; title: string; tier_rank: number }>;
 
 function HuChip({ level }: { level?: string }) {
   if (!level) return null;
@@ -53,9 +53,21 @@ function Sources({ ids, idx, label = true }: { ids: string[]; idx: SrcIndex; lab
               <a href={s.url} target="_blank" rel="noopener noreferrer" title={s.title}
                  className="cb-ref font-mono text-sky-800 hover:underline">{id}</a>
             ) : <span className="font-mono">{id}</span>}
+            {s && s.tier_rank === 1 && <span className="text-[7.5px] text-slate-500"> (official)</span>}
           </span>
         );
       })}
+    </span>
+  );
+}
+
+/* Ha egy tetelnek nincs KOZVETLEN forrasa, azt kimondjuk — a kontextus-
+ * cikk nem bizonyitek. */
+function NoDirect({ ctx, idx }: { ctx?: string[]; idx: SrcIndex }) {
+  if (!ctx?.length) return null;
+  return (
+    <span className="text-[8px] text-amber-800">
+      No direct source — claim appears only in the body of <Sources ids={ctx} idx={idx} label={false} /> (context, not evidence)
     </span>
   );
 }
@@ -241,7 +253,9 @@ function Page2({ b, idx }: { b: CommandBriefV2; idx: SrcIndex }) {
               <td className="px-1.5 py-1">{r.confidence ?? "—"}<br /><span className="text-[8.5px] text-slate-500">{HORIZON_LABEL(r.horizon)}</span></td>
               <td className="px-1.5 py-1">
                 <p>{r.next_observable || "—"}</p>
-                <p className="mt-0.5"><Sources ids={r.sources} idx={idx} label={false} /></p>
+                <p className="mt-0.5">
+                  {r.sources.length ? <Sources ids={r.sources} idx={idx} label={false} /> : <NoDirect ctx={r.context_sources} idx={idx} />}
+                </p>
               </td>
             </tr>
           ))}
@@ -310,7 +324,7 @@ function ItemCard({ it, idx }: { it: BriefItem; idx: SrcIndex }) {
       <p className="mt-0.5 flex flex-wrap items-center gap-1">
         <Meta>SIG {it.significance}/5</Meta><Meta>CONF {(it.confidence ?? "—").toUpperCase()}</Meta>
         <Meta>{HORIZON_LABEL(it.horizon)}</Meta><HuChip level={it.hu_relevance} />
-        <span className="ml-auto"><Sources ids={it.sources} idx={idx} label={false} /></span>
+        <span className="ml-auto">{it.sources.length ? <Sources ids={it.sources} idx={idx} label={false} /> : <NoDirect ctx={it.context_sources} idx={idx} />}</span>
       </p>
     </article>
   );
@@ -478,31 +492,33 @@ function Page5({ b }: { b: CommandBriefV2 }) {
   const m = b.meta;
   return (
     <PageFrame n={5} brief={b} title="Sources & Legend" flow
-               subtitle="Source register (original publications) · permanent legend · document metadata">
-      <table className="w-full table-fixed border-collapse text-[8.8px] leading-[1.25] text-slate-900">
+               subtitle="Evidence behind each judgement (official first, specialist media as corroboration) · permanent legend · document metadata">
+      <p className="mb-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-900">{p.register_title ?? "Source register"}</p>
+      <table className="w-full table-fixed border-collapse text-[8.6px] leading-[1.25] text-slate-900">
         <colgroup>
-          <col style={{ width: "5%" }} /><col style={{ width: "13%" }} /><col style={{ width: "33%" }} />
-          <col style={{ width: "8%" }} /><col style={{ width: "10%" }} /><col style={{ width: "15%" }} />
-          <col style={{ width: "5%" }} /><col style={{ width: "5%" }} /><col style={{ width: "6%" }} />
+          <col style={{ width: "5%" }} /><col style={{ width: "15%" }} /><col style={{ width: "33%" }} />
+          <col style={{ width: "8%" }} /><col style={{ width: "12%" }} /><col style={{ width: "8%" }} />
+          <col style={{ width: "4%" }} /><col style={{ width: "5%" }} /><col style={{ width: "10%" }} />
         </colgroup>
         <thead>
-          <tr className="bg-slate-800 text-left text-[8.3px] uppercase tracking-wide text-white">
-            <th className="px-1 py-0.5">ID</th><th className="px-1 py-0.5">Source</th><th className="px-1 py-0.5">Original title</th>
-            <th className="px-1 py-0.5">Published</th><th className="px-1 py-0.5">Country</th><th className="px-1 py-0.5">Source type</th>
+          <tr className="bg-slate-800 text-left text-[8.2px] uppercase tracking-wide text-white">
+            <th className="px-1 py-0.5">ID</th><th className="px-1 py-0.5">Source · tier</th><th className="px-1 py-0.5">Title (original language)</th>
+            <th className="px-1 py-0.5">Published</th><th className="px-1 py-0.5">Role</th><th className="px-1 py-0.5">Country</th>
             <th className="px-1 py-0.5">Lang</th><th className="px-1 py-0.5">Lineage</th><th className="px-1 py-0.5">Used by</th>
           </tr>
         </thead>
         <tbody>
           {p.sources.map((s) => (
-            <tr key={s.id} id={s.id} className="border-b border-slate-200 align-top">
+            <tr key={s.id} id={s.id} className={`border-b border-slate-200 align-top ${s.role.startsWith("Context") ? "text-slate-500" : ""}`}>
               <td className="px-1 py-0.5 font-mono font-bold">{s.id}</td>
-              <td className="px-1 py-0.5">{s.source_name}<br /><span className="text-[8px] text-slate-500">{s.tier}</span></td>
+              <td className="px-1 py-0.5">{s.source_name}<br /><span className="text-[7.8px] text-slate-500">{s.tier} · {s.source_type}</span></td>
               <td className="px-1 py-0.5">
                 <a href={s.url} target="_blank" rel="noopener noreferrer" className="cb-ref text-sky-800 hover:underline">{s.title}</a>
+                {s.note && <span className="block text-[7.8px] text-slate-500">{s.note}</span>}
               </td>
-              <td className="px-1 py-0.5">{s.publication_date ?? s.event_date ?? "—"}</td>
+              <td className="px-1 py-0.5">{s.published ?? "not recorded"}{s.published_basis && s.published_basis !== "feed" && <span className="block text-[7.5px] text-slate-500">({s.published_basis})</span>}</td>
+              <td className="px-1 py-0.5">{s.role}</td>
               <td className="px-1 py-0.5">{s.country}</td>
-              <td className="px-1 py-0.5">{s.source_type}</td>
               <td className="px-1 py-0.5">{s.language}</td>
               <td className="px-1 py-0.5 font-mono">{s.lineage}</td>
               <td className="px-1 py-0.5 text-[8px]">{s.used_by.join(", ") || "—"}</td>
@@ -538,7 +554,7 @@ function Page5({ b }: { b: CommandBriefV2 }) {
 }
 
 export function sourceIndex(b: CommandBriefV2): SrcIndex {
-  return new Map(b.page5.sources.map((s) => [s.id, { url: s.url, title: s.title }]));
+  return new Map(b.page5.sources.map((s) => [s.id, { url: s.url, title: s.title, tier_rank: s.tier_rank }]));
 }
 
 export function CommandBrief({ brief }: { brief: CommandBriefV2 }) {

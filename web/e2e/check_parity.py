@@ -93,9 +93,13 @@ for field in ("week_label", "window_label", "generated_utc",
               "methodology_version", "hu_model_version"):
     ok("metadata in Word: {}".format(field),
        norm(str(b["meta"].get(field) or "")) in norm(docx_text))
+# Ket kinyeresi sorrend: olvasasi (oszlopok) es nyers (tartalomfolyam,
+# a DOM-sorrend — tablazatcellaknal ez a megbizhato).
 pdf_text = subprocess.run(["pdftotext", pdf_path, "-"],
                           capture_output=True, text=True).stdout
-nd, np_ = norm(docx_text), norm(pdf_text)
+pdf_raw = subprocess.run(["pdftotext", "-raw", pdf_path, "-"],
+                         capture_output=True, text=True).stdout
+nd, np_ = norm(docx_text), norm(pdf_text) + "\n" + norm(pdf_raw)
 
 exec_texts = [s["text"] for s in b["page1"]["bottom_line"]["sentences"]]
 for k in b["page1"]["primary"]:
@@ -129,6 +133,43 @@ hu = [s["title"] for s in b["page5"]["sources"]
       if re.search("[áéíóöőúüűÁÉÍÓÖŐÚÜŰ]", s["title"])]
 ok("Hungarian characters intact in Word and PDF", all(
     norm(t) in nd and norm(t) in np_ for t in hu), "{} title(s)".format(len(hu)))
+# --- Word layout: nincs kozel ures koztes oldal (LibreOffice render) ---
+import os  # noqa: E402
+import shutil  # noqa: E402
+import tempfile  # noqa: E402
+soffice = shutil.which("soffice") or shutil.which("libreoffice")
+if soffice and shutil.which("pdftoppm"):
+    tmp = tempfile.mkdtemp()
+    subprocess.run([soffice, "--headless", "--convert-to", "pdf", "--outdir",
+                    tmp, docx_path], capture_output=True, timeout=240)
+    dpdf = os.path.join(tmp, os.path.splitext(os.path.basename(
+        docx_path))[0] + ".pdf")
+    if os.path.exists(dpdf):
+        subprocess.run(["pdftoppm", "-r", "30", "-gray", dpdf,
+                        os.path.join(tmp, "pg")], capture_output=True)
+        pages = sorted(f for f in os.listdir(tmp) if f.startswith("pg"))
+        fills = []
+        from PIL import Image  # noqa: E402
+        for f in pages:
+            im = Image.open(os.path.join(tmp, f)).convert("L")
+            w, h = im.size
+            top, bot = int(h * 0.07), int(h * 0.91)   # fejlec / lablec nelkul
+            px = im.load()
+            last = top
+            for y in range(top, bot):
+                if any(px[x, y] < 200 for x in range(0, w, 2)):
+                    last = y
+            fills.append(round((last - top) / float(bot - top), 2))
+        sparse = [i + 1 for i, fl in enumerate(fills[:-1]) if fl < 0.45]
+        print("  Word render: {} pages, body fill per page {}".format(
+            len(fills), fills))
+        ok("Word: no nearly-empty intermediate pages", not sparse,
+           "sparse pages: {}".format(sparse))
+    else:
+        ok("Word converts with LibreOffice", False)
+else:
+    print("  (LibreOffice not available — Word layout check skipped)")
+
 print("\n" + ("{} parity check(s) FAILED".format(len(FAILS)) if FAILS
               else "All PDF/Word parity and integrity checks passed."))
 sys.exit(1 if FAILS else 0)

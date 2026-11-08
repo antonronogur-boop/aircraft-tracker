@@ -1,0 +1,11 @@
+# Aircraft Tracker — database migrations in apply order.
+# Every file is idempotent (create/alter ... if not exists) and additive.
+# A fresh database applies all of them in this order; an existing database
+# applies the ones not yet applied. scripts/test_migrations.py verifies both
+# paths on a real PostgreSQL before a release.
+schema.sql
+add_capability_fields.sql
+add_reports.sql
+add_fleet_verification.sql
+add_programme_layer.sql
+add_review_triage.sql
