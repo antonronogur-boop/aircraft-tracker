@@ -49,7 +49,6 @@ import sys
 from datetime import timedelta
 from pathlib import Path
 
-import anthropic
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import supabase_client as db  # noqa: E402
@@ -58,6 +57,7 @@ import ac_programmes as acprog  # noqa: E402
 import ac_window  # noqa: E402
 import ac_hungary  # noqa: E402
 import ac_command_brief  # noqa: E402
+import ac_articles  # noqa: E402
 import coverage_audit  # noqa: E402
 
 DAY = timedelta(days=1)
@@ -113,19 +113,8 @@ def load_prior_report(current_week):
 
 
 def load_articles(article_ids):
-    """Csak a hivatkozott cikkek (cim, URL, PUBLIKACIOS datum, gyujtesi
-    datum, rovid osszefoglalo) — 100-as csomagokban, nem a teljes tabla."""
-    ids = sorted({a for a in article_ids if a})
-    out = {}
-    for i in range(0, len(ids), 100):
-        chunk = ",".join('"{}"'.format(x.replace('"', '')) for x in
-                         ids[i:i + 100])
-        for a in db.select("ac_articles", {
-                "select": "article_id,title,url,source_id,publish_date,"
-                          "collected_date,short_summary",
-                "article_id": "in.({})".format(chunk)}):
-            out[a["article_id"]] = a
-    return out
+    """Csak a hivatkozott cikkek — lasd ac_articles.load_articles."""
+    return ac_articles.load_articles(db, article_ids)
 
 
 def existing_report(week_label):
@@ -468,6 +457,7 @@ def main(dry_run=False, restate_reason=None):
             },
         }
 
+        import anthropic  # csak a modellhivasokhoz (lazy)
         client = anthropic.Anthropic()
 
         # ---------------- elemzoi retegek ----------------

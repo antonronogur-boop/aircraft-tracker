@@ -517,6 +517,9 @@ class MemDB(object):
                 rows = [r for r in rows if str(r.get(k)) == val]
             elif op == "gte":
                 rows = [r for r in rows if str(r.get(k) or "") >= val[:19]]
+            elif op == "in":
+                ids = {x.strip('"') for x in val.strip("()").split(",")}
+                rows = [r for r in rows if str(r.get(k)) in ids]
         if params.get("order") == "period_end.desc":
             rows.sort(key=lambda r: r.get("period_end") or "", reverse=True)
         if params.get("limit"):
@@ -864,6 +867,97 @@ def test_sources():
           "SU35" in B.designation_stems("Su-35SE"), True)
 
 
+def test_backfill_without_anthropic():
+    section("H. backfill_command_brief runs WITHOUT the anthropic package")
+    import importlib
+    import tempfile
+    import supabase_client as db
+    p = fixture()
+    row = {"week_label": p["week_label"],
+           "period_start": p["report_meta"]["period_start"],
+           "period_end": p["report_meta"]["period_end"],
+           "generated_at": "2026-11-11T05:20:00+00:00", "payload": p}
+    evs = [{"event_id": 1, "country_id": "pol", "article_id": "a1",
+            "event_date": "2026-11-05", "announcement_date": None,
+            "created_at": "2026-11-05T08:00:00+00:00",
+            "review_status": "approved", "originating_evidence_id": None}]
+    mem = MemDB({
+        "ac_reports": [row],
+        "ac_countries": [dict(v, aliases=v.get("aliases") or [])
+                         for v in COUNTRIES.values()],
+        "ac_events": evs,
+        "ac_articles": [
+            {"article_id": "a1", "title": "Referenced article",
+             "url": "https://example.org/a1", "source_id": "ACS-0001",
+             "publish_date": "2026-11-05", "collected_date": "2026-11-05",
+             "short_summary": None},
+            {"article_id": "zz", "title": "Unreferenced article",
+             "url": "https://example.org/zz", "source_id": "ACS-0001",
+             "publish_date": None, "collected_date": None,
+             "short_summary": None}],
+        "ac_sources": [{"source_id": "ACS-0001", "source_name": "Example",
+                        "language": "en", "homepage": None}],
+    })
+    saved = {k: getattr(db, k) for k in ("select", "upsert")}
+    saved_mods = {m: sys.modules.get(m) for m in (
+        "anthropic", "generate_weekly_report", "backfill_command_brief")}
+    saved_argv = sys.argv
+    tmp = Path(tempfile.mkdtemp())
+    (tmp / "data").mkdir()
+    err = None
+    try:
+        for k in saved:
+            setattr(db, k, getattr(mem, k))
+        sys.modules["anthropic"] = None          # import anthropic -> error
+        sys.modules.pop("generate_weekly_report", None)
+        sys.modules.pop("backfill_command_brief", None)
+        BF = importlib.import_module("backfill_command_brief")
+        BF.ROOT = tmp
+        sys.argv = ["backfill_command_brief.py", "--week", "latest",
+                    "--write"]
+        try:
+            BF.main()
+        except (ImportError, SystemExit) as e:  # noqa: PERF203
+            err = e
+        gen_imported = "generate_weekly_report" in sys.modules
+    finally:
+        for k, v in saved.items():
+            setattr(db, k, v)
+        for m, v in saved_mods.items():
+            if v is None:
+                sys.modules.pop(m, None)
+            else:
+                sys.modules[m] = v
+        sys.argv = saved_argv
+    check("backfill --write completes with anthropic unavailable",
+          repr(err) if err else None, None)
+    check("generate_weekly_report is not imported by the backfill",
+          gen_imported, False)
+    art_q = [q for t, q in mem.calls if t == "ac_articles"]
+    check("articles loaded by id (in.), not the whole table",
+          [q.get("article_id") for q in art_q], ['in.("a1")'])
+    up = [r for t, rows in mem.upserts if t == "ac_reports" for r in rows]
+    check("stored report written once", len(up), 1)
+    if up:
+        pl = up[0]["payload"]
+        check("visible restatement recorded",
+              pl["report_meta"]["restatement"]["number"], 1)
+        ann = ("ref", "country_ids", "countries", "hu_relevance")
+        strip = [{k: v for k, v in d.items() if k not in ann}
+                 for d in pl["developments"]]
+        orig = [{k: v for k, v in d.items() if k not in ann}
+                for d in fixture()["developments"]]
+        check("analytical content unchanged (developments)",
+              strip == orig, True)
+        check("analytical content unchanged (key judgements)",
+              pl["key_judgements"] == fixture()["key_judgements"], True)
+        check("brief carries the revision",
+              pl["command_brief"]["meta"]["revision"]["number"], 1)
+    check("brief file written to data/",
+          (tmp / "data" / "command_brief_{}.json".format(
+              p["week_label"])).exists(), True)
+
+
 if __name__ == "__main__":
     test_window()
     test_hu_model()
@@ -872,6 +966,7 @@ if __name__ == "__main__":
     test_pipeline()
     test_triage()
     test_sources()
+    test_backfill_without_anthropic()
     print("\n" + "=" * 92)
     if FAILS:
         print("{} check(s) FAILED:".format(len(FAILS)))

@@ -29,6 +29,7 @@ import supabase_client as db  # noqa: E402
 import ac_hungary  # noqa: E402
 import ac_command_brief  # noqa: E402
 import coverage_audit  # noqa: E402
+import ac_articles  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -62,8 +63,9 @@ def main():
                   "announcement_date,created_at,review_status,"
                   "originating_evidence_id",
         "review_status": "neq.rejected", "created_at": "gte." + since})
-    import generate_weekly_report as G  # ugyanaz a cikk-betolto
-    articles = G.load_articles(e.get("article_id") for e in events)
+    # Ugyanaz a cikk-betolto, mint a generatore — anthropic nelkul.
+    articles = ac_articles.load_articles(
+        db, (e.get("article_id") for e in events))
     try:
         sources_by_id = {s["source_id"]: s for s in db.select(
             "ac_sources", {"select": "source_id,source_name,language,"
