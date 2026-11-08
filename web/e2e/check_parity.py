@@ -196,8 +196,23 @@ pdf_raw = subprocess.run(["pdftotext", "-raw", pdf_path, "-"],
 nd, np_ = norm(docx_text), norm(pdf_text) + "\n" + norm(pdf_raw)
 
 exec_texts = P.executive_texts(b, schema)
-exec_texts += [s["title"] for s in b["page5"]["sources"]]
 exec_texts += [t for sec in b["page5"]["legend"] for _, t in sec["items"]]
+# Forrasok — a kanonikus PDF lineage-szintu: minden S-xx, minden kiado es
+# minden lineage-targy szerepel; a publikacio-CIMEK a Wordben (teljes
+# register) es a web source-detail nezetben vannak.
+LR = b["page5"]["lineages"]
+src_ids = [s["id"] for s in b["page5"]["sources"]]
+miss_ids = [i for i in src_ids if not re.search(r"\b" + re.escape(i) + r"\b", pdf_text + pdf_raw)]
+ok("every S-xx (all {} publications) present in the PDF".format(len(src_ids)), not miss_ids, ", ".join(miss_ids[:5]))
+subjects = [r["subject"] for r in LR["rows"]]
+ok("every lineage row ({}) present in PDF and Word".format(len(subjects)),
+   all(norm(t) in np_ and norm(t) in nd for t in subjects))
+ok("every publisher present in the PDF",
+   all(norm(s["source_name"]) in np_ for s in b["page5"]["sources"]))
+titles = [s["title"] for s in b["page5"]["sources"]]
+miss_t = [t for t in titles if norm(t) not in nd]
+ok("all {} publication titles present in Word (full register)".format(len(titles)),
+   not miss_t, "; ".join(x[:50] for x in miss_t[:3]))
 exec_texts = [t for t in exec_texts if t]
 miss_d = [t for t in exec_texts if norm(t) not in nd]
 miss_p = [t for t in exec_texts if norm(t) not in np_]
@@ -213,8 +228,11 @@ for k in b["page1"]["primary"]:
 ok("no ellipsis in Word text", "…" not in docx_text)
 hu = [s["title"] for s in b["page5"]["sources"]
       if re.search("[áéíóöőúüűÁÉÍÓÖŐÚÜŰąćęłńśźżĄĆĘŁŃŚŹŻ]", s["title"])]
-ok("accented (HU/PL) characters intact in Word and PDF", all(
-    norm(t) in nd and norm(t) in np_ for t in hu), "{} title(s)".format(len(hu)))
+ok("accented (HU/PL) titles intact in Word", all(norm(t) in nd for t in hu),
+   "{} title(s)".format(len(hu)))
+acc = [t for t in exec_texts + subjects if re.search("[áéíóöőúüűąćęłńśźż]", t)]
+ok("accented characters intact in PDF", all(norm(t) in np_ for t in acc),
+   "{} text(s)".format(len(acc)))
 
 # --- Word layout: nincs kozel ures koztes oldal (LibreOffice render) ---
 soffice = shutil.which("soffice") or shutil.which("libreoffice")

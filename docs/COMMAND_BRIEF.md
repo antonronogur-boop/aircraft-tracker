@@ -127,6 +127,17 @@ A v1 modell működött, két finomítással: (1) a **supplier/partner kapcsolat
 
 A tárolt W45 brief a webes nézetben már a javított szemantikával jelenik meg (régi briefek megjelenítéskori normalizálása — a tárolt adathoz nem nyúl). A `backfill_command_brief.py --week 2026-W45 --write --reason "..."` futtatása a tárolt briefbe is beírja az új mezőket (evidence_role, context_for, template_version, rövidebb register-jegyzet) — ez restatementként látszik; a draft (ha már van) átkerül.
 
+## 10. Page 5 — forrás-skálázhatóság (template v1.1, 2026-11-08)
+
+**Szabály:** a kanonikus PDF 5. oldala **evidence-lineage register**, nem publikáció-lista. Egy sor = egy független bizonyíték-lánc (L-xx): *Official / First report* (a hivatalos, ennek hiányában a legkorábbi forrás) + *Corroboration* (az ugyanazt a láncot átvevő publikációk) egy sorban, kiadónként kattintható S-xx-szel; első publikáció dátuma; mire bizonyíték. **4 cikk ≠ 4 független forrás.** A kontextus-forrás külön sorban („Context only — not evidence, no lineage”).
+
+- **Semmi nem esik ki:** minden S-xx (bizonyíték és kontextus is) kattinthatóan ott van a 5. oldalon; a teljes publikáció-szintű register (eredeti nyelvű cím, publikációs dátum, szerep, lineage, Evidence for / Context for) a web **source-detail** nézetben (`/weekly/<hét>/command/sources`) és a Word-exportban marad.
+- **Betűméret:** ≤14 lineage 8,4 px, ≤22: 8,0 px, felette 7,6 px — soha nem kisebb (`register.lineage_scaling` a sémában). A jelmagyarázat 4 rögzített, kiegyensúlyozott hasábban.
+- **Garantált 5 oldal ≤32 lineage-ig** — stressz-teszt: 32 lineage / 56 bizonyíték-publikáció + 2 kontextus → PDF 5 oldal, 5. oldal túlcsordulás 0 px, betű 7,6 px, minden S-xx a 5. oldalon. 32 felett a 5. oldal továbbfolyik (bizonyítékot nem dobunk el), és a szerkesztő jelez.
+- A modell: `scripts/ac_command_brief.py · lineage_register()` → `page5.lineages`; régi briefeknél a web ugyanígy számolja (`lineageRegister()`); teszt: minden bizonyíték-publikáció pontosan egyszer szerepel, egy sor = egy lineage, kontextus soha nem lineage-sor, 4 cikk egy közleményről = 1 sor.
+- Template **v1.1** (`templates/Command_Air_Intelligence_Brief_v1.1.dotx`, `command_brief_presentation_v1.1.json`); a v1.0 archiválva marad. A már kiadott W45 R-1 a saját v1.0 metaadatával megmarad; a web a jelenlegi rendererrel jeleníti meg (a tartalom azonos).
+- Ellenőrzés: `test_command_brief.py` 205 · `draft.unit.cjs` 46 · böngészős E2E (W46 + stressz 214, valós W45 203) · parity (minden S-xx és kiadó a PDF-ben, minden lineage a PDF-ben és a Wordben, minden cím a Wordben) · template — mind PASS. A Word-export 10 oldal (lineage register + teljes register), közel üres oldal nélkül.
+
 ## 8. Ismert korlátok
 
 - A „Download PDF” a böngésző nyomtatásából készül (Save as PDF); szerveroldali PDF-generálás nincs (a Vercel serverless környezetben nincs böngésző).

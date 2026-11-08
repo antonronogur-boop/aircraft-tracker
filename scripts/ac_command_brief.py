@@ -589,7 +589,11 @@ class SourceRegister(object):
     def for_dev(self, d, used_by):
         """A tetel KOZVETLEN forrasai (belso kulcsok; S-szam a vegen)."""
         direct, context = self._resolve(d)
+        subject = d.get("display_label") or d.get("title")
         for ent, role in direct:
+            # A lineage-sor targya: az elso tetel, amelyet bizonyit.
+            if subject and not ent.get("subject"):
+                ent["subject"] = subject
             if used_by and used_by not in ent["used_by"]:
                 ent["used_by"].append(used_by)
             if used_by:
@@ -679,6 +683,53 @@ class SourceRegister(object):
         for e in out:
             e.pop("key", None)
         return out
+
+
+def lineage_register(sources):
+    """A kanonikus PDF 5. oldala: EVIDENCE-LINEAGE register.
+
+    Egy sor = egy fuggetlen bizonyitek-lanc (L-xx): elsodleges (hivatalos /
+    legkorabbi) forras + a megerosito publikaciok egy sorban. 4 cikk ≠ 4
+    fuggetlen forras. Semmilyen bizonyitek nem esik ki: minden S-xx a sajat
+    soraban, kattinthatoan szerepel; a teljes publikacio-szintu register a
+    web source-detail nezeteben es a Wordben marad."""
+    by = {}
+    for s in sources:
+        if s.get("evidence_role") == "CONTEXT_ONLY" or not s.get("lineage"):
+            continue
+        by.setdefault(s["lineage"], []).append(s)
+    rows = []
+    for lid in sorted(by):
+        group = sorted(by[lid], key=lambda x: (x.get("tier_rank") or 9,
+                                               x.get("published") or "9999",
+                                               x["id"]))
+        head = group[0]
+        official = [x for x in group if (x.get("tier_rank") or 9) == 1]
+        primary = official or [head]
+        corro = [x for x in group if x not in primary]
+        used = []
+        for x in group:
+            for u in x.get("used_by") or []:
+                if u not in used:
+                    used.append(u)
+        dates = sorted(x["published"] for x in group if x.get("published"))
+        rows.append({
+            "id": lid,
+            "subject": head.get("subject") or (used[0] if used else head["title"]),
+            "country": head.get("country"),
+            "primary": [x["id"] for x in primary],
+            "primary_kind": "official" if official else "first report",
+            "corroboration": [x["id"] for x in corro],
+            "publications": len(group),
+            "first_published": dates[0] if dates else None,
+            "used_by": used,
+            "state_controlled": any(x.get("state_controlled") for x in group),
+        })
+    context = [{"id": s["id"], "context_for": s.get("context_for") or []}
+               for s in sources if s.get("evidence_role") == "CONTEXT_ONLY"]
+    return {"rows": rows, "context_only": context,
+            "publications": len(sources),
+            "independent_lineages": len(rows)}
 
 
 # --------------------------------------------------------------------------
@@ -1703,6 +1754,7 @@ def build_command_brief(payload, countries_by_id, coverage=None, cfg=None,
                              if not e["role"].startswith("Context"))
     brief["page5"] = {
         "sources": entries,
+        "lineages": lineage_register(entries),
         "register_title": PRESENTATION["register"]["title"],
         "source_note": (
             PRESENTATION["register"]["note"]

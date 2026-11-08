@@ -829,6 +829,24 @@ def test_sources():
     check("every register entry has evidence_role",
           all(e.get("evidence_role") in ("EVIDENCE", "CONTEXT_ONLY")
               for e in b["page5"]["sources"]), True)
+    # PAGE 5 — EVIDENCE-LINEAGE REGISTER: egy sor = egy fuggetlen lanc;
+    # semmilyen bizonyitek nem esik ki, kontextus soha nem bizonyitek.
+    LR = b["page5"]["lineages"]
+    ev_ids = sorted(e["id"] for e in b["page5"]["sources"]
+                    if e["evidence_role"] == "EVIDENCE")
+    in_rows = sorted(x for r in LR["rows"]
+                     for x in r["primary"] + r["corroboration"])
+    check("lineage register: every evidence publication exactly once",
+          in_rows, ev_ids)
+    check("lineage register: one row per independent lineage",
+          [r["id"] for r in LR["rows"]],
+          sorted({e["lineage"] for e in b["page5"]["sources"]
+                  if e["evidence_role"] == "EVIDENCE"}))
+    check("lineage register: context source not a lineage row",
+          [c["id"] for c in LR["context_only"]], [mig["id"]])
+    check("lineage register: counts (publications, independent lineages)",
+          (LR["publications"], LR["independent_lineages"]),
+          (len(b["page5"]["sources"]), len(LR["rows"])))
     check("evidence sources are cited by at least one item",
           all(e["used_by"] for e in b["page5"]["sources"]
               if e["evidence_role"] == "EVIDENCE"), True)
@@ -849,6 +867,17 @@ def test_sources():
     b2 = B.build_command_brief(json.loads(json.dumps(p)), COUNTRIES,
                                coverage=cov, evidence_supplements=sup)
     reg2 = {e["id"]: e for e in b2["page5"]["sources"]}
+    fa_rows = [r for r in b2["page5"]["lineages"]["rows"]
+               if any(reg2[x]["title"].startswith(("Wpis ministra",
+                                                    "Polish FA-50s"))
+                      for x in r["primary"] + r["corroboration"])]
+    check("4 articles of one statement = ONE lineage row (not 4 rows)",
+          len(fa_rows), 1)
+    check("… official statement is the row's primary, media corroborate",
+          (fa_rows[0]["primary_kind"],
+           reg2[fa_rows[0]["primary"][0]]["title"].startswith("Wpis"),
+           len(fa_rows[0]["corroboration"])) if fa_rows else None,
+          ("official", True, 1))
     items = ([k for k in b2["page1"]["primary"]
               if "FA-50" in k["statement"]]
              + [r for r in b2["page2"]["rows"] if r["country"] == "Poland"])
@@ -1050,7 +1079,8 @@ def test_presentation_schema(b):
                     continue
                 if P.get_field(it, f["key"]) is None and f["key"] not in (
                         "alternative_explanation", "hu_why", "published",
-                        "published_basis", "lineage", "column"):
+                        "published_basis", "lineage", "column",
+                        "first_published"):
                     missing.append("{}.{}".format(blk["id"], f["key"]))
     check("every schema block resolves on the brief", unresolved, [])
     check("every schema field exists on the brief items",

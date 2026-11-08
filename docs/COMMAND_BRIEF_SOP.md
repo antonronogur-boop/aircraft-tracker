@@ -1,7 +1,7 @@
 # COMMAND AIR INTELLIGENCE BRIEF — SOP
 
 **Standard Operating Procedure a heti Command Air Intelligence Brief elkészítéséhez, szerkesztéséhez, jóváhagyásához és kiadásához.**
-Template: **v1.0** (`config/command_brief_presentation.json`) · Rövid változat: [`Command_Brief_Quick_Guide.md`](Command_Brief_Quick_Guide.md)
+Template: **v1.1** (`config/command_brief_presentation.json`) · Rövid változat: [`Command_Brief_Quick_Guide.md`](Command_Brief_Quick_Guide.md)
 
 > Mérce: egy megfelelően képzett légierős / felderítő elemző a rendszerrel vagy a Word-template-tel — a PO jelenléte nélkül — ugyanabban a szakmai és vizuális szabványban elő tudja állítani a heti briefet.
 
@@ -65,6 +65,7 @@ Normál esetben ez néhány perces átnézés, nem kézi riportépítés.
 | **Sources** | **minden judgementnél kötelező** (S-xx). Hivatalos (Tier 1) forrás elöl. Kontextus-forrás („Context only — not evidence”) **soha nem bizonyíték**, nem számít lineage-nek. |
 | **Collection gap** | gyűjtési hiány ≠ inaktivitás. Így írd: „absence of reporting is not evidence of inactivity”. |
 | **Confidence** | **ne keverd a significance-szel**: a significance azt mondja, mennyire számít; a confidence azt, mennyire vagyunk biztosak. |
+| **Page 5** | evidence-lineage register: egy sor = egy független lánc (hivatalos forrás + megerősítők). A teljes publikáció-lista: *Source detail* nézet és Word. |
 | **Published** | a cikk saját publikációs dátuma — **soha** nem az esemény-, szerződés- vagy mérföldkő-dátum. |
 | **Lineage** | ugyanazt a közleményt átvevő cikkek = **egy** lineage; állami (state-controlled) források = egy, mindig attribuált lineage. |
 | **Szöveg** | egész mondatok; **nincs „…”**; nincs ki nem mondott rövidítés. |

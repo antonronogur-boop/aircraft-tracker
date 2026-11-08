@@ -1,6 +1,6 @@
 {
   "schema": "command_brief_presentation",
-  "template_version": "1.0",
+  "template_version": "1.1",
   "template_name": "Command Air Intelligence Brief",
   "brief_schema": "command_brief_v2",
   "_note": "SINGLE TEMPLATE STANDARD. The web view, the canonical PDF (browser print of the web view), the editable DOCX export and the Command_Air_Intelligence_Brief.dotx Word template are all rendered from this file: section order, field names, editable/controlled split, maximum lengths, labels, table structure, colour semantics and legend. Changing layout or wording here is a TEMPLATE change: bump template_version and keep the previous version file in templates/ so older reports can be re-rendered with their own template version.",
@@ -213,10 +213,21 @@
      ]},
 
     {"n": 5, "title": "Sources & Legend",
-     "subtitle": "Evidence behind each judgement (official first) · permanent legend",
+     "subtitle": "Evidence lineage behind each judgement (official first) · permanent legend",
      "blocks": [
-      {"id": "source_register", "label": "Source Register", "path": "page5.sources",
-       "kind": "list", "item_key": "id", "max_items": 30, "reorder": false, "hide": false,
+      {"id": "lineage_register", "label": "Evidence lineage register (canonical PDF)", "path": "page5.lineages.rows",
+       "kind": "list", "item_key": "id", "max_items": 40, "reorder": false, "hide": false,
+       "table": {"columns": ["Lineage", "Evidence chain", "Primary", "Corroboration", "First published", "Evidence for"]},
+       "fields": [
+         {"key": "id", "label": "Lineage", "edit": "controlled"},
+         {"key": "subject", "label": "Evidence chain", "edit": "controlled"},
+         {"key": "primary", "label": "Primary", "edit": "controlled"},
+         {"key": "corroboration", "label": "Corroboration", "edit": "controlled"},
+         {"key": "first_published", "label": "First published", "edit": "controlled"},
+         {"key": "used_by", "label": "Evidence for", "edit": "controlled"}
+       ]},
+      {"id": "source_register", "label": "Publication register (web source detail · Word)", "path": "page5.sources",
+       "kind": "list", "item_key": "id", "max_items": 60, "reorder": false, "hide": false,
        "table": {"columns": ["ID", "Source · tier", "Title (original language)", "Published", "Evidence role", "Country · lang", "Lineage", "Evidence for", "Context for"]},
        "fields": [
          {"key": "id", "label": "ID", "edit": "controlled"},
@@ -237,6 +248,9 @@
 
   "register": {
     "title": "Source register — evidence behind each judgement",
+    "lineage_title": "Evidence lineage register — independent evidence behind each judgement",
+    "lineage_note": "One row = one independent evidence chain (L-xx): the official or first report, then the publications that restate it. 4 articles ≠ 4 independent sources. Every S-xx links to its publication; the full publication-level register (titles, dates, roles) is in the web source detail and the Word export.",
+    "lineage_scaling": {"comfortable_rows": 14, "compact_rows": 22, "max_rows_one_page": 32, "font_px": {"normal": 8.4, "compact": 8.0, "dense": 7.6}, "_rule": "Page 5 = one row per independent lineage, never one row per article. Font never below 7.6 px (≈5.7 pt). Up to max_rows_one_page lineages the canonical PDF is guaranteed 5 pages (tested). Evidence is never dropped: above that limit page 5 continues on a further page and the editor warns."},
     "note": "Each S-xx links to the publication it names (original-language title). Items cite only sources that report their subject directly; official (Tier 1) sources first. Context sources are listed for audit only: never evidence, never a lineage. Published = the article's own publication date, never an event or contract date. One lineage = publications restating one evidence chain.",
     "evidence_roles": {
       "EVIDENCE": "Cited as evidence (Primary official / Corroborating)",

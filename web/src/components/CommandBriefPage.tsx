@@ -54,6 +54,12 @@ export function CommandBriefPage({ report, draft, q = {} }: {
             Detailed weekly report (analyst product) →
           </Link>
           {v2 && (
+            <Link href={`/weekly/${report.week_label}/command/sources${kind === "release" && relNo ? `?release=${relNo}` : q.view === "draft" ? "?view=draft" : ""}`}
+                  className="text-xs text-slate-400 hover:text-slate-200">
+              Source detail (all publications) →
+            </Link>
+          )}
+          {v2 && (
             <Link href={`/weekly/${report.week_label}/command/edit`}
                   className="rounded border border-slate-600 px-3 py-1.5 text-xs text-slate-100 hover:border-slate-400">
               Edit (analyst)

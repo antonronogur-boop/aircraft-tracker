@@ -16,7 +16,7 @@ AC_REPORT_FIXTURE="$ROWS" AC_DRAFT_STORE="file:$STORE" nohup npx next start -p "
 for i in $(seq 1 30); do curl -s "http://localhost:$PORT/weekly" >/dev/null && break; sleep 1; done
 rc=0
 echo "== draft model unit tests"; node e2e/draft.unit.cjs "$ROWS" "$WEEK" || rc=1
-echo "== browser E2E";            BASE="http://localhost:$PORT" OUT="$OUT" WEEK="$WEEK" LEGACY_WEEK="${LEGACY_WEEK:-2026-W45}" node e2e/command-brief.e2e.cjs || rc=1
+echo "== browser E2E";            BASE="http://localhost:$PORT" OUT="$OUT" WEEK="$WEEK" STRESS_WEEK="${STRESS_WEEK-2026-W40}" LEGACY_WEEK="${LEGACY_WEEK:-2026-W45}" node e2e/command-brief.e2e.cjs || rc=1
 echo "== PDF / Word parity";      python3 e2e/check_parity.py "$OUT/published_brief.json" "$OUT/command_brief.pdf" "$OUT/command_brief.docx" || rc=1
 echo "== Word template";          python3 e2e/check_template.py "$OUT/Command_Air_Intelligence_Brief.dotx" || rc=1
 pkill -f "next-server" >/dev/null 2>&1

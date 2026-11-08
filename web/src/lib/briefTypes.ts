@@ -62,6 +62,20 @@ export interface SourceEntry {
   used_by: string[];            // bizonyitekkent hivatkozo tetelek
   context_for?: string[];       // csak kontextuskent megnevezo tetelek
   supports: Record<string, string>;
+  subject?: string | null;      // az elso tetel, amelyet bizonyit (lineage-sor targya)
+}
+
+/* A kanonikus PDF 5. oldala: egy sor = egy fuggetlen bizonyitek-lanc. */
+export interface LineageRow {
+  id: string; subject: string; country?: string | null;
+  primary: string[]; primary_kind: "official" | "first report";
+  corroboration: string[]; publications: number;
+  first_published?: string | null; used_by: string[]; state_controlled: boolean;
+}
+
+export interface LineageRegister {
+  rows: LineageRow[]; context_only: { id: string; context_for: string[] }[];
+  publications: number; independent_lineages: number;
 }
 
 export interface CeeMapData {
@@ -133,6 +147,7 @@ export interface CommandBriefV2 {
   };
   page5: {
     sources: SourceEntry[]; source_note?: string; register_title?: string;
+    lineages?: LineageRegister;
     legend: { title: string; items: [string, string][] }[];
     principles: string[];
   };

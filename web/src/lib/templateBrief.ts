@@ -104,13 +104,21 @@ export function templateBrief(): CommandBriefV2 {
       map_global: { hotspots: [], caption: ph(field("map_global", "caption"), "Map caption") },
     },
     page5: {
-      sources: range(10).map((i) => ({
+      sources: range(8).map((i) => ({
         id: `S-${String(i + 1).padStart(2, "0")}`, title: "[Title in original language — insert as hyperlink to the publication]",
         url: "", source_name: "[Publisher]", source_type: "[type]", tier: "[Tier 1–3]", tier_rank: 9, language: "[lang]",
         published: "[publication date — never the event date]", published_basis: null, country: "[Country]",
         state_controlled: false, lineage: "[L-xx]", role: "[Primary (official) / Corroborating / Context only]",
         evidence_role: "EVIDENCE" as const, used_by: ["[KJ-xx, p.2 Country]"], context_for: [], supports: {},
       })),
+      lineages: {
+        rows: range(8).map((i) => ({
+          id: `L-${String(i + 1).padStart(2, "0")}`, subject: "[Evidence chain — e.g. Poland FA-50 QRA]", country: "[Country]",
+          primary: [`S-${String(i + 1).padStart(2, "0")}`], primary_kind: "official" as const,
+          corroboration: ["[S-xx · S-xx — publications restating the same chain]"], publications: 0,
+          first_published: "[YYYY-MM-DD]", used_by: ["[KJ-xx, p.2 Country]"], state_controlled: false })),
+        context_only: [], publications: 0, independent_lineages: 0,
+      },
       register_title: PRESENTATION.register.title, source_note: PRESENTATION.register.note,
       legend: PRESENTATION.legend, principles: PRESENTATION.principles,
     },

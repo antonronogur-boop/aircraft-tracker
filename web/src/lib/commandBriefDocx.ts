@@ -26,6 +26,7 @@ import { HORIZON_LABEL } from "@/lib/briefTypes";
 import { ceeMapSvg, globalMapSvg } from "@/lib/briefMaps";
 import { DOCX_STYLES } from "@/lib/docxStyles";
 import { PRESENTATION, TEMPLATE_VERSION, block as schemaBlock, page as schemaPage, slotTag } from "@/lib/presentation";
+import { lineageRegister } from "@/lib/briefDraft";
 
 const MM = 56.6929; // DXA / mm
 const PAGE_W = 11906, PAGE_H = 16838;
@@ -404,6 +405,32 @@ export async function buildCommandBriefDocx(b: CommandBriefV2, svg2png: Svg2Png,
   // --- 5. forrasok + jelmagyarazat ---
   const p5 = b.page5;
   body.push(heading(ctx, 1, `5. ${schemaPage(5).title}`));
+  // (a) EVIDENCE-LINEAGE register — ugyanaz, mint a kanonikus PDF 5. oldala.
+  const LR = p5.lineages ?? lineageRegister(p5.sources);
+  const reg = PRESENTATION.register as unknown as { lineage_title: string; lineage_note: string };
+  const pubRuns = (ids: string[]): Run[] => ids.flatMap((id, i) => {
+    const s = ctx.idx.get(id);
+    return [...(i ? [tr(" · ")] : []), tr(`${s?.source_name ?? id} `),
+      s?.url ? new ExternalHyperlink({ link: s.url, children: [tr(id, { style: "Hyperlink" })] }) : tr(id)];
+  });
+  body.push(heading(ctx, 2, reg.lineage_title));
+  body.push(caption(ctx, `${LR.independent_lineages} independent lineages · ${LR.publications} publications. ${reg.lineage_note}`));
+  body.push(table(ctx, schemaBlock("lineage_register")!.table!.columns, [6, 20, 19, 28, 9, 18],
+    LR.rows.map((r) => [
+      [tr(r.id, { bold: true })],
+      [tr(r.subject, { bold: true }), ...(r.country ? [tr(` · ${r.country}`, { color: "64748B" })] : [])],
+      [tr(r.primary_kind === "official" ? "Official: " : "First report: ", { color: "64748B" }), ...pubRuns(r.primary)],
+      r.corroboration.length ? [...pubRuns(r.corroboration), ...(r.state_controlled ? [tr(" · state-controlled: attributed statement", { color: "92400E" })] : [])]
+        : "none — single report",
+      r.first_published ?? "not recorded",
+      r.used_by.join(", ") || "—",
+    ])));
+  if (LR.context_only.length) {
+    body.push(para([tr("Context only — not evidence, no lineage: ", { bold: true }),
+      ...LR.context_only.flatMap((c, i) => [...(i ? [tr(" · ")] : []), ...pubRuns([c.id]), tr(` (context for ${c.context_for.join(", ") || "—"})`)])],
+      { after: 60 }));
+  }
+  // (b) a TELJES publikacio-szintu register (Wordben megtartva).
   body.push(heading(ctx, 2, p5.register_title ?? PRESENTATION.register.title));
   body.push(table(ctx, schemaBlock("source_register")!.table!.columns, [5, 12, 35, 9, 10, 8, 5, 9, 7],
     p5.sources.map((s) => {

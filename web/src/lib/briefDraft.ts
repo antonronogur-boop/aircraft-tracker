@@ -10,7 +10,7 @@
 //
 // Csak a presentation schema "copy" mezoi szerkeszthetok; forras, lineage,
 // HU-szint, SIG, CONF, horizon, datumok kontrollalt metaadatok.
-import type { CommandBriefV2, SourceEntry } from "@/lib/briefTypes";
+import type { CommandBriefV2, LineageRegister, SourceEntry } from "@/lib/briefTypes";
 import {
   PRESENTATION, TEMPLATE_VERSION, allBlocks, block as schemaBlock, blockLists, blockObject,
   copyFields, getField, hardLimit, itemKey, setField, type SchemaBlock,
@@ -86,7 +86,37 @@ export function normalizeBrief(b: CommandBriefV2): CommandBriefV2 {
       : { ...s, evidence_role: "EVIDENCE", context_for: [] };
   });
   out.meta.template_version ??= TEMPLATE_VERSION;
+  out.page5.lineages ??= lineageRegister(out.page5.sources);
   return out;
+}
+
+/* Ugyanaz a csoportositas, mint scripts/ac_command_brief.py
+ * lineage_register() — a regi (lineage-register elotti) briefekhez. */
+export function lineageRegister(sources: SourceEntry[]): LineageRegister {
+  const by = new Map<string, SourceEntry[]>();
+  for (const s of sources) {
+    if (s.evidence_role === "CONTEXT_ONLY" || !s.lineage) continue;
+    by.set(s.lineage, [...(by.get(s.lineage) ?? []), s]);
+  }
+  const rows = [...by.keys()].sort().map((lid) => {
+    const g = [...by.get(lid)!].sort((a, z) =>
+      (a.tier_rank ?? 9) - (z.tier_rank ?? 9) || (a.published ?? "9999").localeCompare(z.published ?? "9999") || a.id.localeCompare(z.id));
+    const official = g.filter((x) => (x.tier_rank ?? 9) === 1);
+    const primary = official.length ? official : [g[0]];
+    const used: string[] = [];
+    g.forEach((x) => (x.used_by ?? []).forEach((u) => { if (!used.includes(u)) used.push(u); }));
+    const dates = g.map((x) => x.published).filter(Boolean).sort() as string[];
+    return {
+      id: lid, subject: g[0].subject ?? used[0] ?? g[0].title, country: g[0].country,
+      primary: primary.map((x) => x.id), primary_kind: (official.length ? "official" : "first report") as "official" | "first report",
+      corroboration: g.filter((x) => !primary.includes(x)).map((x) => x.id), publications: g.length,
+      first_published: dates[0] ?? null, used_by: used, state_controlled: g.some((x) => x.state_controlled),
+    };
+  });
+  return {
+    rows, publications: sources.length, independent_lineages: rows.length,
+    context_only: sources.filter((s) => s.evidence_role === "CONTEXT_ONLY").map((s) => ({ id: s.id, context_for: s.context_for ?? [] })),
+  };
 }
 
 export function emptyDraft(brief: CommandBriefV2, hash: Hasher, now: string): BriefDraft {

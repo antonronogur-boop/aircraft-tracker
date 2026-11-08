@@ -65,22 +65,41 @@ async function viewChecks(page, label) {
   const ext = await page.$$eval("img, link[rel=stylesheet], script[src]", (e) =>
     e.map((x) => x.src || x.href).filter((u) => u && !u.startsWith(location.origin)));
   ok("no external tiles or remote assets", ext.length === 0, ext.join(","));
-  const reg = await page.$$eval("[data-cb-page='5'] tbody tr", (rows) => rows.map((r) => ({
-    id: r.id, href: r.querySelector("a")?.getAttribute("href"), role: r.getAttribute("data-evidence-role"),
-    ev: r.querySelector("[data-col=evidence-for]")?.textContent, cx: r.querySelector("[data-col=context-for]")?.textContent,
-    lineage: r.children[6]?.textContent })));
-  const regUrls = new Set(reg.map((r) => r.href));
+  // Page 5 = EVIDENCE-LINEAGE register (egy sor = egy fuggetlen lanc).
+  const api0 = await (await api.get(`${BASE}/api/command-brief/${WEEK}/draft`)).json();
+  const allSrc = api0.brief.page5.sources;
+  const evIds = allSrc.filter((x) => x.evidence_role === "EVIDENCE").map((x) => x.id).sort();
+  const ctxIds = allSrc.filter((x) => x.evidence_role === "CONTEXT_ONLY").map((x) => x.id).sort();
+  const p5 = await page.$eval("[data-cb-page='5']", (el) => ({
+    rows: [...el.querySelectorAll("[data-lineage]")].map((r) => ({ id: r.id, ids: [...r.querySelectorAll("a.cb-ref")].map((a) => a.textContent) })),
+    ctx: [...(el.querySelector("[data-cb-context-only]")?.querySelectorAll("a.cb-ref") ?? [])].map((a) => a.textContent),
+    hrefs: [...el.querySelectorAll("a.cb-ref")].map((a) => a.getAttribute("href")),
+    font: parseFloat(getComputedStyle(el.querySelector("[data-cb-lineage-register]")).fontSize) }));
+  const regUrls = new Set(p5.hrefs);
   const links = await page.$$eval(".cb a.cb-ref", (a) => a.map((x) => ({ href: x.getAttribute("href"), text: x.textContent })));
   ok("every executive page cites sources", (await page.$$eval("[data-cb-page]", (ps) =>
     ps.slice(0, 4).map((p) => p.querySelectorAll("a.cb-ref").length))).every((n) => n > 0));
   ok("all source links are absolute original-source URLs", links.every((l) => /^https?:\/\//.test(l.href)));
-  ok("every S-xx link points to a register entry", links.filter((l) => /^S-\d+$/.test(l.text)).every((l) => regUrls.has(l.href)));
-  ok("register rows have ids S-01..", reg.length > 0 && reg[0].id === "S-01", `${reg.length} sources`);
-  ok("every register row has an evidence role", reg.every((r) => r.role === "EVIDENCE" || r.role === "CONTEXT_ONLY"));
+  ok("every S-xx on pages 1–4 is linked on page 5", links.filter((l) => /^S-\d+$/.test(l.text)).every((l) => regUrls.has(l.href)));
+  ok("page 5: one row per independent lineage", p5.rows.length === new Set(allSrc.filter((x) => x.lineage).map((x) => x.lineage)).size, `${p5.rows.length} lineages / ${allSrc.length} publications`);
+  ok("page 5: every evidence publication shown exactly once (none dropped)",
+     JSON.stringify(p5.rows.flatMap((r) => r.ids).sort()) === JSON.stringify(evIds));
+  ok("page 5: context-only sources listed separately, never in a lineage row",
+     JSON.stringify([...p5.ctx].sort()) === JSON.stringify(ctxIds) && !p5.rows.some((r) => r.ids.some((x) => ctxIds.includes(x))));
+  ok("page 5: register font readable (≥ 7.6 px)", p5.font >= 7.6, `${p5.font}px`);
+  // A teljes publikacio-szintu register: web source-detail nezet.
+  await page.goto(`${BASE}/weekly/${WEEK}/command/sources`, { waitUntil: "networkidle" });
+  const reg = await page.$$eval("[data-cb-source-register] tbody tr", (rows) => rows.map((r) => ({
+    id: r.id, role: r.getAttribute("data-evidence-role"),
+    ev: r.querySelector("[data-col=evidence-for]")?.textContent, cx: r.querySelector("[data-col=context-for]")?.textContent,
+    lineage: r.children[6]?.textContent, href: r.querySelector("a")?.getAttribute("href") })));
+  ok("source detail: full publication register (all publications)", reg.length === allSrc.length, `${reg.length}`);
+  ok("source detail: every publication links to its original URL", reg.every((r) => /^https?:\/\//.test(r.href || "")));
   const ctxRows = reg.filter((r) => r.role === "CONTEXT_ONLY");
-  ok("context source: 'Evidence for' empty, 'Context for' filled, no lineage",
-     ctxRows.length > 0 && ctxRows.every((r) => r.ev === "—" && r.cx !== "—" && r.lineage === "—"), `${ctxRows.length} context row(s)`);
-  ok("evidence sources: 'Evidence for' filled", reg.filter((r) => r.role === "EVIDENCE").every((r) => r.ev && r.ev !== "—"));
+  ok("source detail: context source — 'Evidence for' empty, 'Context for' filled, no lineage",
+     ctxRows.length === ctxIds.length && ctxRows.every((r) => r.ev === "—" && r.cx !== "—" && r.lineage === "—"), `${ctxRows.length} context row(s)`);
+  ok("source detail: evidence sources — 'Evidence for' filled", reg.filter((r) => r.role === "EVIDENCE").every((r) => r.ev && r.ev !== "—"));
+  await page.goto(`${BASE}/weekly/${WEEK}/command`, { waitUntil: "networkidle" });
   const btns = await page.$$eval("button, a", (e) => e.map((x) => x.textContent.trim()));
   ok("not approved: print button is a WORKING COPY print", btns.includes("Print working copy (not approved)") && !btns.includes("Download PDF"));
   ok("Edit (analyst) link", btns.includes("Edit (analyst)"));
@@ -212,6 +231,31 @@ async function viewChecks(page, label) {
   ok("public view still shows R-1 and flags the newer draft",
      (await page.$eval("[data-brief-view]", (e) => e.getAttribute("data-brief-view"))) === "release" &&
      (await page.textContent("[data-brief-view]")).includes("newer draft"));
+
+  // ------------------------------- 4b. stress: strong week, many sources --
+  const STRESS = process.env.STRESS_WEEK || "";
+  if (STRESS) {
+    console.log(`Stress week ${STRESS} (source scalability)`);
+    await page.goto(`${BASE}/weekly/${STRESS}/command`, { waitUntil: "networkidle" });
+    await viewChecks(page, "stress");
+    const st5 = await page.$eval("[data-cb-page='5']", (el) => ({
+      rows: el.querySelectorAll("[data-lineage]").length,
+      ids: [...el.querySelectorAll("a.cb-ref")].map((a) => a.textContent),
+      font: parseFloat(getComputedStyle(el.querySelector("[data-cb-lineage-register]")).fontSize) }));
+    const sj = await (await api.get(`${BASE}/api/command-brief/${STRESS}/draft`)).json();
+    const sIds = sj.brief.page5.sources.map((x) => x.id);
+    ok(`stress: ${st5.rows} lineage rows for ${sIds.length} publications`, st5.rows < sIds.length);
+    ok("stress: no publication dropped from page 5", sIds.every((id) => st5.ids.includes(id)));
+    ok("stress: font stays readable (≥ 7.6 px)", st5.font >= 7.6, `${st5.font}px`);
+    await page.emulateMedia({ media: "print" });
+    await page.goto(`${BASE}/weekly/${STRESS}/command`, { waitUntil: "networkidle" });
+    const spdf = await page.pdf({ preferCSSPageSize: true, printBackground: true });
+    fs.writeFileSync(path.join(OUT, "stress.pdf"), spdf);
+    ok("stress: canonical PDF still exactly 5 pages", pdfPages(spdf).count === 5, `${pdfPages(spdf).count}`);
+    await page.emulateMedia({ media: "screen" });
+    const sp5 = (await page.$$(".cb-page"))[4];
+    await sp5.screenshot({ path: path.join(OUT, "stress_page5.png") });
+  }
 
   // ------------------------------------------------- 5. Word template --
   console.log("Word template");

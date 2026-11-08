@@ -14,6 +14,7 @@ import type { CommandBriefV2, BriefItem } from "@/lib/briefTypes";
 import { HORIZON_LABEL } from "@/lib/briefTypes";
 import { ceeMapSvg, globalMapSvg, HU_FILL, SIG_FILL } from "@/lib/briefMaps";
 import { PRESENTATION, page as schemaPage } from "@/lib/presentation";
+import { lineageRegister } from "@/lib/briefDraft";
 
 const HU_CHIP: Record<string, string> = {
   HIGH: "bg-red-700 text-white", MEDIUM: "bg-orange-600 text-white",
@@ -501,69 +502,143 @@ function Page4({ b, idx }: { b: CommandBriefV2; idx: SrcIndex }) {
   );
 }
 
-function Page5({ b }: { b: CommandBriefV2 }) {
+/* Page 5 — EVIDENCE-LINEAGE REGISTER (kanonikus PDF). Egy sor = egy
+ * fuggetlen bizonyitek-lanc: elsodleges (hivatalos) forras + megerositok egy
+ * sorban. 4 cikk ≠ 4 fuggetlen forras. Minden S-xx kattinthato; a teljes
+ * publikacio-szintu register: SourceRegisterTable (web source-detail, Word). */
+function Page5({ b, idx }: { b: CommandBriefV2; idx: SrcIndex }) {
   const p = b.page5;
   const m = b.meta;
-  const n = p.sources.length;
-  // Egy oldal a cel (kanonikus PDF = 5 oldal). Csak rendkivul hosszu
-  // forrasjegyzeknel (> 24) folyik tovabb.
-  const dense = n > 16 ? "text-[7.2px]" : n > 12 ? "text-[7.6px]" : "text-[8px]";
-  const roleOf = (s: (typeof p.sources)[number]) =>
-    s.evidence_role === "CONTEXT_ONLY" ? "Context only — not evidence" : s.role;
+  const L = p.lineages ?? lineageRegister(p.sources);
+  const sc = PRESENTATION.register as unknown as { lineage_title: string; lineage_note: string;
+    lineage_scaling: { comfortable_rows: number; compact_rows: number; max_rows_one_page: number;
+                       font_px: { normal: number; compact: number; dense: number } } };
+  const n = L.rows.length;
+  const fs = n <= sc.lineage_scaling.comfortable_rows ? sc.lineage_scaling.font_px.normal
+    : n <= sc.lineage_scaling.compact_rows ? sc.lineage_scaling.font_px.compact : sc.lineage_scaling.font_px.dense;
+  const byId = new Map(p.sources.map((s) => [s.id, s]));
+  const pub = (id: string) => {
+    const s = byId.get(id);
+    const hit = idx.get(id);
+    return (
+      <span key={id} className="whitespace-nowrap">
+        {s?.source_name ?? id}{" "}
+        {hit ? <a href={hit.url} target="_blank" rel="noopener noreferrer" title={hit.title}
+                  className="cb-ref font-mono text-sky-800 hover:underline">{id}</a> : <span className="font-mono">{id}</span>}
+      </span>
+    );
+  };
+  const join = (ids: string[]) => ids.flatMap((id, i) => (i ? [<span key={`s${id}`}> · </span>, pub(id)] : [pub(id)]));
+  const cols = schemaPage(5).blocks.find((x) => x.id === "lineage_register")?.table?.columns ?? [];
   return (
-    <PageFrame n={5} brief={b} flow={n > 24}
+    <PageFrame n={5} brief={b} flow={n > sc.lineage_scaling.max_rows_one_page}
                foot={<>p. 5 · {m.week_label} · window {m.window_label} · generated {m.generated_utc} · method {m.methodology_version ?? "—"} · HU model {m.hu_model_version ?? "—"} · template v{m.template_version ?? PRESENTATION.template_version}{m.revision ? ` · rev. ${m.revision.number} (${m.revision.restated_utc})` : ""}</>}>
-      <p className="text-[9.5px] font-bold uppercase tracking-wide text-slate-900">{p.register_title ?? PRESENTATION.register.title}</p>
-      <table className={`w-full table-fixed border-collapse ${dense} leading-[1.2] text-slate-900`}>
+      <p className="text-[9.5px] font-bold uppercase tracking-wide text-slate-900">
+        {sc.lineage_title}
+        <span className="ml-2 font-normal normal-case tracking-normal text-slate-600" data-cb-lineage-count>
+          {L.independent_lineages} independent lineage{L.independent_lineages === 1 ? "" : "s"} · {L.publications} publication{L.publications === 1 ? "" : "s"}
+        </span>
+      </p>
+      <table className="w-full table-fixed border-collapse leading-[1.22] text-slate-900" style={{ fontSize: `${fs}px` }} data-cb-lineage-register>
         <colgroup>
-          <col style={{ width: "4%" }} /><col style={{ width: "13%" }} /><col style={{ width: "32%" }} />
-          <col style={{ width: "7%" }} /><col style={{ width: "9%" }} /><col style={{ width: "7%" }} />
-          <col style={{ width: "4.5%" }} /><col style={{ width: "12%" }} /><col style={{ width: "11.5%" }} />
+          <col style={{ width: "4.5%" }} /><col style={{ width: "19%" }} /><col style={{ width: "19%" }} />
+          <col style={{ width: "30%" }} /><col style={{ width: "7.5%" }} /><col style={{ width: "20%" }} />
         </colgroup>
         <thead>
           <tr className="bg-slate-800 text-left text-[7.6px] uppercase tracking-wide text-white">
-            {(schemaPage(5).blocks[0].table?.columns ?? []).map((c) => <th key={c} className="px-1 py-0.5">{c}</th>)}
+            {cols.map((c) => <th key={c} className="px-1 py-0.5">{c}</th>)}
           </tr>
         </thead>
         <tbody>
-          {p.sources.map((s) => {
-            const ctx = s.evidence_role === "CONTEXT_ONLY";
-            return (
-              <tr key={s.id} id={s.id} data-evidence-role={s.evidence_role}
-                  className={`border-b border-slate-200 align-top ${ctx ? "text-slate-500" : ""}`}>
-                <td className="px-1 py-px font-mono font-bold">{s.id}</td>
-                <td className="px-1 py-px">{s.source_name} <span className="text-slate-500">· {s.tier.replace("Tier ", "T")}{s.tier_rank === 1 ? " official" : ""}</span></td>
-                <td className="px-1 py-px">
-                  <a href={s.url} target="_blank" rel="noopener noreferrer" className="cb-ref text-sky-800 hover:underline">{s.title}</a>
-                  {s.note && <span className="text-slate-500"> — {s.note}</span>}
-                </td>
-                <td className="px-1 py-px">{s.published ?? "not recorded"}{s.published_basis && s.published_basis !== "feed" && <span className="text-slate-500"> ({s.published_basis})</span>}</td>
-                <td className={`px-1 py-px ${ctx ? "italic" : ""}`}>{roleOf(s)}</td>
-                <td className="px-1 py-px">{s.country} · {s.language}</td>
-                <td className="px-1 py-px font-mono">{s.lineage ?? "—"}</td>
-                <td className="px-1 py-px" data-col="evidence-for">{s.used_by.join(", ") || "—"}</td>
-                <td className="px-1 py-px" data-col="context-for">{(s.context_for ?? []).join(", ") || "—"}</td>
-              </tr>
-            );
-          })}
+          {L.rows.map((r) => (
+            <tr key={r.id} id={r.id} data-lineage={r.id} data-publications={r.publications}
+                className="border-b border-slate-200 align-top">
+              <td className="px-1 py-px font-mono font-bold">{r.id}</td>
+              <td className="px-1 py-px font-semibold">{r.subject}{r.country ? <span className="font-normal text-slate-500"> · {r.country}</span> : null}</td>
+              <td className="px-1 py-px">
+                <span className="text-slate-500">{r.primary_kind === "official" ? "Official: " : "First report: "}</span>{join(r.primary)}
+              </td>
+              <td className="px-1 py-px">{r.corroboration.length ? join(r.corroboration) : <span className="text-slate-400">none — single report</span>}
+                {r.state_controlled && <span className="text-amber-800"> · state-controlled: attributed statement</span>}</td>
+              <td className="px-1 py-px">{r.first_published ?? "not recorded"}</td>
+              <td className="px-1 py-px">{r.used_by.join(", ") || "—"}</td>
+            </tr>
+          ))}
         </tbody>
       </table>
-      <p className="mt-0.5 text-[7.4px] leading-tight text-slate-500">{p.source_note}</p>
-      <div className="cb-legend mt-1.5 text-[7.8px] leading-[1.22] text-slate-800">
-        {p.legend.map((sec) => (
-          <div key={sec.title} className="cb-keep mb-1">
-            <p className="border-b border-slate-400 text-[8.2px] font-bold uppercase tracking-wide text-slate-900">{sec.title}</p>
-            {sec.items.map(([term, text]) => (
-              <p key={term}><b>{term}</b> — {text}</p>
-            ))}
+      {L.context_only.length > 0 && (
+        <p className="mt-0.5 text-slate-600" style={{ fontSize: `${fs}px` }} data-cb-context-only>
+          <b>Context only — not evidence, no lineage:</b>{" "}
+          {L.context_only.map((c, i) => <span key={c.id}>{i ? " · " : ""}{pub(c.id)} (context for {c.context_for.join(", ") || "—"})</span>)}
+        </p>
+      )}
+      <p className="mt-0.5 text-[7.4px] leading-tight text-slate-500">
+        {sc.lineage_note} Full register: /weekly/{b.week_label}/command/sources
+      </p>
+      {/* Jelmagyarazat: 4 rogzitett hasab, kiegyensulyozott magassaggal
+          (HU+SIG · CONF+horizon · collection+discipline · terminology). */}
+      <div className="mt-1.5 grid grid-cols-4 gap-x-2.5 text-[7.8px] leading-[1.22] text-slate-800" data-cb-legend>
+        {[[0, 1], [2, 3], [4, -1], [5]].map((col, ci) => (
+          <div key={ci}>
+            {col.map((k) => {
+              const sec = k === -1 ? { title: "Analytical discipline", items: p.principles.map((x) => ["•", x] as [string, string]) }
+                : p.legend[k];
+              if (!sec) return null;
+              return (
+                <div key={sec.title} className="mb-1">
+                  <p className="border-b border-slate-400 text-[8.2px] font-bold uppercase tracking-wide text-slate-900">{sec.title}</p>
+                  {sec.items.map(([term, text]) => (
+                    <p key={term + text}>{term === "•" ? "• " : <b>{term} — </b>}{text}</p>
+                  ))}
+                </div>
+              );
+            })}
           </div>
         ))}
-        <div className="cb-keep mb-1">
-          <p className="border-b border-slate-400 text-[8.2px] font-bold uppercase tracking-wide text-slate-900">Analytical discipline</p>
-          {p.principles.map((x) => <p key={x}>• {x}</p>)}
-        </div>
       </div>
     </PageFrame>
+  );
+}
+
+/* A TELJES publikacio-szintu forrasjegyzek (web source-detail nezet). */
+export function SourceRegisterTable({ b }: { b: CommandBriefV2 }) {
+  const p = b.page5;
+  const cols = schemaPage(5).blocks.find((x) => x.id === "source_register")?.table?.columns ?? [];
+  return (
+    <table className="w-full table-fixed border-collapse text-[11px] leading-snug text-slate-200" data-cb-source-register>
+      <colgroup>
+        <col style={{ width: "5%" }} /><col style={{ width: "13%" }} /><col style={{ width: "30%" }} />
+        <col style={{ width: "9%" }} /><col style={{ width: "10%" }} /><col style={{ width: "8%" }} />
+        <col style={{ width: "5%" }} /><col style={{ width: "10%" }} /><col style={{ width: "10%" }} />
+      </colgroup>
+      <thead>
+        <tr className="border-b border-slate-600 text-left text-[10px] uppercase tracking-wide text-slate-400">
+          {cols.map((c) => <th key={c} className="px-1 py-1">{c}</th>)}
+        </tr>
+      </thead>
+      <tbody>
+        {p.sources.map((s) => {
+          const ctx = s.evidence_role === "CONTEXT_ONLY";
+          return (
+            <tr key={s.id} id={s.id} data-evidence-role={s.evidence_role}
+                className={`border-b border-slate-800 align-top ${ctx ? "text-slate-400" : ""}`}>
+              <td className="px-1 py-1 font-mono font-bold">{s.id}</td>
+              <td className="px-1 py-1">{s.source_name} <span className="text-slate-500">· {s.tier}{s.tier_rank === 1 ? " official" : ""} · {s.source_type}</span></td>
+              <td className="px-1 py-1">
+                <a href={s.url} target="_blank" rel="noopener noreferrer" className="text-sky-300 hover:underline">{s.title}</a>
+                {s.note && <span className="block text-[10px] text-slate-500">{s.note}</span>}
+              </td>
+              <td className="px-1 py-1">{s.published ?? "not recorded"}{s.published_basis && s.published_basis !== "feed" && <span className="block text-[10px] text-slate-500">({s.published_basis})</span>}</td>
+              <td className={`px-1 py-1 ${ctx ? "italic" : ""}`}>{ctx ? "Context only — not evidence" : s.role}</td>
+              <td className="px-1 py-1">{s.country} · {s.language}</td>
+              <td className="px-1 py-1 font-mono">{s.lineage ?? "—"}</td>
+              <td className="px-1 py-1" data-col="evidence-for">{s.used_by.join(", ") || "—"}</td>
+              <td className="px-1 py-1" data-col="context-for">{(s.context_for ?? []).join(", ") || "—"}</td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
   );
 }
 
@@ -579,7 +654,7 @@ export function CommandBrief({ brief }: { brief: CommandBriefV2 }) {
       <Page2 b={brief} idx={idx} />
       <Page3 b={brief} idx={idx} />
       <Page4 b={brief} idx={idx} />
-      <Page5 b={brief} />
+      <Page5 b={brief} idx={idx} />
     </div>
   );
 }

@@ -1,6 +1,6 @@
 # Command Brief — Quick Guide (1 oldal)
 
-**Template v1.0 · Részletek: `docs/COMMAND_BRIEF_SOP.md`**
+**Template v1.1 · Részletek: `docs/COMMAND_BRIEF_SOP.md`**
 
 **Heti menet (szerda):** `Weekly → Command Brief → Edit (analyst)` → írd be a neved → oldalanként (Page 1–5) nézd át → szerkeszd a szöveget → **Save** → **Submit for approval** → jóváhagyó: **Approve** → **Release** → Command Brief oldal: **Download PDF** (kanonikus, 5 oldal) · **Download Word** (munkapéldány).
 
@@ -14,7 +14,7 @@
 | Assessment | max. 2 mondat |
 | Why Hungary should care | 1–2 mondat, konkrét HU / MH / NATO KKE kapcsolat |
 | Next observable | **1** konkrét, ellenőrizhető indikátor |
-| Sources | **minden** judgementnél; hivatalos elöl; kontextus ≠ bizonyíték |
+| Sources | **minden** judgementnél; hivatalos elöl; kontextus ≠ bizonyíték; p.5 = 1 sor / független lánc |
 | Collection gap | hiány ≠ inaktivitás |
 | Confidence | ≠ significance |
 | Published | a cikk dátuma, **soha** nem az eseményé |
