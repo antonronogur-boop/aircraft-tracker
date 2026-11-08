@@ -1,0 +1,296 @@
+{
+  "schema": "command_brief_presentation",
+  "template_version": "1.0",
+  "template_name": "Command Air Intelligence Brief",
+  "brief_schema": "command_brief_v2",
+  "_note": "SINGLE TEMPLATE STANDARD. The web view, the canonical PDF (browser print of the web view), the editable DOCX export and the Command_Air_Intelligence_Brief.dotx Word template are all rendered from this file: section order, field names, editable/controlled split, maximum lengths, labels, table structure, colour semantics and legend. Changing layout or wording here is a TEMPLATE change: bump template_version and keep the previous version file in templates/ so older reports can be re-rendered with their own template version.",
+
+  "document": {
+    "title": "Command Air Intelligence Brief",
+    "kicker": "Command Air Intelligence Brief · Hungary",
+    "classification": "UNCLASSIFIED // OSINT",
+    "status_line": "EDITABLE EXPORT — GENERATED FROM AIRCRAFT TRACKER",
+    "word_note": "Editable working copy. The canonical product is the released PDF.",
+    "page": {"size": "A4", "orientation": "landscape", "width_mm": 297, "height_mm": 210,
+             "margin_mm": {"top": 7.5, "right": 9, "bottom": 6, "left": 9}},
+    "word_page": {"size": "A4", "orientation": "landscape",
+                  "margin_mm": {"top": 15, "right": 15, "bottom": 15, "left": 15}},
+    "canonical_pdf_pages": 5,
+    "fonts": {"web": "system sans-serif", "word": "Calibri", "word_fallback": "DejaVu Sans"}
+  },
+
+  "micro_legend": "HU = relevance to Hungary / MH / NATO Central-Eastern Europe · SIG = air-power significance 1–5 · CONF = analytic confidence · S-xx = source (p. 5) · dashed border = collection gap · no hotspot ≠ no activity",
+
+  "colours": {
+    "_rule": "Colour never carries meaning on its own: every coloured mark also prints its text label (HU HIGH, SIG 4/5, GAP …), so the brief reads correctly in grayscale.",
+    "hu": {
+      "HIGH":    {"fill": "#b91c1c", "text": "#ffffff", "label": "HU HIGH"},
+      "MEDIUM":  {"fill": "#d97706", "text": "#ffffff", "label": "HU MEDIUM"},
+      "LOW":     {"fill": "#64748b", "text": "#ffffff", "label": "HU LOW"},
+      "MINIMAL": {"fill": "#cbd5e1", "text": "#0f172a", "label": "HU MINIMAL"}
+    },
+    "collection": {
+      "ADEQUATE": {"fill": "#e2e8f0", "label": "ADEQUATE"},
+      "PARTIAL":  {"fill": "#fef3c7", "label": "PARTIAL"},
+      "GAP":      {"fill": "#ffffff", "border": "dashed", "label": "GAP"}
+    },
+    "draft_status": {
+      "GENERATED":          {"fill": "#e2e8f0", "label": "GENERATED — not reviewed"},
+      "EDITING":            {"fill": "#fef3c7", "label": "EDITING — working copy"},
+      "READY_FOR_APPROVAL": {"fill": "#dbeafe", "label": "READY FOR APPROVAL"},
+      "APPROVED":           {"fill": "#dcfce7", "label": "APPROVED"},
+      "RELEASED":           {"fill": "#bbf7d0", "label": "RELEASED"}
+    }
+  },
+
+  "draft": {
+    "statuses": ["GENERATED", "EDITING", "READY_FOR_APPROVAL", "APPROVED", "RELEASED"],
+    "transitions": {
+      "GENERATED": ["EDITING", "READY_FOR_APPROVAL"],
+      "EDITING": ["READY_FOR_APPROVAL"],
+      "READY_FOR_APPROVAL": ["EDITING", "APPROVED"],
+      "APPROVED": ["EDITING", "RELEASED"],
+      "RELEASED": ["EDITING"]
+    },
+    "canonical_pdf_from": ["APPROVED", "RELEASED"],
+    "word_export_from": ["GENERATED", "EDITING", "READY_FOR_APPROVAL", "APPROVED", "RELEASED"],
+    "hard_limit_factor": 1.6
+  },
+
+  "pages": [
+    {"n": 1, "title": "Hungary Air Intelligence Bottom Line",
+     "subtitle": "What changed → why it matters → what it means for Hungary / MH / NATO → what to watch",
+     "blocks": [
+      {"id": "bottom_line", "label": "Bottom Line", "path": "page1.bottom_line.sentences",
+       "kind": "list", "item_key": "#index", "max_items": 6, "reorder": false, "hide": true,
+       "tag": "CB_BOTTOM_LINE",
+       "fields": [
+         {"key": "text", "label": "Sentence", "edit": "copy", "max_chars": 300, "max_sentences": 1, "tag": "CB_BOTTOM_LINE_{n}"},
+         {"key": "sources", "label": "Sources", "edit": "controlled"}
+       ]},
+      {"id": "primary", "label": "Primary key judgements", "path": "page1.primary",
+       "kind": "list", "item_key": "id", "max_items": 3, "reorder": true, "hide": true,
+       "slot_prefix": "CB_KJ{n}",
+       "fields": [
+         {"key": "statement", "label": "Title", "edit": "copy", "max_chars": 280, "max_sentences": 1, "tag": "CB_KJ{n}_TITLE"},
+         {"key": "what_changed", "label": "What changed", "edit": "copy", "max_chars": 240, "max_sentences": 2, "tag": "CB_KJ{n}_WHAT_CHANGED"},
+         {"key": "assessment", "label": "Assessment", "edit": "copy", "max_chars": 260, "max_sentences": 2, "tag": "CB_KJ{n}_ASSESSMENT"},
+         {"key": "why_hungary", "label": "Why Hungary should care", "edit": "copy", "max_chars": 230, "max_sentences": 2, "tag": "CB_KJ{n}_HU_RELEVANCE"},
+         {"key": "next_observable", "label": "Next observable", "edit": "copy", "max_chars": 170, "max_sentences": 1, "tag": "CB_KJ{n}_NEXT_OBSERVABLE"},
+         {"key": "alternative_explanation", "label": "What would make this wrong", "edit": "copy", "max_chars": 190, "max_sentences": 1, "tag": "CB_KJ{n}_ALTERNATIVE"},
+         {"key": "hu_relevance.level", "label": "HU relevance", "edit": "controlled", "tag": "CB_KJ{n}_HU_LEVEL"},
+         {"key": "significance", "label": "SIG", "edit": "controlled", "tag": "CB_KJ{n}_SIG"},
+         {"key": "confidence", "label": "CONF", "edit": "controlled", "tag": "CB_KJ{n}_CONF"},
+         {"key": "horizon", "label": "Horizon", "edit": "controlled", "tag": "CB_KJ{n}_HORIZON"},
+         {"key": "sources", "label": "Sources", "edit": "controlled", "tag": "CB_KJ{n}_SOURCES"},
+         {"key": "refs", "label": "Analyst refs", "edit": "controlled"}
+       ]},
+      {"id": "secondary_watch", "label": "Secondary watch", "path": "page1.secondary_watch",
+       "kind": "list", "item_key": "id", "max_items": 3, "reorder": true, "hide": true,
+       "fields": [
+         {"key": "line", "label": "Watch line", "edit": "copy", "max_chars": 170, "max_sentences": 1, "tag": "CB_WATCH{n}"},
+         {"key": "hu_level", "label": "HU relevance", "edit": "controlled"},
+         {"key": "significance", "label": "SIG", "edit": "controlled"},
+         {"key": "sources", "label": "Sources", "edit": "controlled", "tag": "CB_WATCH{n}_SOURCES"}
+       ]},
+      {"id": "map_cee", "label": "CEE map caption", "path": "page1.map_cee",
+       "kind": "object", "figure": {"tag": "CB_MAP_CEE", "width_px": 2400},
+       "fields": [
+         {"key": "caption", "label": "Caption", "edit": "copy", "max_chars": 260, "max_sentences": 2, "tag": "CB_MAP_CEE_CAPTION"}
+       ]}
+     ]},
+
+    {"n": 2, "title": "Immediate & Near-Regional Air Picture",
+     "subtitle": "Non-NATO priority · Hungary's neighbours · extended regional NATO — material changes only",
+     "blocks": [
+      {"id": "regional_rows", "label": "Regional changes", "path": "page2.rows",
+       "kind": "list", "item_key": "ref", "max_items": 6, "reorder": true, "hide": true,
+       "table": {"columns": ["Country", "What changed", "Effect", "HU", "SIG · CONF · horizon", "Next observable", "Sources"]},
+       "fields": [
+         {"key": "what_changed", "label": "What changed", "edit": "copy", "max_chars": 230, "max_sentences": 2, "tag": "CB_P2_ROW{n}_WHAT_CHANGED"},
+         {"key": "effect", "label": "Effect", "edit": "copy", "max_chars": 210, "max_sentences": 2, "tag": "CB_P2_ROW{n}_EFFECT"},
+         {"key": "hu_why", "label": "Why Hungary should care", "edit": "copy", "max_chars": 170, "max_sentences": 1, "tag": "CB_P2_ROW{n}_HU_WHY"},
+         {"key": "next_observable", "label": "Next observable", "edit": "copy", "max_chars": 150, "max_sentences": 1, "tag": "CB_P2_ROW{n}_NEXT_OBSERVABLE"},
+         {"key": "country", "label": "Country", "edit": "controlled"},
+         {"key": "hu_relevance", "label": "HU relevance", "edit": "controlled"},
+         {"key": "significance", "label": "SIG", "edit": "controlled"},
+         {"key": "confidence", "label": "CONF", "edit": "controlled"},
+         {"key": "coverage", "label": "Collection", "edit": "controlled"},
+         {"key": "sources", "label": "Sources", "edit": "controlled", "tag": "CB_P2_ROW{n}_SOURCES"}
+       ]},
+      {"id": "collection_requirements", "label": "Regional collection requirements", "path": "page2.collection_requirements",
+       "kind": "list", "item_key": "country", "max_items": 8, "reorder": true, "hide": true,
+       "table": {"columns": ["Country", "Status", "Collection gap", "Question", "Observable"]},
+       "fields": [
+         {"key": "question", "label": "Question", "edit": "copy", "max_chars": 200, "max_sentences": 1, "tag": "CB_P2_REQ{n}_QUESTION"},
+         {"key": "observable", "label": "Observable", "edit": "copy", "max_chars": 200, "max_sentences": 1, "tag": "CB_P2_REQ{n}_OBSERVABLE"},
+         {"key": "country", "label": "Country", "edit": "controlled"},
+         {"key": "status", "label": "Collection status", "edit": "controlled"},
+         {"key": "gap", "label": "Collection gap", "edit": "controlled"}
+       ]},
+      {"id": "collection_gaps", "label": "Collection gaps", "path": "page2",
+       "kind": "object",
+       "fields": [
+         {"key": "collection_gap", "label": "Countries with a collection gap", "edit": "controlled"},
+         {"key": "no_material_change", "label": "No material change identified", "edit": "controlled"},
+         {"key": "note", "label": "Note", "edit": "fixed"}
+       ]}
+     ]},
+
+    {"n": 3, "title": "Extended Air Power Picture",
+     "subtitle": "Middle East · Africa · Wider NATO (material only) · capability maturity · what changed since last week",
+     "blocks": [
+      {"id": "p3_items", "label": "Extended Air Power Picture", "path": "page3.sections[].items",
+       "kind": "list", "item_key": "ref", "max_items": 3, "reorder": false, "hide": true,
+       "fields": [
+         {"key": "what_changed", "label": "What changed", "edit": "copy", "max_chars": 200, "max_sentences": 1, "tag": "CB_P3_ITEM{n}_WHAT_CHANGED"},
+         {"key": "assessment", "label": "Assessment", "edit": "copy", "max_chars": 200, "max_sentences": 1, "tag": "CB_P3_ITEM{n}_ASSESSMENT"},
+         {"key": "country", "label": "Country", "edit": "controlled"},
+         {"key": "significance", "label": "SIG", "edit": "controlled"},
+         {"key": "confidence", "label": "CONF", "edit": "controlled"},
+         {"key": "hu_relevance", "label": "HU relevance", "edit": "controlled"},
+         {"key": "sources", "label": "Sources", "edit": "controlled", "tag": "CB_P3_ITEM{n}_SOURCES"}
+       ]},
+      {"id": "maturity", "label": "Capability Maturity Matrix", "path": "page3.maturity.rows",
+       "kind": "list", "item_key": "ref", "max_items": 8, "reorder": false, "hide": true,
+       "table": {"columns": ["Capability", "Intent", "Committed", "Contracted", "Fielding", "IOC", "FOC"]},
+       "fields": [
+         {"key": "label", "label": "Capability label", "edit": "copy", "max_chars": 48, "tag": "CB_P3_MAT{n}_LABEL"},
+         {"key": "column", "label": "Maturity stage", "edit": "controlled"},
+         {"key": "hu_relevance", "label": "HU relevance", "edit": "controlled"}
+       ]},
+      {"id": "maturity_caption", "label": "Maturity matrix caption", "path": "page3.maturity", "kind": "object",
+       "fields": [{"key": "caption", "label": "Caption", "edit": "copy", "max_chars": 260, "max_sentences": 2, "tag": "CB_P3_MATURITY_CAPTION"}]},
+      {"id": "change_table", "label": "Executive Change Table", "path": "page3.change_table.rows",
+       "kind": "list", "item_key": "ref", "max_items": 6, "reorder": true, "hide": true,
+       "table": {"columns": ["Country", "Capability", "Previous", "Current", "Change", "HU"]},
+       "fields": [
+         {"key": "capability", "label": "Capability", "edit": "copy", "max_chars": 48, "tag": "CB_P3_CHG{n}_CAPABILITY"},
+         {"key": "delta", "label": "Change", "edit": "copy", "max_chars": 120, "max_sentences": 1, "tag": "CB_P3_CHG{n}_DELTA"},
+         {"key": "previous", "label": "Previous", "edit": "controlled"},
+         {"key": "current", "label": "Current", "edit": "controlled"},
+         {"key": "hu_relevance", "label": "HU relevance", "edit": "controlled"}
+       ]}
+     ]},
+
+    {"n": 4, "title": "Global Strategic Air Power Watch",
+     "subtitle": "Indo-Pacific and other strategic movers · priority watch · gaps · outlook",
+     "blocks": [
+      {"id": "global_items", "label": "Global Strategic", "path": "page4.global.items",
+       "kind": "list", "item_key": "ref", "max_items": 4, "reorder": true, "hide": true,
+       "fields": [
+         {"key": "what_changed", "label": "What changed", "edit": "copy", "max_chars": 200, "max_sentences": 1, "tag": "CB_P4_GLOBAL{n}_WHAT_CHANGED"},
+         {"key": "assessment", "label": "Assessment", "edit": "copy", "max_chars": 200, "max_sentences": 1, "tag": "CB_P4_GLOBAL{n}_ASSESSMENT"},
+         {"key": "country", "label": "Country", "edit": "controlled"},
+         {"key": "significance", "label": "SIG", "edit": "controlled"},
+         {"key": "confidence", "label": "CONF", "edit": "controlled"},
+         {"key": "hu_relevance", "label": "HU relevance", "edit": "controlled"},
+         {"key": "sources", "label": "Sources", "edit": "controlled", "tag": "CB_P4_GLOBAL{n}_SOURCES"}
+       ]},
+      {"id": "map_global", "label": "Global map caption", "path": "page4.map_global",
+       "kind": "object", "figure": {"tag": "CB_MAP_GLOBAL", "width_px": 2400},
+       "fields": [{"key": "caption", "label": "Caption", "edit": "copy", "max_chars": 260, "max_sentences": 2, "tag": "CB_MAP_GLOBAL_CAPTION"}]},
+      {"id": "priority_watch", "label": "Priority Intelligence Watch", "path": "page4.priority_watch",
+       "kind": "list", "item_key": "question", "max_items": 5, "reorder": true, "hide": true,
+       "fields": [
+         {"key": "question", "label": "Watch item", "edit": "copy", "max_chars": 120, "max_sentences": 1, "tag": "CB_P4_WATCH{n}_ITEM"},
+         {"key": "why", "label": "Why it matters", "edit": "copy", "max_chars": 170, "max_sentences": 1, "tag": "CB_P4_WATCH{n}_WHY"},
+         {"key": "next_observable", "label": "Next observable", "edit": "copy", "max_chars": 170, "max_sentences": 1, "tag": "CB_P4_WATCH{n}_NEXT_OBSERVABLE"},
+         {"key": "hu_relevance", "label": "HU relevance", "edit": "controlled"},
+         {"key": "horizon", "label": "Horizon", "edit": "controlled"}
+       ]},
+      {"id": "intelligence_gaps", "label": "Intelligence Gaps", "path": "page4.intelligence_gaps",
+       "kind": "list", "item_key": "#index", "max_items": 5, "reorder": true, "hide": true,
+       "fields": [{"key": "text", "label": "Gap", "edit": "copy", "max_chars": 260, "max_sentences": 2, "tag": "CB_P4_GAP{n}"}]},
+      {"id": "outlook", "label": "Outlook & Expected Observables", "path": "page4.outlook",
+       "kind": "list", "item_key": "subject", "max_items": 5, "reorder": true, "hide": true,
+       "fields": [
+         {"key": "subject", "label": "Subject", "edit": "copy", "max_chars": 60, "tag": "CB_P4_OUTLOOK{n}_SUBJECT"},
+         {"key": "expected_observable", "label": "Expected observable", "edit": "copy", "max_chars": 170, "max_sentences": 1, "tag": "CB_P4_OUTLOOK{n}_OBSERVABLE"},
+         {"key": "hu_relevance", "label": "HU relevance", "edit": "controlled"},
+         {"key": "sources", "label": "Sources", "edit": "controlled", "tag": "CB_P4_OUTLOOK{n}_SOURCES"}
+       ]}
+     ]},
+
+    {"n": 5, "title": "Sources & Legend",
+     "subtitle": "Evidence behind each judgement (official first) · permanent legend",
+     "blocks": [
+      {"id": "source_register", "label": "Source Register", "path": "page5.sources",
+       "kind": "list", "item_key": "id", "max_items": 30, "reorder": false, "hide": false,
+       "table": {"columns": ["ID", "Source · tier", "Title (original language)", "Published", "Evidence role", "Country · lang", "Lineage", "Evidence for", "Context for"]},
+       "fields": [
+         {"key": "id", "label": "ID", "edit": "controlled"},
+         {"key": "source_name", "label": "Source", "edit": "controlled"},
+         {"key": "tier", "label": "Tier", "edit": "controlled"},
+         {"key": "title", "label": "Title (original language)", "edit": "controlled"},
+         {"key": "url", "label": "URL", "edit": "controlled"},
+         {"key": "published", "label": "Published", "edit": "controlled"},
+         {"key": "published_basis", "label": "Date basis", "edit": "controlled"},
+         {"key": "evidence_role", "label": "Evidence role", "edit": "controlled"},
+         {"key": "lineage", "label": "Lineage", "edit": "controlled"},
+         {"key": "used_by", "label": "Evidence for", "edit": "controlled"},
+         {"key": "context_for", "label": "Context for", "edit": "controlled"}
+       ]},
+      {"id": "legend", "label": "Legend", "path": "page5.legend", "kind": "fixed"}
+     ]}
+  ],
+
+  "register": {
+    "title": "Source register — evidence behind each judgement",
+    "note": "Each S-xx links to the publication it names (original-language title). Items cite only sources that report their subject directly; official (Tier 1) sources first. Context sources are listed for audit only: never evidence, never a lineage. Published = the article's own publication date, never an event or contract date. One lineage = publications restating one evidence chain.",
+    "evidence_roles": {
+      "EVIDENCE": "Cited as evidence (Primary official / Corroborating)",
+      "CONTEXT_ONLY": "Context — not cited as evidence; not counted in lineage or confidence"
+    }
+  },
+
+  "legend": [
+    {"title": "Hungary relevance (HU)", "items": [
+      ["HIGH", "Directly affects Hungary, its airspace, MH capability planning or NATO's Central/Eastern European air posture."],
+      ["MEDIUM", "Affects the regional air picture or Allied posture around Hungary, but not Hungary directly."],
+      ["LOW", "A weak or indirect tie (distant actor, supplier link, doctrinal interest)."],
+      ["MINIMAL", "No direct link to Hungary, MH or NATO Central/Eastern Europe identified."]]},
+    {"title": "Air-power significance (SIG)", "items": [
+      ["1/5", "Routine; no capability effect."],
+      ["2/5", "Minor or administrative change."],
+      ["3/5", "A real but limited capability change."],
+      ["4/5", "A major national capability change."],
+      ["5/5", "A change with regional or global strategic weight."]]},
+    {"title": "Analytic confidence (CONF)", "items": [
+      ["LOW", "First indication; thin or single-source reporting."],
+      ["MODERATE", "Credible reporting; not independently confirmed, or a single evidence lineage."],
+      ["HIGH", "Multiple independent lineages or authoritative primary evidence."]]},
+    {"title": "Effect horizon", "items": [
+      ["immediate", "The effect exists now."],
+      ["<12 months", "Earliest operational effect within a year."],
+      ["1–3 years", "Earliest operational effect in one to three years."],
+      [">3 years", "No near-term operational effect."],
+      ["unknown", "Timing is not established in reporting."]]},
+    {"title": "Collection status", "items": [
+      ["ADEQUATE", "At least 4 events from at least 2 sources in 60 days."],
+      ["PARTIAL", "Some reporting, below the adequate threshold."],
+      ["GAP", "No reporting reached the collection in 60 days; absence of reporting is not evidence of inactivity."],
+      ["NO MATERIAL CHANGE IDENTIFIED", "Collection was at least PARTIAL and nothing material was assessed."]]},
+    {"title": "Analytical terminology", "items": [
+      ["FACT", "What the source states, attributed."],
+      ["ASSESSMENT", "Our judgement of what the fact means."],
+      ["CAPABILITY DELTA", "What changes in capability terms."],
+      ["POLICY / INTENT", "A stated plan or requirement; no commitment."],
+      ["FIELDING", "Aircraft or systems are being delivered to units."],
+      ["IOC", "Initial operational capability: a first unit can conduct the mission."],
+      ["FOC", "Full operational capability at planned scale."],
+      ["OPERATIONAL", "Employed in its role (IOC or beyond)."],
+      ["NEXT OBSERVABLE", "The next concrete, checkable sign that would confirm or move the assessment."],
+      ["INTELLIGENCE GAP", "A question collection could not answer that would change the assessment."]]}
+  ],
+
+  "principles": [
+    "significance ≠ confidence",
+    "procurement ≠ operational capability",
+    "delivery ≠ IOC",
+    "more articles ≠ more independent lineages",
+    "official statement ≠ independent confirmation (state-controlled sources: one attributed lineage)"
+  ],
+
+  "maturity_columns": ["Intent", "Committed", "Contracted", "Fielding", "IOC", "FOC"]
+}

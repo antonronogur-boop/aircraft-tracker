@@ -698,9 +698,33 @@ def test_pipeline():
         G.main(dry_run=False)
         check("re-run without --restate writes nothing",
               len(mem.upserts), n_before)
+        # A webes szerkesztoben mar szerkesztett/jovahagyott publikacios
+        # reteg: a restatement NEM torolheti.
+        stored = [r for r in mem.t["ac_reports"]
+                  if r["week_label"] == pl["week_label"]][0]
+        stored["payload"]["command_brief_draft"] = {
+            "schema": "command_brief_draft_v1", "status": "APPROVED",
+            "revision": 4, "overrides": {"primary/KJ-01/assessment": {
+                "value": "Edited publication copy.", "base": "x",
+                "at": "t", "by": "analyst"}},
+            "hidden": [], "order": {}, "audit": [], "releases": [
+                {"release_no": 1, "draft_rev": 3}]}
         G.main(dry_run=False, restate_reason="late MoD confirmation")
         rep2 = [r for t, rows in mem.upserts[n_before:] if t == "ac_reports"
                 for r in rows]
+        dr = rep2[0]["payload"].get("command_brief_draft") if rep2 else None
+        check("restatement keeps the edited publication layer (draft)",
+              (dr or {}).get("overrides", {}).get(
+                  "primary/KJ-01/assessment", {}).get("value"),
+              "Edited publication copy.")
+        check("restatement keeps the release history",
+              len((dr or {}).get("releases") or []), 1)
+        check("restatement is logged in the draft audit (rebase)",
+              [(a["actor"], a["action"]) for a in (dr or {}).get("audit")
+               or []], [("system", "rebase")])
+        check("analytical layer rebuilt independently of the draft",
+              "Edited publication copy." in json.dumps(
+                  rep2[0]["payload"].get("key_judgements")), False)
         check("--restate writes once", len(rep2), 1)
         rs = rep2[0]["payload"]["report_meta"].get("restatement") or {}
         check("restatement is visible with reason", rs.get("reason"),
@@ -784,6 +808,30 @@ def test_sources():
           (fa[0]["sources"], fa[0]["context_sources"]), ([], [mig["id"]]))
     check("traceability reports the indirect-only item",
           len(b["traceability"]["items_with_indirect_evidence_only"]), 1)
+    # PO (S-13): a kontextus-forras NEM szerepel ugyanabban a mezoben, mint
+    # a bizonyitek, es lineage / megerosites szamitasba sem kerul.
+    check("context source: evidence_role CONTEXT_ONLY",
+          mig.get("evidence_role"), "CONTEXT_ONLY")
+    check("context source: 'Used by' (evidence) is empty", mig["used_by"], [])
+    check("context source: separate 'Context for' names the item",
+          "p.2 Poland" in mig.get("context_for", []), True)
+    check("context source: no lineage (never counted as a lineage)",
+          mig.get("lineage"), None)
+    lineages = {e["lineage"] for e in b["page5"]["sources"]
+                if e.get("evidence_role") == "EVIDENCE"}
+    check("lineage labels only on evidence sources", None in lineages, False)
+    check("context source never in any 'sources' list",
+          mig["id"] in b["traceability"]["sources_used"], False)
+    check("traceability: context_cited_as_evidence is empty",
+          b["traceability"]["context_cited_as_evidence"], [])
+    check("traceability lists the context-only source",
+          b["traceability"]["context_only_sources"], [mig["id"]])
+    check("every register entry has evidence_role",
+          all(e.get("evidence_role") in ("EVIDENCE", "CONTEXT_ONLY")
+              for e in b["page5"]["sources"]), True)
+    check("evidence sources are cited by at least one item",
+          all(e["used_by"] for e in b["page5"]["sources"]
+              if e["evidence_role"] == "EVIDENCE"), True)
     # 2) Ellenorzott, verziokezelt forras csatolva: hivatalos forras elol.
     sup = [{"id": "t-fa50", "verified_on": "2026-11-08",
             "match": {"country_ids": ["pol"], "subject_rx": "FA-?50",
@@ -876,7 +924,13 @@ def test_backfill_without_anthropic():
     row = {"week_label": p["week_label"],
            "period_start": p["report_meta"]["period_start"],
            "period_end": p["report_meta"]["period_end"],
-           "generated_at": "2026-11-11T05:20:00+00:00", "payload": p}
+           "generated_at": "2026-11-11T05:20:00+00:00",
+           "payload": dict(json.loads(json.dumps(p)), command_brief_draft={
+               "schema": "command_brief_draft_v1", "status": "EDITING",
+               "revision": 2, "overrides": {"bottom_line/#0/text": {
+                   "value": "Edited bottom line.", "base": "b", "at": "t",
+                   "by": "analyst"}}, "hidden": ["secondary_watch/KJ-01"],
+               "order": {}, "audit": [], "releases": []})}
     evs = [{"event_id": 1, "country_id": "pol", "article_id": "a1",
             "event_date": "2026-11-05", "announcement_date": None,
             "created_at": "2026-11-05T08:00:00+00:00",
@@ -953,9 +1007,109 @@ def test_backfill_without_anthropic():
               pl["key_judgements"] == fixture()["key_judgements"], True)
         check("brief carries the revision",
               pl["command_brief"]["meta"]["revision"]["number"], 1)
+        d = pl.get("command_brief_draft") or {}
+        check("backfill keeps the edited publication layer",
+              (d.get("overrides", {}).get("bottom_line/#0/text", {})
+               .get("value"), d.get("hidden")),
+              ("Edited bottom line.", ["secondary_watch/KJ-01"]))
+        check("backfill logs a rebase in the draft audit",
+              [a["action"] for a in d.get("audit") or []], ["rebase"])
     check("brief file written to data/",
           (tmp / "data" / "command_brief_{}.json".format(
               p["week_label"])).exists(), True)
+
+
+def test_presentation_schema(b):
+    section("I. Presentation Schema — one standard for web / PDF / DOCX / .dotx")
+    import ac_presentation as P
+    sch = P.load()
+    check("template version present", bool(sch.get("template_version")),
+          True)
+    mirror = HERE.parent / "web" / "src" / "lib" / \
+        "command_brief_presentation.json"
+    check("web mirror of the schema is identical (Vercel builds web/ only)",
+          mirror.read_bytes() == P.SCHEMA_PATH.read_bytes(), True)
+    check("brief meta carries the template version",
+          b["meta"].get("template_version"), sch["template_version"])
+    check("legend / principles / micro-legend come from the schema",
+          (b["page5"]["legend"] == sch["legend"],
+           b["page5"]["principles"] == sch["principles"],
+           b["micro_legend"] == sch["micro_legend"]), (True, True, True))
+    check("page order 1..5", [pg["n"] for pg in sch["pages"]],
+          [1, 2, 3, 4, 5])
+    missing, unresolved = [], []
+    for page, blk in P.blocks(sch):
+        if blk["kind"] == "fixed":
+            continue
+        items = P.block_items(b, blk)
+        if blk["kind"] == "object" and not items:
+            unresolved.append(blk["id"])
+        for it in items:
+            for f in blk.get("fields") or []:
+                if f["edit"] == "fixed":
+                    continue
+                if P.get_field(it, f["key"]) is None and f["key"] not in (
+                        "alternative_explanation", "hu_why", "published",
+                        "published_basis", "lineage", "column"):
+                    missing.append("{}.{}".format(blk["id"], f["key"]))
+    check("every schema block resolves on the brief", unresolved, [])
+    check("every schema field exists on the brief items",
+          sorted(set(missing)), [])
+    # Kontrollalt analitikai metaadat soha nem publikacios (copy) mezo.
+    protected = {"sources", "context_sources", "refs", "significance",
+                 "confidence", "hu_relevance", "hu_relevance.level",
+                 "hu_level", "lineage", "published", "published_basis",
+                 "evidence_role", "used_by", "context_for", "url", "tier",
+                 "coverage", "status", "column", "previous", "current",
+                 "horizon", "id"}
+    leaked = [(blk["id"], f["key"]) for _, blk in P.blocks(sch)
+              for f in P.copy_fields(blk) if f["key"] in protected]
+    check("analytical metadata is never an editable copy field", leaked, [])
+    check("source register: no editable field",
+          [f["key"] for _, blk in P.blocks(sch)
+           if blk["id"] == "source_register"
+           for f in P.copy_fields(blk)], [])
+    budget = {("primary", "statement"): "statement",
+              ("primary", "what_changed"): "what_changed",
+              ("primary", "assessment"): "assessment",
+              ("primary", "why_hungary"): "why_hu",
+              ("primary", "next_observable"): "next_observable",
+              ("primary", "alternative_explanation"): "alternative",
+              ("regional_rows", "what_changed"): "row_what",
+              ("regional_rows", "effect"): "row_effect",
+              ("regional_rows", "next_observable"): "row_next",
+              ("regional_rows", "hu_why"): "row_hu",
+              ("secondary_watch", "line"): "secondary",
+              ("intelligence_gaps", "text"): "gap",
+              ("outlook", "expected_observable"): "outlook",
+              ("priority_watch", "why"): "watch_why",
+              ("priority_watch", "next_observable"): "watch_next"}
+    fields = {(blk["id"], f["key"]): f for _, blk in P.blocks(sch)
+              for f in blk.get("fields") or []}
+    diff = [k for k, bk in budget.items()
+            if (fields[k]["max_chars"], fields[k]["max_sentences"])
+            != B.BUDGET[bk]]
+    check("schema max lengths = generator budget", diff, [])
+    counts = {"primary": B.MAX_PRIMARY, "secondary_watch": B.MAX_SECONDARY,
+              "regional_rows": B.MAX_PAGE2_ROWS,
+              "collection_requirements": B.MAX_REQUIREMENTS,
+              "maturity": B.MAX_MATURITY, "change_table": B.MAX_CHANGE_ROWS,
+              "global_items": B.MAX_GLOBAL_ITEMS,
+              "priority_watch": B.MAX_WATCH,
+              "intelligence_gaps": B.MAX_GAPS, "outlook": B.MAX_OUTLOOK}
+    blk_by = {blk["id"]: blk for _, blk in P.blocks(sch)}
+    check("schema max items = generator limits",
+          [k for k, v in counts.items() if blk_by[k]["max_items"] != v], [])
+    tags = P.all_tags(sch)
+    check("Word content-control tags unique", len(tags), len(set(tags)))
+    check("Word tags follow CB_ naming",
+          all(t.startswith("CB_") and t.upper() == t for t in tags), True)
+    for t in ("CB_BOTTOM_LINE_1", "CB_KJ1_TITLE", "CB_KJ1_WHAT_CHANGED",
+              "CB_KJ1_ASSESSMENT", "CB_KJ1_HU_RELEVANCE",
+              "CB_KJ1_NEXT_OBSERVABLE", "CB_KJ1_SOURCES", "CB_KJ3_TITLE"):
+        check("tag {} defined".format(t), t in tags, True)
+    check("executive texts enumerated from the schema",
+          len(P.executive_texts(b)) > 40, True)
 
 
 if __name__ == "__main__":
@@ -967,6 +1121,7 @@ if __name__ == "__main__":
     test_triage()
     test_sources()
     test_backfill_without_anthropic()
+    test_presentation_schema(b)
     print("\n" + "=" * 92)
     if FAILS:
         print("{} check(s) FAILED:".format(len(FAILS)))

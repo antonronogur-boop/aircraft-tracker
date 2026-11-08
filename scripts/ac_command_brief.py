@@ -73,15 +73,23 @@ MAX_GAPS = 5
 MAX_OUTLOOK = 5
 MAX_CHANGE_ROWS = 6
 
-STATUS_LINE = "EDITABLE EXPORT — GENERATED FROM AIRCRAFT TRACKER"
+# A megjelenitesi szabvany (web, PDF, DOCX, .dotx) EGY helyen van:
+# config/command_brief_presentation.json. A brief szovegei innen jonnek.
+PRESENTATION_PATH = (Path(__file__).resolve().parent.parent / "config"
+                     / "command_brief_presentation.json")
 
-MICRO_LEGEND = ("HU = relevance to Hungary / MH / NATO Central-Eastern Europe · "
-                "SIG = air-power significance 1–5 · CONF = analytic confidence · "
-                "S-xx = source (p. 5) · dashed border = collection gap · "
-                "no hotspot ≠ no activity")
 
-MATURITY_COLUMNS = ["Intent", "Committed", "Contracted", "Fielding", "IOC",
-                    "FOC"]
+def load_presentation(path=None):
+    return json.loads(Path(path or PRESENTATION_PATH).read_text(
+        encoding="utf-8"))
+
+
+PRESENTATION = load_presentation()
+TEMPLATE_VERSION = PRESENTATION["template_version"]
+STATUS_LINE = PRESENTATION["document"]["status_line"]
+CLASSIFICATION = PRESENTATION["document"]["classification"]
+MICRO_LEGEND = PRESENTATION["micro_legend"]
+MATURITY_COLUMNS = list(PRESENTATION["maturity_columns"])
 STAGE_TO_COLUMN = {
     "requirement": "Intent", "rfi_sources_sought": "Intent", "rfp": "Intent",
     "bid": "Intent", "other": "Intent",
@@ -109,70 +117,10 @@ DOMAIN_LABELS = {
     "maritime_patrol": "Maritime patrol", "other": "Other",
 }
 
-# A TELJES jelmagyarazat — allando, hetrol hetre nem valtozik. A web, a PDF
-# es a Word ugyanezt a szoveget rendereli.
-LEGEND = [
-    {"title": "Hungary relevance (HU)", "items": [
-        ["HIGH", "Directly affects Hungary, its airspace, MH capability "
-                 "planning or NATO's Central/Eastern European air posture."],
-        ["MEDIUM", "Affects the regional air picture or Allied posture "
-                   "around Hungary, but not Hungary directly."],
-        ["LOW", "A weak or indirect tie (distant actor, supplier link, "
-                "doctrinal interest)."],
-        ["MINIMAL", "No direct link to Hungary, MH or NATO Central/Eastern "
-                    "Europe identified."]]},
-    {"title": "Air-power significance (SIG)", "items": [
-        ["1/5", "Routine; no capability effect."],
-        ["2/5", "Minor or administrative change."],
-        ["3/5", "A real but limited capability change."],
-        ["4/5", "A major national capability change."],
-        ["5/5", "A change with regional or global strategic weight."]]},
-    {"title": "Analytic confidence (CONF)", "items": [
-        ["LOW", "First indication; thin or single-source reporting."],
-        ["MODERATE", "Credible reporting; not independently confirmed, or a "
-                     "single evidence lineage."],
-        ["HIGH", "Multiple independent lineages or authoritative primary "
-                 "evidence."]]},
-    {"title": "Effect horizon", "items": [
-        ["immediate", "The effect exists now."],
-        ["<12 months", "Earliest operational effect within a year."],
-        ["1–3 years", "Earliest operational effect in one to three years."],
-        [">3 years", "No near-term operational effect."],
-        ["unknown", "Timing is not established in reporting."]]},
-    {"title": "Collection status", "items": [
-        ["ADEQUATE", "At least 4 events from at least 2 sources in 60 days."],
-        ["PARTIAL", "Some reporting, below the adequate threshold."],
-        ["GAP", "No reporting reached the collection in 60 days; absence of "
-                "reporting is not evidence of inactivity."],
-        ["NO MATERIAL CHANGE IDENTIFIED", "Collection was at least PARTIAL "
-                                          "and nothing material was "
-                                          "assessed."]]},
-    {"title": "Analytical terminology", "items": [
-        ["FACT", "What the source states, attributed."],
-        ["ASSESSMENT", "Our judgement of what the fact means."],
-        ["CAPABILITY DELTA", "What changes in capability terms."],
-        ["POLICY / INTENT", "A stated plan or requirement; no commitment."],
-        ["FIELDING", "Aircraft or systems are being delivered to units."],
-        ["IOC", "Initial operational capability: a first unit can conduct "
-                "the mission."],
-        ["FOC", "Full operational capability at planned scale."],
-        ["OPERATIONAL", "Employed in its role (IOC or beyond)."],
-        ["NEXT OBSERVABLE", "The next concrete, checkable sign that would "
-                            "confirm or move the assessment."],
-        ["INTELLIGENCE GAP", "A question collection could not answer that "
-                             "would change the assessment."]]},
-]
-PRINCIPLES = [
-    "significance ≠ confidence: how much it matters is not how sure we are.",
-    "procurement ≠ operational capability: a contract or delivery is not "
-    "combat power.",
-    "delivery ≠ IOC: aircraft handed over are not a declared operational "
-    "unit.",
-    "multiple articles ≠ independent evidence lineage: outlets restating "
-    "one release are one lineage.",
-    "official statement ≠ independent confirmation: state-controlled "
-    "sources count as one lineage and are always attributed.",
-]
+# A TELJES jelmagyarazat — allando, hetrol hetre nem valtozik; a
+# presentation schemabol. A web, a PDF es a Word ugyanezt rendereli.
+LEGEND = PRESENTATION["legend"]
+PRINCIPLES = PRESENTATION["principles"]
 
 
 # --------------------------------------------------------------------------
@@ -543,7 +491,10 @@ class SourceRegister(object):
                     "event_date") or "")[:10] or None,
                 "country": info.get("country") or "—",
                 "note": info.get("note"),
-                "used_by": [], "supports": {},
+                # used_by = BIZONYITEKKENT hivatkozo tetelek; context_for =
+                # csak kontextuskent megnevezo tetelek. Kulon mezo: egy
+                # kontextus-forras soha nem jelenik meg bizonyitekkent.
+                "used_by": [], "context_for": [], "supports": {},
             })
             ev = info.get("event") or {}
             cid = ev.get("country_id")
@@ -638,11 +589,14 @@ class SourceRegister(object):
     def for_dev(self, d, used_by):
         """A tetel KOZVETLEN forrasai (belso kulcsok; S-szam a vegen)."""
         direct, context = self._resolve(d)
-        for ent, role in direct + context:
+        for ent, role in direct:
             if used_by and used_by not in ent["used_by"]:
                 ent["used_by"].append(used_by)
             if used_by:
                 ent["supports"][used_by] = role
+        for ent, _ in context:
+            if used_by and used_by not in ent["context_for"]:
+                ent["context_for"].append(used_by)
         return [e["key"] for e, _ in direct]
 
     def context_for(self, d):
@@ -670,6 +624,11 @@ class SourceRegister(object):
                     walk_collect(v)
         walk_collect(brief)
         cited = set(order)
+        # Csak kontextus: nincs bizonyitek-hivatkozasa. Ami se nem
+        # bizonyitek, se nem kontextus egyetlen megjelenitett tetelnel sem,
+        # az nem kerul a registerbe.
+        self.entries = [e for e in self.entries
+                        if e["key"] in cited or e["context_for"]]
         for e in self.entries:
             if e["key"] not in order:
                 order.append(e["key"])
@@ -678,12 +637,21 @@ class SourceRegister(object):
             e = self.by_key[key]
             e["id"] = "S-{:02d}".format(i + 1)
             chain = e.pop("_chain", None) or key
+            if key not in cited:
+                # CONTEXT_ONLY: nem bizonyitek, ezert lineage-et sem kap —
+                # a lineage / megerosites / confidence szamitasban nem
+                # szerepelhet.
+                e["evidence_role"] = "CONTEXT_ONLY"
+                e["role"] = "Context — not cited as evidence"
+                e["lineage"] = None
+                e["used_by"] = []
+                e["supports"] = {}
+                continue
+            e["evidence_role"] = "EVIDENCE"
             if chain not in lineage:
                 lineage[chain] = "L-{:02d}".format(len(lineage) + 1)
             e["lineage"] = lineage[chain]
-            if key not in cited:
-                e["role"] = "Context — not cited as evidence"
-            elif e["tier_rank"] == 1:
+            if e["tier_rank"] == 1:
                 e["role"] = "Primary (official)"
             else:
                 e["role"] = "Corroborating"
@@ -1644,7 +1612,7 @@ def build_command_brief(payload, countries_by_id, coverage=None, cfg=None,
         "schema": BRIEF_SCHEMA,
         "week_label": payload.get("week_label") or meta.get("week_label"),
         "title": "Command Air Intelligence Brief",
-        "classification": "UNCLASSIFIED // OSINT",
+        "classification": CLASSIFICATION,
         "status_line": STATUS_LINE,
         "meta": {
             "week_label": payload.get("week_label") or meta.get("week_label"),
@@ -1657,6 +1625,7 @@ def build_command_brief(payload, countries_by_id, coverage=None, cfg=None,
             "methodology_version": meta.get("methodology_version"),
             "hu_model_version": cfg.get("version"),
             "brief_version": "v2",
+            "template_version": TEMPLATE_VERSION,
             "report_status": meta.get("status"),
             "revision": ({"number": rest.get("number") or 1,
                           "reason": rest.get("reason"),
@@ -1734,19 +1703,9 @@ def build_command_brief(payload, countries_by_id, coverage=None, cfg=None,
                              if not e["role"].startswith("Context"))
     brief["page5"] = {
         "sources": entries,
-        "register_title": "Source register — evidence behind each judgement",
+        "register_title": PRESENTATION["register"]["title"],
         "source_note": (
-            "Each S-xx links to the publication it names; titles are shown "
-            "in their original language. Items cite only sources that "
-            "directly report their subject: an official (Tier 1) source "
-            "comes first where one exists, specialist media follow as "
-            "corroboration. 'Context' sources are listed for audit but are "
-            "not cited as evidence. 'Published' is the article's own "
-            "publication date (from the feed or the article URL) — never an "
-            "event, contract or milestone date; blank means not recorded. "
-            "Lineage groups publications restating one evidence chain; "
-            "state-controlled sources are attributed statements, not "
-            "independent confirmation."
+            PRESENTATION["register"]["note"]
             + (" This week no official primary source was available: the "
                "cited evidence is secondary specialist media."
                if has_secondary_only else "")),
@@ -1802,6 +1761,15 @@ def build_command_brief(payload, countries_by_id, coverage=None, cfg=None,
             if sid in supports and supports[sid]
             and not any(v in ("direct", "unverified")
                         for v in supports[sid].values())),
+        # Kontextus-forras soha nem szerepelhet bizonyitekkent (S-13 eset).
+        "context_only_sources": sorted(
+            e["id"] for e in brief["page5"]["sources"]
+            if e.get("evidence_role") == "CONTEXT_ONLY"),
+        "context_cited_as_evidence": sorted(
+            e["id"] for e in brief["page5"]["sources"]
+            if e.get("evidence_role") == "CONTEXT_ONLY"
+            and (e["id"] in used_sources or e.get("used_by")
+                 or e.get("lineage"))),
         "executive_synthesis_items": [x["id"] for x in primary
                                       if x["origin"] == "executive_synthesis"],
         "withheld_judgements_excluded": [

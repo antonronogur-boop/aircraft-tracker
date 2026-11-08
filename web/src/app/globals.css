@@ -68,3 +68,13 @@
   .cb-print-hide { display: none !important; }
   .cb a.cb-ref { color: #075985 !important; }
 }
+
+/* Page 5 jelmagyarazat: 4 hasab, a szekciok nem torhetnek ketfele —
+   igy a Sources & Legend egy oldalra fer (kanonikus PDF = 5 oldal). */
+.cb .cb-legend { column-count: 4; column-gap: 10px; }
+.cb .cb-legend .cb-keep { break-inside: avoid; }
+.cb .cb-stamp { font-size: 8px; }
+
+/* Szerkeszto elonezet: ugyanaz a DOM, mint a PDF-e, kicsinyitve. */
+.cb-preview .cb { zoom: 0.58; }
+@media print { .cb-preview { display: none !important; } }

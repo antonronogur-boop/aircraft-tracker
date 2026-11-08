@@ -58,6 +58,7 @@ import ac_window  # noqa: E402
 import ac_hungary  # noqa: E402
 import ac_command_brief  # noqa: E402
 import ac_articles  # noqa: E402
+import ac_brief_draft  # noqa: E402
 import coverage_audit  # noqa: E402
 
 DAY = timedelta(days=1)
@@ -698,6 +699,12 @@ def main(dry_run=False, restate_reason=None):
                       len(payload["key_judgements"]), len(self_checks)))
             return
 
+        if prior_same:
+            # A szerkesztett publikacios reteg (draft, jovahagyas, kiadasok)
+            # nem veszhet el egy restatementnel.
+            ac_brief_draft.carry_draft(
+                db, week_label, payload,
+                "restatement — {}".format(restate_reason))
         db.upsert("ac_reports", [{
             "week_label": week_label,
             "period_start": start_d.isoformat(),

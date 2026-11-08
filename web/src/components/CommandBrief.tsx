@@ -13,6 +13,7 @@
 import type { CommandBriefV2, BriefItem } from "@/lib/briefTypes";
 import { HORIZON_LABEL } from "@/lib/briefTypes";
 import { ceeMapSvg, globalMapSvg, HU_FILL, SIG_FILL } from "@/lib/briefMaps";
+import { PRESENTATION, page as schemaPage } from "@/lib/presentation";
 
 const HU_CHIP: Record<string, string> = {
   HIGH: "bg-red-700 text-white", MEDIUM: "bg-orange-600 text-white",
@@ -72,20 +73,36 @@ function NoDirect({ ctx, idx }: { ctx?: string[]; idx: SrcIndex }) {
   );
 }
 
-function PageFrame({ n, brief, title, subtitle, flow = false, children }: {
-  n: number | string; brief: CommandBriefV2; title: string; subtitle?: string;
-  flow?: boolean; children: React.ReactNode;
+function DraftStamp({ brief }: { brief: CommandBriefV2 }) {
+  const d = brief.meta.draft;
+  const status = d?.status ?? "GENERATED";
+  const canon = d?.canonical ?? false;
+  const txt = d?.release_no
+    ? `RELEASED R-${d.release_no}`
+    : canon
+      ? `APPROVED · draft rev ${d?.revision ?? 0}`
+      : `WORKING COPY — ${status.replace(/_/g, " ")} · NOT APPROVED`;
+  return (
+    <p className={`cb-stamp font-bold tracking-wide ${canon ? "text-slate-800" : "text-red-700"}`}
+       data-cb-status={status} data-cb-canonical={canon ? "1" : "0"}>{txt}</p>
+  );
+}
+
+function PageFrame({ n, brief, title, subtitle, flow = false, foot, children }: {
+  n: number | string; brief: CommandBriefV2; title?: string; subtitle?: string;
+  flow?: boolean; foot?: React.ReactNode; children: React.ReactNode;
 }) {
   const m = brief.meta;
+  const sp = typeof n === "number" ? schemaPage(n) : undefined;
   return (
     <section className={`cb-page ${flow ? "cb-flow" : ""}`} data-cb-page={n} aria-label={`Command brief page ${n}`}>
       <header className="cb-head">
         <div className="min-w-0">
           <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-            Command Air Intelligence Brief · Hungary
+            {PRESENTATION.document.kicker}
           </p>
-          <h2 className="text-[15px] font-bold leading-tight text-slate-900">{title}</h2>
-          {subtitle && <p className="text-[9.5px] text-slate-600">{subtitle}</p>}
+          <h2 className="text-[15px] font-bold leading-tight text-slate-900">{title ?? sp?.title}</h2>
+          {(subtitle ?? sp?.subtitle) && <p className="text-[9.5px] text-slate-600">{subtitle ?? sp?.subtitle}</p>}
         </div>
         <div className="shrink-0 text-right text-[9px] leading-snug text-slate-600">
           <p className="font-bold text-slate-900">
@@ -97,13 +114,14 @@ function PageFrame({ n, brief, title, subtitle, flow = false, children }: {
           </p>
           <p>{m.period_start} → {m.period_end} · {m.timezone ?? "Europe/Budapest"}</p>
           <p className="font-semibold tracking-wide text-slate-800">{brief.classification}</p>
+          <DraftStamp brief={brief} />
         </div>
       </header>
       <div className="cb-body">{children}</div>
       {/* div, nem <footer>: a globalis print-szabaly a footer elemeket elrejti */}
       <div className="cb-foot">
         <span className="cb-micro">{brief.micro_legend}</span>
-        <span className="shrink-0">p. {n} · {m.generated_utc} · method {m.methodology_version ?? "—"} · HU model {m.hu_model_version ?? "—"}</span>
+        <span className="shrink-0">{foot ?? <>p. {n} · {m.generated_utc} · method {m.methodology_version ?? "—"} · HU model {m.hu_model_version ?? "—"} · template v{m.template_version ?? PRESENTATION.template_version}</>}</span>
       </div>
     </section>
   );
@@ -114,8 +132,7 @@ function Page1({ b, idx }: { b: CommandBriefV2; idx: SrcIndex }) {
   const p = b.page1;
   const bl = p.bottom_line;
   return (
-    <PageFrame n={1} brief={b} title="Hungary Air Intelligence Bottom Line"
-               subtitle="What changed → why it matters → what it means for Hungary / MH / NATO → what to watch">
+    <PageFrame n={1} brief={b}>
       <div className="grid h-full grid-cols-[37%_1fr] gap-3">
         <div className="flex min-h-0 flex-col gap-2">
           <div className="rounded border-l-4 border-slate-900 bg-slate-50 px-2.5 py-2">
@@ -215,8 +232,7 @@ function Page1({ b, idx }: { b: CommandBriefV2; idx: SrcIndex }) {
 function Page2({ b, idx }: { b: CommandBriefV2; idx: SrcIndex }) {
   const p = b.page2;
   return (
-    <PageFrame n={2} brief={b} title="Immediate & Near-Regional Air Picture"
-               subtitle="Non-NATO priority · Hungary's neighbours · extended regional NATO — material changes only">
+    <PageFrame n={2} brief={b}>
       <table className="w-full table-fixed border-collapse text-[9.3px] leading-[1.28] text-slate-900">
         <colgroup>
           <col style={{ width: "10%" }} /><col style={{ width: "25%" }} /><col style={{ width: "22%" }} />
@@ -333,8 +349,7 @@ function ItemCard({ it, idx }: { it: BriefItem; idx: SrcIndex }) {
 function Page3({ b, idx }: { b: CommandBriefV2; idx: SrcIndex }) {
   const { sections, maturity, change_table: ct } = b.page3;
   return (
-    <PageFrame n={3} brief={b} title="Extended Air Power Picture"
-               subtitle="Middle East · Africa · Wider NATO (material only) · capability maturity · what changed since last week">
+    <PageFrame n={3} brief={b}>
       <div className="grid grid-cols-3 gap-2">
         {sections.map((s) => (
           <div key={s.key} className="flex min-h-0 flex-col gap-1">
@@ -429,8 +444,7 @@ function Page3({ b, idx }: { b: CommandBriefV2; idx: SrcIndex }) {
 function Page4({ b, idx }: { b: CommandBriefV2; idx: SrcIndex }) {
   const p = b.page4;
   return (
-    <PageFrame n={4} brief={b} title="Global Strategic Air Power Watch"
-               subtitle="Indo-Pacific and other strategic movers · priority watch · gaps · outlook">
+    <PageFrame n={4} brief={b}>
       <div className="grid h-full grid-cols-[50%_1fr] gap-3">
         <div className="flex min-h-0 flex-col gap-1.5">
           <p className="border-b-2 border-slate-800 pb-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-900">Global strategic</p>
@@ -490,63 +504,63 @@ function Page4({ b, idx }: { b: CommandBriefV2; idx: SrcIndex }) {
 function Page5({ b }: { b: CommandBriefV2 }) {
   const p = b.page5;
   const m = b.meta;
+  const n = p.sources.length;
+  // Egy oldal a cel (kanonikus PDF = 5 oldal). Csak rendkivul hosszu
+  // forrasjegyzeknel (> 24) folyik tovabb.
+  const dense = n > 16 ? "text-[7.2px]" : n > 12 ? "text-[7.6px]" : "text-[8px]";
+  const roleOf = (s: (typeof p.sources)[number]) =>
+    s.evidence_role === "CONTEXT_ONLY" ? "Context only — not evidence" : s.role;
   return (
-    <PageFrame n={5} brief={b} title="Sources & Legend" flow
-               subtitle="Evidence behind each judgement (official first, specialist media as corroboration) · permanent legend · document metadata">
-      <p className="mb-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-900">{p.register_title ?? "Source register"}</p>
-      <table className="w-full table-fixed border-collapse text-[8.6px] leading-[1.25] text-slate-900">
+    <PageFrame n={5} brief={b} flow={n > 24}
+               foot={<>p. 5 · {m.week_label} · window {m.window_label} · generated {m.generated_utc} · method {m.methodology_version ?? "—"} · HU model {m.hu_model_version ?? "—"} · template v{m.template_version ?? PRESENTATION.template_version}{m.revision ? ` · rev. ${m.revision.number} (${m.revision.restated_utc})` : ""}</>}>
+      <p className="text-[9.5px] font-bold uppercase tracking-wide text-slate-900">{p.register_title ?? PRESENTATION.register.title}</p>
+      <table className={`w-full table-fixed border-collapse ${dense} leading-[1.2] text-slate-900`}>
         <colgroup>
-          <col style={{ width: "5%" }} /><col style={{ width: "15%" }} /><col style={{ width: "33%" }} />
-          <col style={{ width: "8%" }} /><col style={{ width: "12%" }} /><col style={{ width: "8%" }} />
-          <col style={{ width: "4%" }} /><col style={{ width: "5%" }} /><col style={{ width: "10%" }} />
+          <col style={{ width: "4%" }} /><col style={{ width: "13%" }} /><col style={{ width: "32%" }} />
+          <col style={{ width: "7%" }} /><col style={{ width: "9%" }} /><col style={{ width: "7%" }} />
+          <col style={{ width: "4.5%" }} /><col style={{ width: "12%" }} /><col style={{ width: "11.5%" }} />
         </colgroup>
         <thead>
-          <tr className="bg-slate-800 text-left text-[8.2px] uppercase tracking-wide text-white">
-            <th className="px-1 py-0.5">ID</th><th className="px-1 py-0.5">Source · tier</th><th className="px-1 py-0.5">Title (original language)</th>
-            <th className="px-1 py-0.5">Published</th><th className="px-1 py-0.5">Role</th><th className="px-1 py-0.5">Country</th>
-            <th className="px-1 py-0.5">Lang</th><th className="px-1 py-0.5">Lineage</th><th className="px-1 py-0.5">Used by</th>
+          <tr className="bg-slate-800 text-left text-[7.6px] uppercase tracking-wide text-white">
+            {(schemaPage(5).blocks[0].table?.columns ?? []).map((c) => <th key={c} className="px-1 py-0.5">{c}</th>)}
           </tr>
         </thead>
         <tbody>
-          {p.sources.map((s) => (
-            <tr key={s.id} id={s.id} className={`border-b border-slate-200 align-top ${s.role.startsWith("Context") ? "text-slate-500" : ""}`}>
-              <td className="px-1 py-0.5 font-mono font-bold">{s.id}</td>
-              <td className="px-1 py-0.5">{s.source_name}<br /><span className="text-[7.8px] text-slate-500">{s.tier} · {s.source_type}</span></td>
-              <td className="px-1 py-0.5">
-                <a href={s.url} target="_blank" rel="noopener noreferrer" className="cb-ref text-sky-800 hover:underline">{s.title}</a>
-                {s.note && <span className="block text-[7.8px] text-slate-500">{s.note}</span>}
-              </td>
-              <td className="px-1 py-0.5">{s.published ?? "not recorded"}{s.published_basis && s.published_basis !== "feed" && <span className="block text-[7.5px] text-slate-500">({s.published_basis})</span>}</td>
-              <td className="px-1 py-0.5">{s.role}</td>
-              <td className="px-1 py-0.5">{s.country}</td>
-              <td className="px-1 py-0.5">{s.language}</td>
-              <td className="px-1 py-0.5 font-mono">{s.lineage}</td>
-              <td className="px-1 py-0.5 text-[8px]">{s.used_by.join(", ") || "—"}</td>
-            </tr>
-          ))}
+          {p.sources.map((s) => {
+            const ctx = s.evidence_role === "CONTEXT_ONLY";
+            return (
+              <tr key={s.id} id={s.id} data-evidence-role={s.evidence_role}
+                  className={`border-b border-slate-200 align-top ${ctx ? "text-slate-500" : ""}`}>
+                <td className="px-1 py-px font-mono font-bold">{s.id}</td>
+                <td className="px-1 py-px">{s.source_name} <span className="text-slate-500">· {s.tier.replace("Tier ", "T")}{s.tier_rank === 1 ? " official" : ""}</span></td>
+                <td className="px-1 py-px">
+                  <a href={s.url} target="_blank" rel="noopener noreferrer" className="cb-ref text-sky-800 hover:underline">{s.title}</a>
+                  {s.note && <span className="text-slate-500"> — {s.note}</span>}
+                </td>
+                <td className="px-1 py-px">{s.published ?? "not recorded"}{s.published_basis && s.published_basis !== "feed" && <span className="text-slate-500"> ({s.published_basis})</span>}</td>
+                <td className={`px-1 py-px ${ctx ? "italic" : ""}`}>{roleOf(s)}</td>
+                <td className="px-1 py-px">{s.country} · {s.language}</td>
+                <td className="px-1 py-px font-mono">{s.lineage ?? "—"}</td>
+                <td className="px-1 py-px" data-col="evidence-for">{s.used_by.join(", ") || "—"}</td>
+                <td className="px-1 py-px" data-col="context-for">{(s.context_for ?? []).join(", ") || "—"}</td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
-      <p className="mt-0.5 text-[8px] leading-tight text-slate-500">{p.source_note}</p>
-      <div className="mt-2 grid grid-cols-3 gap-x-3 gap-y-1.5 text-[8.6px] leading-[1.25] text-slate-800">
+      <p className="mt-0.5 text-[7.4px] leading-tight text-slate-500">{p.source_note}</p>
+      <div className="cb-legend mt-1.5 text-[7.8px] leading-[1.22] text-slate-800">
         {p.legend.map((sec) => (
-          <div key={sec.title} className="cb-keep">
-            <p className="border-b border-slate-400 text-[9px] font-bold uppercase tracking-wide text-slate-900">{sec.title}</p>
+          <div key={sec.title} className="cb-keep mb-1">
+            <p className="border-b border-slate-400 text-[8.2px] font-bold uppercase tracking-wide text-slate-900">{sec.title}</p>
             {sec.items.map(([term, text]) => (
               <p key={term}><b>{term}</b> — {text}</p>
             ))}
           </div>
         ))}
-      </div>
-      <div className="cb-keep mt-1.5 grid grid-cols-[1fr_auto] gap-3 text-[8.6px] text-slate-800">
-        <div>
-          <p className="text-[9px] font-bold uppercase tracking-wide text-slate-900">Analytical discipline</p>
+        <div className="cb-keep mb-1">
+          <p className="border-b border-slate-400 text-[8.2px] font-bold uppercase tracking-wide text-slate-900">Analytical discipline</p>
           {p.principles.map((x) => <p key={x}>• {x}</p>)}
-        </div>
-        <div className="text-[8.3px] text-slate-600">
-          <p className="font-bold uppercase tracking-wide text-slate-900">Document</p>
-          <p>Report week {m.week_label} · window {m.window_label}</p>
-          <p>Generated {m.generated_utc} · methodology {m.methodology_version} · HU model {m.hu_model_version} · brief {m.brief_version}</p>
-          {m.revision && <p>Revision {m.revision.number}: {m.revision.reason} ({m.revision.restated_utc})</p>}
         </div>
       </div>
     </PageFrame>

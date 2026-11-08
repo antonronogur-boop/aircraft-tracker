@@ -6,6 +6,7 @@ const nextConfig = {
     serverComponentsExternalPackages: ["@resvg/resvg-js"],
     outputFileTracingIncludes: {
       "/api/command-brief/[week]/docx": ["./assets/fonts/**"],
+      "/api/command-brief/template": ["./assets/fonts/**"],
     },
   },
 };

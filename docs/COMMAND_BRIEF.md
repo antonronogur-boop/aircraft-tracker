@@ -7,10 +7,30 @@ Három formátum, **egyetlen kanonikus adatmodellből** (`payload.command_brief`
 | Formátum | Hol | Hogyan készül |
 |---|---|---|
 | Web | `/weekly/command-brief`, `/weekly/<hét>/command` | React, ugyanaz az adatmodell |
-| PDF | „Download PDF” gomb | a web nézet nyomtatási CSS-e: 4 fix A4 fekvő oldal + Sources & Legend (folyhat) |
-| Word (.docx) | „Download Word (.docx)” gomb, `/api/command-brief/<hét>/docx` | `docx` könyvtár ugyanabból az adatmodellből — **nem a PDF-ből konvertálva**; szerkeszthető munkadokumentum, folyamatos tördeléssel (nincs kényszerített oldaltörés, a teszt kizárja a közel üres köztes oldalakat; W45: 10 oldal) |
+| PDF | „Download PDF” gomb | a web nézet nyomtatási CSS-e: **pontosan 5 fix A4 fekvő oldal** (4 vezetői + Sources & Legend); kanonikus csak APPROVED / RELEASED draftból |
+| Word (.docx) | „Download Word (.docx)” gomb, `/api/command-brief/<hét>/docx` | `docx` könyvtár ugyanabból az adatmodellből — **nem a PDF-ből konvertálva**; szerkeszthető munkapéldány, minden mező stabil `CB_*` content control, folyamatos tördeléssel (W45: 9 oldal, nincs közel üres köztes oldal) |
+| Word template (.dotx) | `templates/Command_Air_Intelligence_Brief.dotx`, `/api/command-brief/template` | ugyanaz a renderer és schema, helyőrzőkkel — hivatalos manuális fallback |
 
 A Word-fájl szerkesztése nem módosítja a rendszerben tárolt jelentést (a dokumentumon: `EDITABLE EXPORT — GENERATED FROM AIRCRAFT TRACKER`). A kanonikus publikáció a web/PDF.
+
+## 0. Szerkesztési modell (PO-döntés, 2026-11) — Analytical truth → Draft → Release
+
+Részletes eljárás: [`COMMAND_BRIEF_SOP.md`](COMMAND_BRIEF_SOP.md) · 1 oldalas: [`Command_Brief_Quick_Guide.md`](Command_Brief_Quick_Guide.md) ([PDF](Command_Brief_Quick_Guide.pdf)).
+
+| Réteg | Tartalom | Tárolás | Ki írja |
+|---|---|---|---|
+| **A. Analytical truth** | cikkek, események, evidence, értékelés, confidence, significance, lineage | `ac_events`, `ac_reports.payload` elemzői kulcsai | pipeline + elemzői workflow — a brief-szerkesztő **soha** |
+| **B. Command Brief Draft** | generált brief (`payload.command_brief`) + **publikációs szöveg** (overrides), rejtés, sorrend, státusz, audit | `ac_reports.payload.command_brief_draft` | webes szerkesztő (`/weekly/<hét>/command/edit`) |
+| **C. Released product** | APPROVED draftból fagyasztott kiadás (R-n): publikált brief, jóváhagyó, kiadó, template/módszertan/HU-modell verzió, SHA-256 | `command_brief_draft.releases[]` | *Release* művelet |
+
+- **Presentation Schema** — `config/command_brief_presentation.json` (template **v1.0**): oldalak és blokkok sorrendje, mezőnevek, szerkeszthető (*copy*) vs. kontrollált (*controlled*) vs. fix mezők, max. hossz / mondatszám, max. tételszám, címkék, táblázat-oszlopok, színszemantika (mindig szöveges címkével), jelmagyarázat, státusz-átmenetek, Word `CB_*` címkék. Ebből dolgozik a Python generátor (legend, principles, micro-legend, register-szöveg), a web/PDF, a DOCX és a .dotx. Teszt: a schema hosszai = a generátor budgetje, a tételszámok = a generátor limitjei, a Word-címkék egyediek. A web a `web/src/lib/command_brief_presentation.json` tükörpéldányt olvassa (a Vercel build csak a `web/` mappát látja); a kettő egyezését a teszt ellenőrzi, a `node scripts/build_dotx.cjs` szinkronizálja.
+- **Csak publication copy szerkeszthető.** Forrás, lineage, publikációs dátum, evidence role, HU szint, SIG, CONF, horizon, collection status, a teljes forrásjegyzék **kontrollált** — a szerkesztő csak olvasható címkeként mutatja, az API 400-zal elutasítja. Az eredeti generált szöveg változatlan marad; az override a saját alapszövegét is tárolja.
+- **Verziózás / audit:** minden mentés új revízió; audit-bejegyzés: actor, időbélyeg, mező, előző és új érték; státusz-átmenetek naplózva. Optimista zárolás: elavult revízióra mentés → 409 (senki munkája nem íródik felül csendben).
+- **Státuszok:** GENERATED → EDITING → READY_FOR_APPROVAL → APPROVED → RELEASED. Jóváhagyás utáni tartalmi szerkesztés → EDITING (jóváhagyás érvénytelen). Restatement / backfill után a generált alap megváltozik: a szerkesztett mezők *stale* jelzést kapnak, a jóváhagyás érvényét veszti, Release tiltva amíg újra nincs jóváhagyva. A Python írók (`generate_weekly_report --restate`, `backfill_command_brief --write`) a draftot **átviszik** (audit: `rebase`), nem törlik.
+- **Kanonikus PDF csak APPROVED / RELEASED** állapotból; minden más állapotban minden oldalon *WORKING COPY — … · NOT APPROVED* bélyeg, és a gomb „Print working copy (not approved)”. A nyilvános nézet a legutóbbi kiadást mutatja (`?view=draft` munkapéldány, `?release=N` adott kiadás); ha kiadás után újabb draft van, azt jelzi.
+- **Word = munkapéldány**, bármely státuszból; fájlnév `_WORKING_COPY` / `_R<n>`; dokumentum-tulajdonságok: `CB_TEMPLATE_VERSION`, `CB_DRAFT_STATUS`, `CB_RELEASE`, `CB_CANONICAL=false`. Content controls: publikációs mezők szerkeszthetők (`sdtLocked`), kontrollált metaadat és fix design-szöveg tartalom-zárolt (`sdtContentLocked`), térképek kép-vezérlőben.
+- **Tárolás SQL nélkül:** a draft a heti jelentés sorában van (`payload.command_brief_draft`), így nincs új tábla és nincs kézi migráció; a szerkesztő a service-role kulccsal a szerver oldalon ír (mint a review-oldal). Opcionális védelem: `BRIEF_EDITOR_TOKEN` környezeti változó — ha be van állítva, az író kérésekhez kell.
+- **Template-verziózás:** `templates/Command_Air_Intelligence_Brief_v1.0.dotx` + `templates/command_brief_presentation_v1.0.json` archiválva; a brief és minden kiadás metaadata tartalmazza a template-, módszertan- és HU-modell-verziót. Template újragenerálása: `cd web && node scripts/build_dotx.cjs`.
 
 ## 1. Oldalak
 
@@ -81,9 +101,39 @@ A v1 modell működött, két finomítással: (1) a **supplier/partner kapcsolat
 
 **Megmaradt collection gapek (W45):** Szerbia (az új MoD-feed szerdától gyűjt), Belarusz, Bosznia-Hercegovina, Ausztria, Szlovákia, Horvátország, Szlovénia, Bulgária, Észtország, Lettország; Irán, Egyesült Arab Emírségek, Nigéria, Dél-Afrika, Líbia. A következő lépés a `source_discovery.py` lefuttatása és a talált hivatalos feedek felvétele `source_expansion.json`-ba.
 
+## 9. Szerkesztési modell — ellenőrzés és BEFORE / AFTER (2026-11-08)
+
+| Teszt | Eredmény |
+|---|---|
+| `test_command_brief.py` (198 ellenőrzés), új: **G** S-13 kontextus-szemantika (CONTEXT_ONLY, üres „Evidence for”, külön „Context for”, nincs lineage, soha nincs `sources` listában), **H** backfill `anthropic` nélkül + a draft átvitele, **E** restatement megtartja a draftot és a kiadásokat (audit: rebase), **I** Presentation Schema = generátor (hosszak, tételszámok, legend, egyedi `CB_*` címkék, kontrollált mező nem szerkeszthető) | PASS |
+| `test_migrations.py`, `test_ac_match`, `test_ac_programmes`, `test_report_integration`, `test_programme_write` | PASS |
+| `web/e2e/draft.unit.cjs` (46): copy-mező szerkesztés + audit (actor, idő, mező, előtte/utána), kontrollált mezők (sources, HU, SIG, CONF, horizon, refs, forrásjegyzék) elutasítva, „…”/üres/kemény limit/név nélkül elutasítva, rejtés/sorrend/revert, státuszgép, kiadás hash-sel és verziókkal, kiadás utáni szerkesztés, restatement → stale + jóváhagyás érvénytelen + Release tiltva, régi briefek S-13 normalizálása | PASS (fixture + valós W45) |
+| Böngészős E2E (`web/e2e/command-brief.e2e.cjs`, ~195 ellenőrzés): generált nézet minden oldalon WORKING COPY bélyeggel, **PDF pontosan 5 oldal** (munkapéldány és kiadás is), register evidence role / Context for oszlopok; szerkesztő: blokkok, read-only kontrollált címkék, élő előnézet, **túlcsordulás-figyelmeztetés**, mentés → EDITING, audit-napló, API 400 kontrollált mezőre és forrásjegyzékre, **409 elavult revízióra**, az alap (elemzői) szöveg változatlan; Submit → Approve (másik név) → Release; kiadott nézet RELEASED R-1 bélyeggel és a szerkesztett szöveggel, kanonikus „Download PDF”, DOCX `_R1`; kiadás utáni szerkesztés a kiadást megtartja és jelzi; .dotx letöltés; meglévő route-ok | PASS (fixture + valós W45) |
+| `web/e2e/check_parity.py`: OOXML **XSD-validáció** (ISO/IEC 29500), stílusok, fejléc/lábléc oldalszámmal, **334 / 315 content control**, minden publikációs mező `CB_*` vezérlő (109 / 103), fix szöveg és kontrollált metaadat tartalom-zárolt, publikációs mezők szerkeszthetők, térképek kép-vezérlőben 2400 px, dokumentum-tulajdonságok (template-verzió, státusz, kiadás, nem kanonikus), forrás-hiperhivatkozások, „Context for” oszlop, **mind a 157 / 147 publikációs szöveg a PDF-ben és a Wordben**, ékezetek (HU/PL), LibreOffice-render: **9 oldal, nincs közel üres oldal** | PASS |
+| `web/e2e/check_template.py` (.dotx): template content type, XSD, a schema mind a 200+ címkéje vezérlő, helyőrzők (showingPlcHdr), fix szöveg zárolt, kép-helyőrzők, template-verzió, LibreOffice-render 10 oldal, nincs közel üres köztes oldal | PASS |
+| `next build` (típusellenőrzéssel) | PASS |
+
+**Microsoft Word:** ebben a környezetben nincs Word-automatizálás. A Word-kompatibilitást az ISO/IEC 29500 XSD-validáció és a LibreOffice-megnyitás/-render támasztja alá — **Wordben megnyitva nem ellenőriztük**; ezt az első használatkor egy Wordös gépen érdemes megnézni (content controls, helyőrzők, kép-csere).
+
+| W45 (ugyanaz a tárolt brief) | BEFORE (bceaf71) | AFTER |
+|---|---|---|
+| Kanonikus PDF | 6 oldal (Analytical discipline + Document blokk külön oldalra tört) | **5 oldal**; a Page 5 fix oldal: tömörebb register, 4 hasábos legend + Analytical discipline, dokumentum-metaadat a láblécben |
+| S-13 (MiG-29-cikk) | „Context — not cited as evidence”, de *Used by: KJ-05, p.2 Poland, p.4 outlook* és lineage L-10 | Evidence role **Context only — not evidence**, *Evidence for: —*, külön **Context for: KJ-05, p.2 Poland, p.4 outlook**, lineage **—**; a lineage-számozás csak bizonyítékon |
+| Státusz / jóváhagyás | nincs; minden generált brief „kész” termékként jelent meg | GENERATED → … → RELEASED; nem jóváhagyott nyomat minden oldalon WORKING COPY bélyeg |
+| Szerkesztés | csak a letöltött Wordben, nyomon követés nélkül | strukturált webes szerkesztő, élő előnézet, verziózott audit, kiadások hash-sel |
+| Word | 10 oldal, címkék nélkül | 9 oldal, 315 content control (`CB_KJ1_ASSESSMENT` …), zárolt fix szöveg és metaadat |
+| Fallback | nincs | `Command_Air_Intelligence_Brief.dotx` v1.0 + SOP + 1 oldalas Quick Guide |
+| Megjelenítési szabvány | a szövegek a Python-kódban és a rendererekben szétszórva | egy `command_brief_presentation.json` (template v1.0) |
+
+A tárolt W45 brief a webes nézetben már a javított szemantikával jelenik meg (régi briefek megjelenítéskori normalizálása — a tárolt adathoz nem nyúl). A `backfill_command_brief.py --week 2026-W45 --write --reason "..."` futtatása a tárolt briefbe is beírja az új mezőket (evidence_role, context_for, template_version, rövidebb register-jegyzet) — ez restatementként látszik; a draft (ha már van) átkerül.
+
 ## 8. Ismert korlátok
 
 - A „Download PDF” a böngésző nyomtatásából készül (Save as PDF); szerveroldali PDF-generálás nincs (a Vercel serverless környezetben nincs böngésző).
 - A Word-export oldaltörései eltérhetnek a PDF-től (szándékosan: a szerkeszthetőség fontosabb), a tartalom azonos.
 - Nem RSS-es hivatalos oldalak lekérdezése („page polling”) még nincs megvalósítva — dokumentált jelöltként szerepelnek.
 - A triage szabályalapú, az AI-kinyerés mezőire épül (külön modellhívás nélkül).
+- A szerkesztő „Analyst” neve önbevallás (a webalkalmazásban nincs bejelentkezés — ugyanúgy, mint a review-oldalon). Az audit így ki-mit-mikor nyomot ad, nem hitelesített azonosítót. Opcionális író-token: `BRIEF_EDITOR_TOKEN`.
+- A draft (és az audit-napló nevei) a jelentés sorában van, így ugyanazzal a publikus olvasási joggal olvasható, mint maga a jelentés.
+- A Python írók (restatement / backfill) közvetlenül írás előtt olvassák újra a draftot; egy ugyanabban a néhány másodpercben történő webes mentés elveszhet (ritka, a restatement kézi indítású).
+- A forrásjegyzék „Evidence for” oszlopa a generált brief tételeire hivatkozik; egy szerkesztőben elrejtett tétel ott továbbra is szerepelhet (a register kontrollált adat).

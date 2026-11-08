@@ -53,9 +53,15 @@ export interface SourceEntry {
   // Az event_date kulon mezo, es SOHA nem jelenik meg 'Published'-kent.
   published?: string | null; published_basis?: "feed" | "url" | "analyst-verified" | null;
   retrieved?: string | null; event_date?: string | null;
-  country: string; lineage: string; state_controlled: boolean;
+  country: string; state_controlled: boolean;
+  // Lineage CSAK bizonyitek-forrasnak van; kontextus-forras soha nem szamit
+  // lineage-nek (S-13 javitas).
+  lineage: string | null;
   role: string; note?: string | null;
-  used_by: string[]; supports: Record<string, string>;
+  evidence_role?: "EVIDENCE" | "CONTEXT_ONLY";
+  used_by: string[];            // bizonyitekkent hivatkozo tetelek
+  context_for?: string[];       // csak kontextuskent megnevezo tetelek
+  supports: Record<string, string>;
 }
 
 export interface CeeMapData {
@@ -76,8 +82,15 @@ export interface CommandBriefV2 {
     week_label: string; period_start?: string; period_end?: string;
     timezone?: string; window_label?: string; generated_utc?: string;
     methodology_version?: string; hu_model_version?: string;
-    brief_version?: string; report_status?: string;
+    brief_version?: string; report_status?: string; template_version?: string;
     revision?: { number: number; reason?: string; restated_utc?: string } | null;
+    // A publikacios reteg allapota (lib/briefDraft.ts applyDraft tolti).
+    draft?: {
+      status: "GENERATED" | "EDITING" | "READY_FOR_APPROVAL" | "APPROVED" | "RELEASED";
+      revision: number; canonical: boolean; approved_by: string | null;
+      approved_utc: string | null; edited_fields: number; hidden_items: number;
+      release_no: number | null;
+    };
   };
   micro_legend: string;
   page1: {

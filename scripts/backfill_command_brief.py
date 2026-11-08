@@ -18,6 +18,10 @@ Alapertelmezesben CSAK OLVAS az adatbazisbol, es fajlba ir:
 
 Usage: python scripts/backfill_command_brief.py [--week 2026-W45|latest]
                                                 [--write] [--synthesis]
+                                                [--reason "<restatement reason>"]
+
+A szerkesztett publikacios reteg (payload.command_brief_draft: szerkesztett
+szoveg, jovahagyas, kiadasok) --write eseten valtozatlanul atkerul.
 """
 import json
 import sys
@@ -30,6 +34,7 @@ import ac_hungary  # noqa: E402
 import ac_command_brief  # noqa: E402
 import coverage_audit  # noqa: E402
 import ac_articles  # noqa: E402
+import ac_brief_draft  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -38,6 +43,9 @@ def main():
     args = sys.argv[1:]
     week = args[args.index("--week") + 1] if "--week" in args else "latest"
     write = "--write" in args
+    reason = (args[args.index("--reason") + 1] if "--reason" in args
+              else "Command Brief added (methodology v3.1); analytical "
+                   "content unchanged")
     q = {"select": "*", "order": "period_end.desc", "limit": "1"}
     if week != "latest":
         q = {"select": "*", "week_label": "eq." + week, "limit": "1"}
@@ -126,8 +134,7 @@ def main():
         meta = payload.setdefault("report_meta", {})
         prev = meta.get("restatement") or {}
         meta["restatement"] = {
-            "reason": "Command Brief added (methodology v3.1); analytical "
-                      "content unchanged",
+            "reason": reason,
             "previous_generated_utc": row.get("generated_at"),
             "restated_utc": datetime.now(timezone.utc).strftime(
                 "%Y-%m-%d %H:%M UTC"),
@@ -137,6 +144,8 @@ def main():
             "number": meta["restatement"]["number"],
             "reason": meta["restatement"]["reason"],
             "restated_utc": meta["restatement"]["restated_utc"]}
+        ac_brief_draft.carry_draft(db, week, payload,
+                                   "backfill — {}".format(reason))
         db.upsert("ac_reports", [{
             "week_label": week, "period_start": row.get("period_start"),
             "period_end": row.get("period_end"),
