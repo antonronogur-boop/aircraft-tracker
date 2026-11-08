@@ -20,6 +20,36 @@
       "language": "en",
       "enabled": true,
       "_why": "Poland/CEE specialist defence media; broad security coverage, therefore behind the cheap Haiku gate."
+    },
+    {
+      "source_id": "ACS-0018",
+      "source_name": "Slovak Ministry of Defence",
+      "rss_url": "https://www.mosr.sk/rss",
+      "homepage": "https://www.mosr.sk",
+      "reliability_score": 80,
+      "language": "sk",
+      "enabled": true,
+      "_why": "Slovakia was a COLLECTION GAP (0 events in 60 days). Tier 1 official source; RSS verified 2026-11-08 by scripts/ops_status.py (30 items, newest 2026-11-05). Slovak titles kept as original-language evidence."
+    },
+    {
+      "source_id": "ACS-0019",
+      "source_name": "Croatian Ministry of Defence",
+      "rss_url": "https://www.morh.hr/feed/",
+      "homepage": "https://www.morh.hr",
+      "reliability_score": 80,
+      "language": "hr",
+      "enabled": true,
+      "_why": "Croatia was a COLLECTION GAP (0 events in 60 days). Tier 1 official source; RSS verified 2026-11-08 by scripts/ops_status.py (20 items, newest 2026-11-07). Croatian original-language feed (an English feed /en/feed also exists)."
+    },
+    {
+      "source_id": "ACS-0020",
+      "source_name": "Czech Ministry of Defence",
+      "rss_url": "https://mocr.army.cz/rss.xml",
+      "homepage": "https://mocr.army.cz",
+      "reliability_score": 80,
+      "language": "cs",
+      "enabled": true,
+      "_why": "Czechia was PARTIAL (1 event in 60 days, no official source). Tier 1 official source; RSS verified 2026-11-08 by scripts/ops_status.py (16 items, newest 2026-11-06). Czech titles kept as original-language evidence."
     }
   ]
 }

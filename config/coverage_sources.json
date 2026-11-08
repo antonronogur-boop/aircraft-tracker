@@ -34,7 +34,10 @@
     "ACS-0009": "specialist_defence",
     "ACS-0010": "specialist_defence",
     "ACS-0016": "mod",
-    "ACS-0017": "specialist_defence"
+    "ACS-0017": "specialist_defence",
+    "ACS-0018": "mod",
+    "ACS-0019": "mod",
+    "ACS-0020": "mod"
   },
   "default_tier": "specialist_defence",
   "candidates": [
@@ -90,14 +93,20 @@
       "name": "Slovak Ministry of Defence",
       "homepage": "https://www.mosr.sk",
       "tier": "mod",
-      "language": "sk"
+      "language": "sk",
+      "rss_url": "https://www.mosr.sk/rss",
+      "verified": "2026-11-08: RSS, 30 items, newest 2026-11-05 (Slovak)",
+      "status": "added as ACS-0018"
     },
     {
       "country_id": "cze",
       "name": "Czech Ministry of Defence",
       "homepage": "https://mocr.army.cz",
       "tier": "mod",
-      "language": "cs"
+      "language": "cs",
+      "rss_url": "https://mocr.army.cz/rss.xml",
+      "verified": "2026-11-08: RSS, 16 items, newest 2026-11-06 (Czech)",
+      "status": "added as ACS-0020"
     },
     {
       "country_id": "srb",
@@ -114,7 +123,10 @@
       "name": "Croatian Ministry of Defence",
       "homepage": "https://www.morh.hr",
       "tier": "mod",
-      "language": "hr"
+      "language": "hr",
+      "rss_url": "https://www.morh.hr/feed/",
+      "verified": "2026-11-08: RSS, 20 items, newest 2026-11-07 (Croatian; /en/feed also available)",
+      "status": "added as ACS-0019"
     },
     {
       "country_id": "svn",

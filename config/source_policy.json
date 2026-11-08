@@ -55,6 +55,21 @@
       "policy": "haiku_gate",
       "name": "Defence24",
       "measured": "new 2026-11; broad security news"
+    },
+    "ACS-0018": {
+      "policy": "haiku_gate",
+      "name": "Slovak Ministry of Defence",
+      "measured": "new 2026-11-08 — non-English official feed: the English keyword prefilter is skipped, so the cheap Haiku gate decides relevance"
+    },
+    "ACS-0019": {
+      "policy": "haiku_gate",
+      "name": "Croatian Ministry of Defence",
+      "measured": "new 2026-11-08 — non-English official feed: the English keyword prefilter is skipped, so the cheap Haiku gate decides relevance"
+    },
+    "ACS-0020": {
+      "policy": "haiku_gate",
+      "name": "Czech Ministry of Defence",
+      "measured": "new 2026-11-08 — non-English official feed: the English keyword prefilter is skipped, so the cheap Haiku gate decides relevance"
     }
   }
 }
