@@ -11,9 +11,11 @@ Deps: pip install feedparser
 Env:  SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
 """
 import hashlib
+import json
 import re
 import sys
 import time
+import urllib.error
 import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
@@ -32,8 +34,20 @@ POLITENESS_DELAY_S = 2
 # eredmenyt (pipeline_runs.details.sources). Bongeszo-szeru User-Agent: tobb
 # vedett oldal (pl. Cloudflare) a "feedparser/x.y" ugynokot elutasitja.
 FETCH_TIMEOUT_S = 25
-FETCH_UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-            "(KHTML, like Gecko) Chrome/124.0 Safari/537.36")
+# User-Agent letra. ELOSZOR a feedparser sajat (oszinte) ugynoke — ezzel ment
+# honapokig minden forras a GitHub-futtatorol; 2026-11-09-en kiderult, hogy
+# egy bongeszo-ugynok EGYEDUL (bongeszo-fejlecek nelkul) nehany
+# bot-vedett oldalon (Airforce Technology) 403-at kap. A bongeszo-ugynok
+# csak tartalek, ha az elso HTTP-hibat ad.
+FETCH_UAS = (
+    "feedparser/{} +https://github.com/kurtmckee/feedparser/".format(
+        getattr(feedparser, "__version__", "6.0")),
+    "AircraftTracker/1.0 (+RSS collector; read-only)",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+)
+CFG_EXPANSION = Path(__file__).resolve().parent.parent / "config" / \
+    "source_expansion.json"
 SUMMARY_MAX_CHARS = 2000
 
 # Generic keywords that signal a procurement / fleet event even when the
@@ -93,19 +107,62 @@ def article_row(entry, source):
 
 
 def fetch_feed(url):
-    """A feed letoltese sajat idokorlattal, bongeszo-szeru fejlecekkel.
+    """A feed letoltese sajat idokorlattal. HTTP-hiba eseten a kovetkezo
+    User-Agenttel probalja ujra; halozati / idotullepesi hibat nem ismetel.
     Hiba eseten kivetelt dob (a hivo forrasonkent kezeli)."""
-    req = urllib.request.Request(url, headers={
-        "User-Agent": FETCH_UA,
-        "Accept": "application/rss+xml, application/atom+xml, "
-                  "application/xml;q=0.9, text/xml;q=0.9, */*;q=0.5"})
-    with urllib.request.urlopen(req, timeout=FETCH_TIMEOUT_S) as r:  # noqa: S310
-        body = r.read(5_000_000)
+    last = None
+    for ua in FETCH_UAS:
+        req = urllib.request.Request(url, headers={
+            "User-Agent": ua,
+            "Accept": "application/rss+xml, application/atom+xml, "
+                      "application/xml;q=0.9, text/xml;q=0.9, */*;q=0.5"})
+        try:
+            with urllib.request.urlopen(req, timeout=FETCH_TIMEOUT_S) as r:  # noqa: S310
+                body = r.read(5_000_000)
+            break
+        except urllib.error.HTTPError as e:
+            last = e
+            if e.code in (401, 403, 406, 429):
+                continue          # masik ugynokkel meg egy esely
+            raise
+    else:
+        raise last
     feed = feedparser.parse(body)
     if not feed.entries and (getattr(feed, "bozo", False)
                              or not getattr(feed, "version", "")):
         raise ValueError("not a valid RSS/Atom feed (0 entries)")
     return feed
+
+
+def apply_feed_url_fixes():
+    """config/source_expansion.json -> feed_url_fixes: a meglevo forrasok
+    javitott feed-URL-je. Idempotens: csak ott ir, ahol az URL elter; nem
+    vesz fel, nem kapcsol ki, nem torol semmit. Igy a javitas a szokasos
+    napi futassal eletbe lep, kezi lepes nelkul."""
+    try:
+        fixes = json.loads(CFG_EXPANSION.read_text(encoding="utf-8")).get(
+            "feed_url_fixes") or []
+    except Exception as e:  # noqa: BLE001
+        print("  [warn] feed_url_fixes unreadable: {}".format(e))
+        return 0
+    if not fixes:
+        return 0
+    current = {s["source_id"]: s for s in db.select(
+        "ac_sources", {"select": "source_id,rss_url"})}
+    n = 0
+    for f in fixes:
+        cur = current.get(f["source_id"])
+        if cur is None or cur.get("rss_url") == f["rss_url"]:
+            continue
+        try:
+            db.update("ac_sources", {"source_id": "eq." + f["source_id"]},
+                      {"rss_url": f["rss_url"]})
+            print("  [FIX] {} feed URL -> {}".format(f["source_id"], f["rss_url"]))
+            n += 1
+        except Exception as e:  # noqa: BLE001
+            print("  [warn] feed URL fix failed for {}: {}".format(
+                f["source_id"], str(e)[:120]))
+    return n
 
 
 def collect_source(source, type_keywords):
@@ -143,6 +200,7 @@ def main():
     run = db.start_run("ac_collect_rss")
     try:
         type_keywords = build_keyword_index()
+        apply_feed_url_fixes()
         sources = db.select("ac_sources", {
             "select": "source_id,source_name,rss_url,language",
             "rss_url": "not.is.null", "enabled": "eq.true"})

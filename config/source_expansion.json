@@ -51,5 +51,20 @@
       "enabled": true,
       "_why": "Czechia was PARTIAL (1 event in 60 days, no official source). Tier 1 official source; RSS verified 2026-11-08 by scripts/ops_status.py (16 items, newest 2026-11-06). Czech titles kept as original-language evidence."
     }
+  ],
+  "_doc_feed_url_fixes": "Feed URL corrections for EXISTING sources. Applied idempotently by scripts/collect_rss.py at the start of every run (and by scripts/add_sources.py): only the rss_url is changed, only where it differs — no new source, nothing disabled, nothing deleted. Each entry has a verified feed.",
+  "feed_url_fixes": [
+    {
+      "source_id": "ACS-0009",
+      "source_name": "Militarnyi (English)",
+      "rss_url": "https://militarnyi.com/en/news/feed/",
+      "_why": "The site moved from mil.in.ua to militarnyi.com; the old /en/feed/ URL returns an EMPTY RSS document (0 items), so the source never collected anything. Verified 2026-11-09: 50 items, newest 2026-11-09."
+    },
+    {
+      "source_id": "ACS-0010",
+      "source_name": "Army Recognition",
+      "rss_url": "https://www.armyrecognition.com/news/aerospace-news?format=feed&type=rss",
+      "_why": "/rss returns HTTP 404 (never worked). The aerospace-news category feed is the on-topic one. Verified 2026-11-09: 29 items, newest 2026-11-09."
+    }
   ]
 }

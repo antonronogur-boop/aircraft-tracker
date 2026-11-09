@@ -6,6 +6,10 @@ ac_sources-ba, amelyek meg nincsenek ott. Meglevo forrast (a source policy
 altal kikapcsoltat sem) NEM modosit — ezert nem a seed_database.py-t
 hasznaljuk, ami minden forrast ujra enabled=true-ra allitana.
 
+A "feed_url_fixes" bejegyzesek (meglevo forras javitott feed-URL-je) itt
+is ervenyesulnek; a napi gyujtes (collect_rss.py) ugyanezt automatikusan
+megteszi, ezert ez a script csak azonnali hatashoz kell.
+
 Usage: python scripts/add_sources.py [--dry-run]
 """
 import json
@@ -30,6 +34,11 @@ def main():
         print("  {} {:<32} {}".format(
             "NEW " if s["source_id"] not in have else "have",
             s["source_name"], s.get("rss_url")))
+    if not dry:
+        import collect_rss  # noqa: E402  (ugyanaz a javito logika)
+        fixed = collect_rss.apply_feed_url_fixes()
+        if fixed:
+            print("Fixed {} feed URL(s).".format(fixed))
     if not new:
         print("Nothing to add.")
         return
