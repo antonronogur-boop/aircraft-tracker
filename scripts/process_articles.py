@@ -14,6 +14,7 @@ Deps: pip install anthropic feedparser
 Env:  SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, ANTHROPIC_API_KEY
 """
 import json
+import os
 import re
 import sys
 import time
@@ -31,7 +32,15 @@ import ac_match  # noqa: E402
 import ac_programmes as acprog  # noqa: E402
 
 MODEL = "claude-sonnet-4-6"
-BATCH_LIMIT = 25
+# Futasonkenti felso korlat. 2026-11-09: a regi 25-os korlat mellett az uj
+# forrasok elso gyujtese (142 cikk) utan torlodas keletkezett, es a heti
+# jelentesbol kimaradtak volna a friss cikkek (a feldolgozas a legregebbivel
+# kezd). Most: legfeljebb 250 cikk VAGY az ido-keret (alapertelmezes 15 perc:
+# a heti job is belefer a 30 perces korlatba) — ami elobb eler. A maradek "raw"
+# marad, a kovetkezo futas folytatja. Felulirhato: AC_PROCESS_LIMIT,
+# AC_PROCESS_MAX_SECONDS.
+BATCH_LIMIT = int(os.environ.get("AC_PROCESS_LIMIT", "250"))
+TIME_BUDGET_S = int(os.environ.get("AC_PROCESS_MAX_SECONDS", "900"))
 FULLTEXT_MAX_CHARS = 12000
 BROWSER_UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
               "(KHTML, like Gecko) Chrome/124.0 Safari/537.36")
@@ -492,8 +501,16 @@ def main():
         print("Raw articles to process: {}".format(len(articles)))
         print(source_policy.describe())
         gate_stats = {"dropped": 0, "gated_out": 0, "gated_in": 0}
+        t0 = time.monotonic()
+        stopped_early = 0
 
-        for art in articles:
+        for i, art in enumerate(articles):
+            if time.monotonic() - t0 > TIME_BUDGET_S:
+                stopped_early = len(articles) - i
+                print("[budget] {} s time budget reached — {} article(s) stay "
+                      "raw for the next run".format(TIME_BUDGET_S,
+                                                    stopped_early))
+                break
             print("- {}".format((art.get("title") or "?")[:80]))
             # ── FORRAS-SZINTU KAPU (config/source_policy.json) ─────────────
             pol = source_policy.policy_for(art.get("source_id"))
@@ -656,11 +673,16 @@ def main():
             processed += 1
             print("  -> {} event(s)".format(len(result["events"])))
 
-        print("Done. Processed: {}/{}".format(processed, len(articles)))
+        print("Done. Processed: {}/{}{}".format(
+            processed, len(articles),
+            " (batch limit {} reached — more raw articles may be waiting)".format(
+                BATCH_LIMIT) if len(articles) >= BATCH_LIMIT else ""))
         print("KAPU: {}".format(gate_stats))
         usage.report()
         db.finish_run(run, "success", items_processed=processed,
-                      details={"usage": usage.summary(), "gate": gate_stats})
+                      details={"usage": usage.summary(), "gate": gate_stats,
+                               "batch_limit": BATCH_LIMIT,
+                               "stopped_by_time_budget": stopped_early})
     except Exception as e:  # noqa: BLE001
         usage.report()
         db.finish_run(run, "error", error_message=str(e),

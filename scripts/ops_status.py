@@ -124,6 +124,12 @@ def main():
             str(r.get("finished_at") or "")[:19], r.get("items_processed"),
             (r.get("error_message") or "")[:80]))
     OUT["runs"] = runs
+    raw = db.select("ac_articles", {"select": "article_id,collected_date",
+                                    "status": "eq.raw"})
+    oldest = min((str(a.get("collected_date") or "") for a in raw), default="")
+    print("  RAW BACKLOG (collected, not yet processed): {}{}".format(
+        len(raw), " · oldest collected {}".format(oldest) if raw else ""))
+    OUT["raw_backlog"] = {"count": len(raw), "oldest": oldest or None}
 
     # ---------------- C. coverage most ----------------
     countries = {c["country_id"]: c for c in db.select(
