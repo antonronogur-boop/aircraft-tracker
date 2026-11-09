@@ -14,6 +14,7 @@ import hashlib
 import re
 import sys
 import time
+import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List
@@ -25,6 +26,14 @@ import supabase_client as db  # noqa: E402
 
 MAX_PER_FEED = 30
 POLITENESS_DELAY_S = 2
+# Egy forras SOHA nem allithatja meg a gyujtest: minden feed sajat
+# idokorlattal (FETCH_TIMEOUT_S) es sajat hibakezelessel fut; a hibas feed
+# kimarad, a tobbi vegigmegy, es a futas naploja forrasonkent rogziti az
+# eredmenyt (pipeline_runs.details.sources). Bongeszo-szeru User-Agent: tobb
+# vedett oldal (pl. Cloudflare) a "feedparser/x.y" ugynokot elutasitja.
+FETCH_TIMEOUT_S = 25
+FETCH_UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+            "(KHTML, like Gecko) Chrome/124.0 Safari/537.36")
 SUMMARY_MAX_CHARS = 2000
 
 # Generic keywords that signal a procurement / fleet event even when the
@@ -83,6 +92,53 @@ def article_row(entry, source):
     }
 
 
+def fetch_feed(url):
+    """A feed letoltese sajat idokorlattal, bongeszo-szeru fejlecekkel.
+    Hiba eseten kivetelt dob (a hivo forrasonkent kezeli)."""
+    req = urllib.request.Request(url, headers={
+        "User-Agent": FETCH_UA,
+        "Accept": "application/rss+xml, application/atom+xml, "
+                  "application/xml;q=0.9, text/xml;q=0.9, */*;q=0.5"})
+    with urllib.request.urlopen(req, timeout=FETCH_TIMEOUT_S) as r:  # noqa: S310
+        body = r.read(5_000_000)
+    feed = feedparser.parse(body)
+    if not feed.entries and (getattr(feed, "bozo", False)
+                             or not getattr(feed, "version", "")):
+        raise ValueError("not a valid RSS/Atom feed (0 entries)")
+    return feed
+
+
+def collect_source(source, type_keywords):
+    """Egy forras teljes feldolgozasa. Visszaad: (bekuldott sorok, kihagyott
+    irrelevans, statusz-dict). Kivetelt NEM dob tovabb."""
+    st = {"ok": False, "entries": 0, "submitted": 0}
+    try:
+        feed = fetch_feed(source["rss_url"])
+        st["entries"] = len(feed.entries)
+        rows, skipped = [], 0
+        # Nem angol nyelvu (pl. szerb MoD, cirill) forrasnal az angol
+        # kulcsszo-szuro mindent kidobna: ott a tobbnyelvu olcso
+        # Haiku-kapu dont (config/source_policy.json -> haiku_gate).
+        # Az eredeti nyelvu cim valtozatlanul kerul tarolasra.
+        english = (source.get("language") or "en").lower().startswith("en")
+        for entry in feed.entries[:MAX_PER_FEED]:
+            if not entry.get("link"):
+                continue
+            title = entry.get("title") or ""
+            summary = entry.get("summary") or entry.get("description") or ""
+            if english and not is_relevant(title, summary, type_keywords):
+                skipped += 1
+                continue
+            rows.append(article_row(entry, source))
+        if rows:
+            db.insert_ignore_duplicates("ac_articles", rows, "article_id")
+        st.update(ok=True, submitted=len(rows))
+        return len(rows), skipped, st
+    except Exception as e:  # noqa: BLE001
+        st["error"] = "{}: {}".format(type(e).__name__, str(e)[:160])
+        return 0, 0, st
+
+
 def main():
     run = db.start_run("ac_collect_rss")
     try:
@@ -92,42 +148,41 @@ def main():
             "rss_url": "not.is.null", "enabled": "eq.true"})
         print("RSS sources: {}".format(len(sources)))
 
-        total, skipped = 0, 0
+        total, skipped, per_source = 0, 0, {}
         for source in sources:
-            try:
-                feed = feedparser.parse(source["rss_url"])
-            except Exception as e:  # noqa: BLE001
-                print("  [SKIP] {} — feed error: {}".format(source["source_name"], e))
-                continue
-
-            rows = []  # type: List[Dict[str, Any]]
-            for entry in feed.entries[:MAX_PER_FEED]:
-                if not entry.get("link"):
-                    continue
-                title = entry.get("title") or ""
-                summary = entry.get("summary") or entry.get("description") or ""
-                # Nem angol nyelvu (pl. szerb MoD, cirill) forrasnal az angol
-                # kulcsszo-szuro mindent kidobna: ott a tobbnyelvu olcso
-                # Haiku-kapu dont (config/source_policy.json -> haiku_gate).
-                # Az eredeti nyelvu cim valtozatlanul kerul tarolasra.
-                english = (source.get("language") or "en").lower().startswith(
-                    "en")
-                if english and not is_relevant(title, summary, type_keywords):
-                    skipped += 1
-                    continue
-                rows.append(article_row(entry, source))
-
-            if rows:
-                db.insert_ignore_duplicates("ac_articles", rows, "article_id")
-                total += len(rows)
-                print("  [OK] {} — {} relevant items".format(source["source_name"], len(rows)))
+            n, sk, st = collect_source(source, type_keywords)
+            total += n
+            skipped += sk
+            per_source[source["source_id"]] = st
+            if not st["ok"]:
+                print("  [FAIL] {} — {} (skipped; the other sources continue)"
+                      .format(source["source_name"], st["error"]))
+            elif n:
+                print("  [OK] {} — {} relevant items".format(
+                    source["source_name"], n))
             else:
-                print("  [--] {} — nothing relevant".format(source["source_name"]))
+                print("  [--] {} — nothing relevant ({} entries)".format(
+                    source["source_name"], st["entries"]))
             time.sleep(POLITENESS_DELAY_S)
 
-        print("Done. Submitted: {} (irrelevant skipped: {})".format(total, skipped))
-        db.finish_run(run, "success", items_processed=total,
-                      details={"sources_checked": len(sources), "skipped_irrelevant": skipped})
+        failed = sorted(k for k, v in per_source.items() if not v["ok"])
+        print("Done. Submitted: {} (irrelevant skipped: {}) · sources ok {} / "
+              "failed {}{}".format(total, skipped, len(sources) - len(failed),
+                                    len(failed),
+                                    " ({})".format(", ".join(failed))
+                                    if failed else ""))
+        details = {"sources_checked": len(sources), "skipped_irrelevant": skipped,
+                   "sources_failed": failed, "sources": per_source}
+        if sources and len(failed) == len(sources):
+            # Ha EGYETLEN forras sem mukodott, az rendszerhiba (halozat,
+            # konfiguracio) — ezt hibakent jelezzuk.
+            db.finish_run(run, "error", items_processed=0,
+                          error_message="all {} sources failed".format(
+                              len(sources)), details=details)
+            raise SystemExit("All sources failed — see the log above.")
+        db.finish_run(run, "success", items_processed=total, details=details)
+    except SystemExit:
+        raise
     except Exception as e:  # noqa: BLE001
         db.finish_run(run, "error", error_message=str(e))
         raise

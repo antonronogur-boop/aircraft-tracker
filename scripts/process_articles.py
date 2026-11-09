@@ -503,6 +503,7 @@ def main():
         gate_stats = {"dropped": 0, "gated_out": 0, "gated_in": 0}
         t0 = time.monotonic()
         stopped_early = 0
+        failed_articles = 0
 
         for i, art in enumerate(articles):
             if time.monotonic() - t0 > TIME_BUDGET_S:
@@ -511,178 +512,200 @@ def main():
                       "raw for the next run".format(TIME_BUDGET_S,
                                                     stopped_early))
                 break
-            print("- {}".format((art.get("title") or "?")[:80]))
-            # ── FORRAS-SZINTU KAPU (config/source_policy.json) ─────────────
-            pol = source_policy.policy_for(art.get("source_id"))
-            if pol == source_policy.DROP:
-                db.update("ac_articles", {"article_id": "eq." + art["article_id"]},
-                          {"status": "irrelevant"})
-                gate_stats["dropped"] += 1
-                processed += 1
-                continue
-            if pol == source_policy.HAIKU_GATE:
-                if cheap_relevance_gate(client, art) is False:
+            try:
+                print("- {}".format((art.get("title") or "?")[:80]))
+                # ── FORRAS-SZINTU KAPU (config/source_policy.json) ─────────────
+                pol = source_policy.policy_for(art.get("source_id"))
+                if pol == source_policy.DROP:
                     db.update("ac_articles", {"article_id": "eq." + art["article_id"]},
                               {"status": "irrelevant"})
-                    gate_stats["gated_out"] += 1
+                    gate_stats["dropped"] += 1
                     processed += 1
                     continue
-                gate_stats["gated_in"] += 1
-            result, failure = call_claude(client, art)
-            if failure:
-                db.update("ac_articles", {"article_id": "eq." + art["article_id"]},
-                          {"status": "failed", "failure_reason": failure})
-                continue
-
-            if not result.get("relevant") or not result.get("events"):
-                db.update("ac_articles", {"article_id": "eq." + art["article_id"]},
-                          {"status": "irrelevant"})
-                processed += 1
-                continue
-
-            for ev in result["events"]:
-                # --- ENTITAS-ILLESZTES designation-fegyelemmel ---
-                type_id, variant_detected, match_kind = match_aircraft(
-                    ev.get("aircraft_type"), type_idx, family_idx)
-                # A modell altal explicit megadott varians elonyt kap a
-                # kikovetkeztetett fole.
-                variant_raw = (ev.get("variant") or variant_detected
-                               or (ev.get("aircraft_type")
-                                   if match_kind == "variant" else None))
-                if match_kind == "none" and type_id is None:
-                    print("  [unresolved] {!r} did not match the catalogue "
-                          "safely — sent to review rather than guessed".format(
-                              ev.get("aircraft_type")))
-                country_id = match(ev.get("country"), country_idx)
-                counterparty_id = match(ev.get("counterparty_country"), country_idx)
-                etype = ev.get("event_type") or "other"
-                # duplicate guard: same soft story already tracked -> skip
-                if etype in ("negotiation", "selection", "other") \
-                        and (country_id or type_id) \
-                        and (country_id, type_id, etype) in soft_keys:
-                    print("  [dup] skipped: {} / {} / {}".format(
-                        ev.get("country"), ev.get("aircraft_type"), etype))
+                if pol == source_policy.HAIKU_GATE:
+                    if cheap_relevance_gate(client, art) is False:
+                        db.update("ac_articles", {"article_id": "eq." + art["article_id"]},
+                                  {"status": "irrelevant"})
+                        gate_stats["gated_out"] += 1
+                        processed += 1
+                        continue
+                    gate_stats["gated_in"] += 1
+                result, failure = call_claude(client, art)
+                if failure:
+                    db.update("ac_articles", {"article_id": "eq." + art["article_id"]},
+                              {"status": "failed", "failure_reason": failure})
                     continue
-                if etype in ("negotiation", "selection", "other"):
-                    soft_keys.add((country_id, type_id, etype))
-                row = {
-                    "article_id": art["article_id"],
-                    "event_type": etype,
-                    "country_id": country_id,
-                    "type_id": type_id,
-                    "counterparty_country_id": counterparty_id,
-                    "quantity": ev.get("quantity"),
-                    "value_usd_m": ev.get("value_usd_m"),
-                    "event_date": _safe_date(ev.get("event_date")),
-                    "summary": (ev.get("summary") or "")[:1000],
-                    "confidence": ev.get("confidence"),
-                    "review_status": "pending",
-                    "unresolved_type_name": None if type_id else ev.get("aircraft_type"),
-                    "unresolved_country_name": None if country_id else ev.get("country"),
-                }
-                # v2 kepesseg-mezok, ervenyes ertekkeszletre szoritva. Ha a
-                # migracio meg nem futott le, a beszuras a v2 kulcsok nelkul
-                # ismetlodik (visszafele kompatibilitas).
-                v2 = _v2_fields(ev)
 
-                # ---------- v3: varians, programme-kotes, baseline-delta ----
-                v3 = {
-                    "variant_raw": variant_raw,
-                    "type_match_kind": match_kind,
-                    "quantity_claimed": ev.get("quantity"),
-                }
-                probe = dict(row, **v2)
-                probe["variant_raw"] = variant_raw
-                probe["service"] = ev.get("service")
-                probe["quantity_claimed"] = ev.get("quantity")
+                if not result.get("relevant") or not result.get("events"):
+                    db.update("ac_articles", {"article_id": "eq." + art["article_id"]},
+                              {"status": "irrelevant"})
+                    processed += 1
+                    continue
 
-                # A PROGRAMME-KOTES. Ez az, ami megakadalyozza, hogy ugyanaz a
-                # program minden heten ujra "megvasarlodjon".
-                prog, why = acprog.find_programme(probe, programmes,
-                                                  ev.get("summary"))
-                if prog:
-                    v3["programme_id"] = prog.get("programme_id")
-                    print("    -> programme {} ({})".format(
-                        prog.get("programme_id"), why))
-                elif country_id and type_id:
-                    kind = acprog.kind_from_event(probe, ev.get("summary"))
-                    anchor = None
-                    m = re.match(r"^(\d{4})", str(ev.get("event_date") or ""))
-                    if m:
-                        anchor = int(m.group(1))
-                    new_key = acprog.programme_key(
-                        country_id, type_id, variant_raw, ev.get("service"),
-                        kind, anchor)
-                    v3["programme_id"] = new_key
-                    # A programrekordot letrehozzuk, ha meg nincs — igy a
-                    # kovetkezo cikk mar EHHEZ kotodik, nem ujat nyit.
-                    try:
-                        db.upsert("ac_programmes", [{
-                            "programme_id": new_key,
-                            "country_id": country_id, "type_id": type_id,
-                            "variant": variant_raw, "service": ev.get("service"),
-                            "programme_kind": kind,
-                            "title": "{} {}{}".format(
-                                country_id.upper(),
-                                variant_raw or type_id,
-                                "" if kind == "acquisition"
-                                else " ({})".format(
-                                    acprog.PROGRAMME_KINDS.get(kind, kind))),
-                            "review_status": "active",
-                        }], "programme_id")
-                        programmes.append({
-                            "programme_id": new_key, "country_id": country_id,
-                            "type_id": type_id, "variant": variant_raw,
-                            "service": ev.get("service"),
-                            "programme_kind": kind, "canonical_quantity": None,
-                            "lifecycle_stage": None, "review_status": "active"})
-                        print("    -> new programme {} [{}]".format(
-                            new_key, kind))
-                    except Exception as exc:  # noqa: BLE001
-                        print("    [warn] could not create programme {}: "
-                              "{}".format(new_key, str(exc)[:120]))
+                for ev in result["events"]:
+                    # --- ENTITAS-ILLESZTES designation-fegyelemmel ---
+                    type_id, variant_detected, match_kind = match_aircraft(
+                        ev.get("aircraft_type"), type_idx, family_idx)
+                    # A modell altal explicit megadott varians elonyt kap a
+                    # kikovetkeztetett fole.
+                    variant_raw = (ev.get("variant") or variant_detected
+                                   or (ev.get("aircraft_type")
+                                       if match_kind == "variant" else None))
+                    if match_kind == "none" and type_id is None:
+                        print("  [unresolved] {!r} did not match the catalogue "
+                              "safely — sent to review rather than guessed".format(
+                                  ev.get("aircraft_type")))
+                    country_id = match(ev.get("country"), country_idx)
+                    counterparty_id = match(ev.get("counterparty_country"), country_idx)
+                    etype = ev.get("event_type") or "other"
+                    # duplicate guard: same soft story already tracked -> skip
+                    if etype in ("negotiation", "selection", "other") \
+                            and (country_id or type_id) \
+                            and (country_id, type_id, etype) in soft_keys:
+                        print("  [dup] skipped: {} / {} / {}".format(
+                            ev.get("country"), ev.get("aircraft_type"), etype))
+                        continue
+                    if etype in ("negotiation", "selection", "other"):
+                        soft_keys.add((country_id, type_id, etype))
+                    row = {
+                        "article_id": art["article_id"],
+                        "event_type": etype,
+                        "country_id": country_id,
+                        "type_id": type_id,
+                        "counterparty_country_id": counterparty_id,
+                        "quantity": ev.get("quantity"),
+                        "value_usd_m": ev.get("value_usd_m"),
+                        "event_date": _safe_date(ev.get("event_date")),
+                        "summary": (ev.get("summary") or "")[:1000],
+                        "confidence": ev.get("confidence"),
+                        "review_status": "pending",
+                        "unresolved_type_name": None if type_id else ev.get("aircraft_type"),
+                        "unresolved_country_name": None if country_id else ev.get("country"),
+                    }
+                    # v2 kepesseg-mezok, ervenyes ertekkeszletre szoritva. Ha a
+                    # migracio meg nem futott le, a beszuras a v2 kulcsok nelkul
+                    # ismetlodik (visszafele kompatibilitas).
+                    v2 = _v2_fields(ev)
 
-                # A BASELINE-DELTA. Alapertelmezesben NULLA: egy ujabb cikk
-                # ugyanarrol a programrol nem ad hozza repulogepet.
-                delta, delta_why = acprog.on_order_delta(
-                    probe, prog, ev.get("summary"))
-                v3["on_order_delta"] = delta
-                if delta:
-                    print("    -> on-order delta {:+d} ({})".format(
-                        delta, delta_why))
+                    # ---------- v3: varians, programme-kotes, baseline-delta ----
+                    v3 = {
+                        "variant_raw": variant_raw,
+                        "type_match_kind": match_kind,
+                        "quantity_claimed": ev.get("quantity"),
+                    }
+                    probe = dict(row, **v2)
+                    probe["variant_raw"] = variant_raw
+                    probe["service"] = ev.get("service")
+                    probe["quantity_claimed"] = ev.get("quantity")
 
-                try:
-                    db.insert("ac_events", dict(row, **v2, **v3))
-                except Exception as e:  # noqa: BLE001
-                    try:
-                        db.insert("ac_events", dict(row, **v2))
-                        print("  [warn] v3 columns missing — inserted without "
-                              "programme/variant fields (run "
-                              "add_programme_layer.sql)")
-                    except Exception as e2:  # noqa: BLE001
+                    # A PROGRAMME-KOTES. Ez az, ami megakadalyozza, hogy ugyanaz a
+                    # program minden heten ujra "megvasarlodjon".
+                    prog, why = acprog.find_programme(probe, programmes,
+                                                      ev.get("summary"))
+                    if prog:
+                        v3["programme_id"] = prog.get("programme_id")
+                        print("    -> programme {} ({})".format(
+                            prog.get("programme_id"), why))
+                    elif country_id and type_id:
+                        kind = acprog.kind_from_event(probe, ev.get("summary"))
+                        anchor = None
+                        m = re.match(r"^(\d{4})", str(ev.get("event_date") or ""))
+                        if m:
+                            anchor = int(m.group(1))
+                        new_key = acprog.programme_key(
+                            country_id, type_id, variant_raw, ev.get("service"),
+                            kind, anchor)
+                        v3["programme_id"] = new_key
+                        # A programrekordot letrehozzuk, ha meg nincs — igy a
+                        # kovetkezo cikk mar EHHEZ kotodik, nem ujat nyit.
                         try:
-                            db.insert("ac_events", row)
-                            print("  [warn] v2 columns missing too — inserted "
-                                  "base fields only")
-                        except Exception as e3:  # noqa: BLE001
-                            print("  [WARN] event insert failed: {}".format(
-                                str(e3)[:200]))
+                            db.upsert("ac_programmes", [{
+                                "programme_id": new_key,
+                                "country_id": country_id, "type_id": type_id,
+                                "variant": variant_raw, "service": ev.get("service"),
+                                "programme_kind": kind,
+                                "title": "{} {}{}".format(
+                                    country_id.upper(),
+                                    variant_raw or type_id,
+                                    "" if kind == "acquisition"
+                                    else " ({})".format(
+                                        acprog.PROGRAMME_KINDS.get(kind, kind))),
+                                "review_status": "active",
+                            }], "programme_id")
+                            programmes.append({
+                                "programme_id": new_key, "country_id": country_id,
+                                "type_id": type_id, "variant": variant_raw,
+                                "service": ev.get("service"),
+                                "programme_kind": kind, "canonical_quantity": None,
+                                "lifecycle_stage": None, "review_status": "active"})
+                            print("    -> new programme {} [{}]".format(
+                                new_key, kind))
+                        except Exception as exc:  # noqa: BLE001
+                            print("    [warn] could not create programme {}: "
+                                  "{}".format(new_key, str(exc)[:120]))
 
-            db.update("ac_articles", {"article_id": "eq." + art["article_id"]},
-                      {"status": "processed"})
-            processed += 1
-            print("  -> {} event(s)".format(len(result["events"])))
+                    # A BASELINE-DELTA. Alapertelmezesben NULLA: egy ujabb cikk
+                    # ugyanarrol a programrol nem ad hozza repulogepet.
+                    delta, delta_why = acprog.on_order_delta(
+                        probe, prog, ev.get("summary"))
+                    v3["on_order_delta"] = delta
+                    if delta:
+                        print("    -> on-order delta {:+d} ({})".format(
+                            delta, delta_why))
+
+                    try:
+                        db.insert("ac_events", dict(row, **v2, **v3))
+                    except Exception as e:  # noqa: BLE001
+                        try:
+                            db.insert("ac_events", dict(row, **v2))
+                            print("  [warn] v3 columns missing — inserted without "
+                                  "programme/variant fields (run "
+                                  "add_programme_layer.sql)")
+                        except Exception as e2:  # noqa: BLE001
+                            try:
+                                db.insert("ac_events", row)
+                                print("  [warn] v2 columns missing too — inserted "
+                                      "base fields only")
+                            except Exception as e3:  # noqa: BLE001
+                                print("  [WARN] event insert failed: {}".format(
+                                    str(e3)[:200]))
+
+                db.update("ac_articles", {"article_id": "eq." + art["article_id"]},
+                          {"status": "processed"})
+                processed += 1
+                print("  -> {} event(s)".format(len(result["events"])))
+            except RuntimeError:
+                # Kifogyott API-kredit es hasonlo rendszerhiba: a futas
+                # leall, a cikkek 'raw'-ban maradnak (kovetkezo futas folytatja).
+                raise
+            except Exception as exc:  # noqa: BLE001
+                # EGY hibas cikk soha nem allitja meg a tobbit: 'failed'
+                # jelolest kap okkal, a ciklus megy tovabb.
+                failed_articles += 1
+                reason = "exception: {}: {}".format(type(exc).__name__,
+                                                     str(exc)[:200])
+                print("  [FAIL] {} — skipped, the run continues".format(reason))
+                try:
+                    db.update("ac_articles",
+                              {"article_id": "eq." + art["article_id"]},
+                              {"status": "failed", "failure_reason": reason[:500]})
+                except Exception:  # noqa: BLE001
+                    pass
 
         print("Done. Processed: {}/{}{}".format(
             processed, len(articles),
             " (batch limit {} reached — more raw articles may be waiting)".format(
                 BATCH_LIMIT) if len(articles) >= BATCH_LIMIT else ""))
         print("KAPU: {}".format(gate_stats))
+        if failed_articles:
+            print("FAILED articles (marked 'failed', run continued): {}".format(
+                failed_articles))
         usage.report()
         db.finish_run(run, "success", items_processed=processed,
                       details={"usage": usage.summary(), "gate": gate_stats,
                                "batch_limit": BATCH_LIMIT,
-                               "stopped_by_time_budget": stopped_early})
+                               "stopped_by_time_budget": stopped_early,
+                               "failed_articles": failed_articles})
     except Exception as e:  # noqa: BLE001
         usage.report()
         db.finish_run(run, "error", error_message=str(e),

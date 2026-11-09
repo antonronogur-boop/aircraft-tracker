@@ -81,6 +81,13 @@ def main():
             p["d7"] += 1
         if c >= d30:
             p["d30"] += 1
+    try:
+        last_collect = (db.select("pipeline_runs", {
+            "select": "details,started_at", "script_name": "eq.ac_collect_rss",
+            "order": "run_id.desc", "limit": "1"}) or [{}])[0]
+    except Exception:  # noqa: BLE001
+        last_collect = {}
+    last_src = ((last_collect.get("details") or {}).get("sources") or {})
     rows = []
     print("\nA. SOURCES — ac_sources (the collector reads: rss_url not null AND enabled = true)")
     print("{:<9} {:<34} {:<7} {:<19} {:<10} {:<7} {:<6} {:>6} {:>4} {:>4}  {}".format(
@@ -105,6 +112,11 @@ def main():
             sid, (r["name"] or "")[:34], "ACTIVE" if active else "-", tier, r["policy"],
             probe.get("format", "-")[:7], str(probe.get("newest") or "-")[5:], p["n"], p["d7"], p["d30"],
             p["last"] or "never"))
+        ls = last_src.get(sid)
+        r["last_run"] = ls
+        if ls and not ls.get("ok"):
+            print("          ^ last scheduled collection FAILED for this source: {}".format(
+                ls.get("error")))
     act = [r for r in rows if r["active"]]
     summ = Counter(r["category"] for r in act)
     fmts = Counter((r["feed"] or {}).get("format", "?") for r in act)
